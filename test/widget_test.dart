@@ -1,36 +1,30 @@
-import 'package:class_vision/app.dart';
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:class_vision/main.dart';
+
 void main() {
-  testWidgets('matches the AI processing screen content', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const MyApp());
 
-    await tester.pumpWidget(const ClassVisionApp());
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
 
-    expect(find.text('IA'), findsOneWidget);
-    expect(find.text('Analisando a sala...'), findsOneWidget);
-    expect(
-      find.text('Comparando os rostos detectados com a lista da turma.'),
-      findsOneWidget,
-    );
-    expect(find.text('Foto recebida'), findsOneWidget);
-    expect(find.text('Rostos detectados'), findsOneWidget);
-    expect(find.text('Identificando alunos'), findsOneWidget);
-    expect(find.text('Preparando conferência'), findsOneWidget);
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
 
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pump(const Duration(milliseconds: 350));
-    expect(find.text('Preparando conferência...'), findsOneWidget);
-
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pump(const Duration(milliseconds: 350));
-    expect(find.text('Análise concluída!'), findsOneWidget);
-    expect(
-      find.text('A conferência está pronta para ser revisada.'),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
   });
 }
