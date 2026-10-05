@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
-import 'features/ai_processing/views/ai_processing_page.dart';
+import 'features/attendance/views/attendance_review_page.dart';
 
 class ClassVisionApp extends StatelessWidget {
   const ClassVisionApp({super.key});
@@ -12,7 +12,7 @@ class ClassVisionApp extends StatelessWidget {
       title: 'ClassVision',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const AiProcessingPage(),
+      home: const AttendanceReviewPage(),
     );
   }
 }
