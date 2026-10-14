@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../../core/navigation/app_routes.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../camera/views/camera_page.dart';
 import '../view_models/ai_processing_view_model.dart';
 import '../widgets/processing_orb.dart';
 import '../widgets/processing_status_card.dart';
 
 class AiProcessingPage extends StatefulWidget {
-  const AiProcessingPage({super.key, this.viewModel});
+  const AiProcessingPage({super.key, required this.result, this.viewModel});
 
+  final CameraResult result;
   final AiProcessingViewModel? viewModel;
 
   @override
@@ -22,104 +27,91 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
   void initState() {
     super.initState();
     _ownsViewModel = widget.viewModel == null;
-    _viewModel = widget.viewModel ?? AiProcessingViewModel();
+    _viewModel =
+        widget.viewModel ??
+        AiProcessingViewModel(stepDuration: const Duration(seconds: 1));
+    _viewModel.addListener(_onChanged);
     _viewModel.start();
+  }
+
+  void _onChanged() {
+    if (!_viewModel.state.isCompleted || !mounted) return;
+    Future<void>.delayed(const Duration(milliseconds: 550), () {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.review,
+        arguments: widget.result.classId,
+      );
+    });
   }
 
   @override
   void dispose() {
+    _viewModel.removeListener(_onChanged);
     if (_ownsViewModel) _viewModel.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Center(
-            child: FittedBox(
-              fit: BoxFit.contain,
-              child: SizedBox(
-                width: 390,
-                height: 844,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: ColoredBox(
-                    color: AppColors.background,
-                    child: AnimatedBuilder(
-                      animation: _viewModel,
-                      builder: (context, _) {
-                        final state = _viewModel.state;
-
-                        return Stack(
-                          children: [
-                            const Positioned(
-                              left: 143,
-                              top: 193,
-                              child: ProcessingOrb(),
-                            ),
-                            Positioned(
-                              left: 24,
-                              right: 24,
-                              top: 314,
-                              child: Transform.scale(
-                                scaleX: .962,
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 300),
-                                  child: Text(
-                                    state.title,
-                                    key: ValueKey(state.phase),
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 22,
-                                      height: 1,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 24,
-                              right: 24,
-                              top: 355,
-                              child: Transform.scale(
-                                scaleX: .955,
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 300),
-                                  child: Text(
-                                    state.description,
-                                    key: ValueKey(state.description),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                      height: 1,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 45.5,
-                              top: 384.5,
-                              child: ProcessingStatusCard(steps: state.steps),
-                            ),
-                          ],
-                        );
-                      },
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: AnimatedBuilder(
+        animation: _viewModel,
+        builder: (context, _) {
+          final state = _viewModel.state;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: SizedBox(
+                    height: 120,
+                    width: 180,
+                    child: Image.file(
+                      File(widget.result.imagePath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const ColoredBox(
+                        color: AppColors.primarySoft,
+                        child: Icon(
+                          Icons.image_outlined,
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                Transform.translate(
+                  offset: const Offset(0, -25),
+                  child: const ProcessingOrb(),
+                ),
+                Text(
+                  state.title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  state.description,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ProcessingStatusCard(steps: state.steps),
+                const Spacer(flex: 3),
+              ],
             ),
           );
         },
       ),
-    );
-  }
+    ),
+  );
 }

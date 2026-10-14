@@ -11,8 +11,8 @@ class ProcessingStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 299,
-      height: 114,
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 114),
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
