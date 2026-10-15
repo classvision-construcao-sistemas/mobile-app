@@ -7,9 +7,10 @@ import '../../../core/theme/app_colors.dart';
 import '../viewmodels/camera_view_model.dart';
 
 class CameraPage extends StatefulWidget {
-  const CameraPage({super.key, this.classId});
+  const CameraPage({super.key, this.classId, this.returnCapturedImage = false});
 
   final String? classId;
+  final bool returnCapturedImage;
 
   @override
   State<CameraPage> createState() => _CameraPageState();
@@ -45,14 +46,21 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider.value(
     value: _viewModel,
-    child: _CameraContent(classId: widget.classId),
+    child: _CameraContent(
+      classId: widget.classId,
+      returnCapturedImage: widget.returnCapturedImage,
+    ),
   );
 }
 
 class _CameraContent extends StatelessWidget {
-  const _CameraContent({required this.classId});
+  const _CameraContent({
+    required this.classId,
+    required this.returnCapturedImage,
+  });
 
   final String? classId;
+  final bool returnCapturedImage;
 
   @override
   Widget build(BuildContext context) {
@@ -111,9 +119,11 @@ class _CameraContent extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        'Enquadre todos os alunos',
-                        style: TextStyle(
+                      Text(
+                        returnCapturedImage
+                            ? 'Enquadre o rosto do aluno'
+                            : 'Enquadre todos os alunos',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -121,7 +131,9 @@ class _CameraContent extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Mantenha o aparelho firme e em boa iluminação.',
+                        returnCapturedImage
+                            ? 'Use boa iluminação e deixe apenas um rosto visível.'
+                            : 'Mantenha o aparelho firme e em boa iluminação.',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: .75),
                           fontSize: 12,
@@ -136,6 +148,10 @@ class _CameraContent extends StatelessWidget {
                               ? () async {
                                   final file = await viewModel.capture();
                                   if (file == null || !context.mounted) return;
+                                  if (returnCapturedImage) {
+                                    Navigator.pop(context, file.path);
+                                    return;
+                                  }
                                   Navigator.pushReplacementNamed(
                                     context,
                                     AppRoutes.processing,

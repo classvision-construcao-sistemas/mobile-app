@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/services/facial_recognition_api.dart';
+import '../../camera/views/camera_page.dart';
 
 enum RegistrationType { user, classroom, student }
 
@@ -27,6 +32,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final _formKey = GlobalKey<FormState>();
   late final List<TextEditingController> _controllers;
   bool _saving = false;
+  String? _faceImagePath;
 
   @override
   void initState() {
@@ -89,41 +95,80 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() => _saving = true);
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    if (!mounted) {
+    if (widget.type == RegistrationType.student && _faceImagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tire a foto facial do aluno.')),
+      );
       return;
     }
+
+    setState(() => _saving = true);
     final repository = context.read<MockSchoolRepository>();
-    switch (widget.type) {
-      case RegistrationType.user:
-        repository.updateProfile(
-          CoordinatorProfile(
-            name: _controllers[0].text,
-            email: _controllers[1].text,
-            school: _controllers[2].text,
-            phone: _controllers[3].text,
-          ),
-        );
-      case RegistrationType.classroom:
-        repository.addClass(
-          name: _controllers[0].text,
-          room: _controllers[1].text,
-          time: _controllers[2].text,
-        );
-      case RegistrationType.student:
-        repository.addStudent(
-          widget.classId ?? repository.classes.first.id,
-          Student(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            name: _controllers[0].text,
-            registration: _controllers[1].text,
-            guardian: _controllers[2].text,
-            phone: _controllers[3].text,
-          ),
-        );
+    try {
+      switch (widget.type) {
+        case RegistrationType.user:
+          repository.updateProfile(
+            CoordinatorProfile(
+              name: _controllers[0].text.trim(),
+              email: _controllers[1].text.trim(),
+              school: _controllers[2].text.trim(),
+              phone: _controllers[3].text.trim(),
+            ),
+          );
+        case RegistrationType.classroom:
+          repository.addClass(
+            name: _controllers[0].text.trim(),
+            room: _controllers[1].text.trim(),
+            time: _controllers[2].text.trim(),
+          );
+        case RegistrationType.student:
+          final registration = _controllers[1].text.trim();
+          await context.read<FacialRecognitionApi>().enrollStudent(
+            studentId: registration,
+            imagePath: _faceImagePath!,
+          );
+          if (!mounted) return;
+          repository.addStudent(
+            widget.classId ?? repository.classes.first.id,
+            Student(
+              id: DateTime.now().microsecondsSinceEpoch.toString(),
+              name: _controllers[0].text.trim(),
+              registration: registration,
+              guardian: _controllers[2].text.trim(),
+              phone: _controllers[3].text.trim(),
+            ),
+          );
+      }
+      if (mounted) Navigator.pop(context);
+    } on FacialRecognitionException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      setState(() => _saving = false);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível salvar o cadastro.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      setState(() => _saving = false);
     }
-    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _captureFace() async {
+    final path = await Navigator.push<String>(
+      context,
+      MaterialPageRoute<String>(
+        builder: (_) => const CameraPage(returnCapturedImage: true),
+      ),
+    );
+    if (path != null && mounted) setState(() => _faceImagePath = path);
   }
 
   @override
@@ -142,7 +187,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
               RegistrationType.classroom =>
                 'Cadastre os dados básicos da nova turma.',
               RegistrationType.student =>
-                'Cadastre o aluno e o contato do responsável.',
+                'Cadastre o aluno, o responsável e a biometria facial.',
             }, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 22),
             for (var index = 0; index < _fields.length; index++) ...[
@@ -157,6 +202,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
               ),
               const SizedBox(height: 14),
             ],
+            if (widget.type == RegistrationType.student) ...[
+              const SizedBox(height: 4),
+              _FaceCaptureCard(
+                imagePath: _faceImagePath,
+                onPressed: _saving ? null : _captureFace,
+              ),
+            ],
             const SizedBox(height: 16),
             PrimaryButton(
               label: 'Salvar cadastro',
@@ -166,6 +218,75 @@ class _RegistrationPageState extends State<RegistrationPage> {
           ],
         ),
       ),
+    ),
+  );
+}
+
+class _FaceCaptureCard extends StatelessWidget {
+  const _FaceCaptureCard({required this.imagePath, required this.onPressed});
+
+  final String? imagePath;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppColors.primarySoft,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.primary.withValues(alpha: .2)),
+    ),
+    child: Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox.square(
+            dimension: 68,
+            child: imagePath == null
+                ? const ColoredBox(
+                    color: Colors.white,
+                    child: Icon(
+                      Icons.face_retouching_natural_rounded,
+                      color: AppColors.primary,
+                      size: 32,
+                    ),
+                  )
+                : Image.file(File(imagePath!), fit: BoxFit.cover),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                imagePath == null ? 'Biometria facial' : 'Foto facial pronta',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                imagePath == null
+                    ? 'Obrigatória para reconhecer o aluno na chamada.'
+                    : 'Você pode tirar outra foto antes de salvar.',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onPressed,
+                icon: Icon(
+                  imagePath == null
+                      ? Icons.camera_alt_rounded
+                      : Icons.refresh_rounded,
+                  size: 18,
+                ),
+                label: Text(imagePath == null ? 'Tirar foto' : 'Refazer foto'),
+              ),
+            ],
+          ),
+        ),
+      ],
     ),
   );
 }

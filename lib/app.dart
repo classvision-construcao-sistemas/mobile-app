@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/navigation/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/mock_school_repository.dart';
+import 'data/services/facial_recognition_api.dart';
 import 'features/ai_processing/views/ai_processing_page.dart';
 import 'features/attendance/views/attendance_review_page.dart';
 import 'features/attendance/views/attendance_saved_page.dart';
@@ -21,6 +22,10 @@ class ClassVisionApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MockSchoolRepository()),
+        Provider(
+          create: (_) => FacialRecognitionApi(),
+          dispose: (_, api) => api.close(),
+        ),
       ],
       child: MaterialApp(
         title: 'ClassVision',
@@ -45,9 +50,14 @@ class ClassVisionApp extends StatelessWidget {
                   ? settings.arguments! as CameraResult
                   : const CameraResult(classId: null, imagePath: ''),
             ),
-            AppRoutes.review => AttendanceReviewPage(
-              classId: settings.arguments as String?,
-            ),
+            AppRoutes.review => switch (settings.arguments) {
+              AttendanceReviewArgs args => AttendanceReviewPage(
+                classId: args.classId,
+                auditResult: args.auditResult,
+              ),
+              final String classId => AttendanceReviewPage(classId: classId),
+              _ => const AttendanceReviewPage(),
+            },
             AppRoutes.saved => AttendanceSavedPage(
               classId: settings.arguments as String?,
             ),

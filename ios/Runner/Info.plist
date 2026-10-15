@@ -3,7 +3,14 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>O ClassVision usa a câmera para registrar a turma e conferir a presença dos alunos.</string>
+	<string>O ClassVision usa a câmera para cadastrar a biometria e reconhecer alunos na chamada.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>O ClassVision acessa o serviço de reconhecimento facial na rede local durante o desenvolvimento.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

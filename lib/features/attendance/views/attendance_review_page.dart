@@ -4,13 +4,22 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
+import '../../../data/models/facial_recognition_models.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/mock_school_repository.dart';
 
+class AttendanceReviewArgs {
+  const AttendanceReviewArgs({required this.classId, this.auditResult});
+
+  final String classId;
+  final RoomAuditResult? auditResult;
+}
+
 class AttendanceReviewPage extends StatelessWidget {
-  const AttendanceReviewPage({super.key, this.classId});
+  const AttendanceReviewPage({super.key, this.classId, this.auditResult});
 
   final String? classId;
+  final RoomAuditResult? auditResult;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +43,38 @@ class AttendanceReviewPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(24, 4, 24, 14),
             child: Column(
               children: [
+                if (auditResult case final audit?) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.infoLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.face_retouching_natural_rounded,
+                          color: AppColors.info,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '${audit.totalFacesDetected} rosto(s) detectado(s) • '
+                            '${audit.recognizedStudents.length} reconhecido(s) • '
+                            '${audit.unrecognizedCount} não reconhecido(s)',
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(

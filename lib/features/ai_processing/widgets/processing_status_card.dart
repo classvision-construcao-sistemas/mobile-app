@@ -38,6 +38,7 @@ class _ProcessingStepRow extends StatelessWidget {
       ProcessingStepStatus.completed => AppColors.success,
       ProcessingStepStatus.active => AppColors.primary,
       ProcessingStepStatus.pending => AppColors.textSecondary,
+      ProcessingStepStatus.failed => AppColors.error,
     };
 
     return SizedBox(
@@ -93,6 +94,11 @@ class _StepIndicator extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.textSecondary, width: 1.2),
         ),
+      ),
+      ProcessingStepStatus.failed => const Icon(
+        Icons.close_rounded,
+        size: 11,
+        color: AppColors.error,
       ),
     };
   }

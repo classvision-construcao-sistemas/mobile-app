@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../models/facial_recognition_models.dart';
 import '../models/school_models.dart';
 
 class MockSchoolRepository extends ChangeNotifier {
@@ -165,6 +166,38 @@ class MockSchoolRepository extends ChangeNotifier {
               : item,
         )
         .toList();
+    notifyListeners();
+  }
+
+  void applyFacialRecognition(String classId, RoomAuditResult result) {
+    final confidenceByRegistration = <String, double>{};
+    for (final match in result.recognizedStudents) {
+      final current = confidenceByRegistration[match.studentId] ?? 0;
+      if (match.confidenceScore > current) {
+        confidenceByRegistration[match.studentId] = match.confidenceScore;
+      }
+    }
+
+    _classes = _classes.map((item) {
+      if (item.id != classId) return item;
+      return item.copyWith(
+        students: item.students.map((student) {
+          final confidence = confidenceByRegistration[student.registration];
+          if (confidence == null) {
+            return student.copyWith(
+              status: AttendanceStatus.absent,
+              confidence: 0,
+            );
+          }
+          return student.copyWith(
+            status: confidence >= .75
+                ? AttendanceStatus.present
+                : AttendanceStatus.review,
+            confidence: confidence,
+          );
+        }).toList(),
+      );
+    }).toList();
     notifyListeners();
   }
 

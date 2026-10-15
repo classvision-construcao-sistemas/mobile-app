@@ -1,6 +1,6 @@
-enum ProcessingStepStatus { completed, active, pending }
+enum ProcessingStepStatus { completed, active, pending, failed }
 
-enum AiProcessingPhase { identifying, preparing, completed }
+enum AiProcessingPhase { identifying, preparing, completed, failed }
 
 class ProcessingStep {
   const ProcessingStep({required this.label, required this.status});
@@ -20,19 +20,19 @@ class AiProcessingState {
   const AiProcessingState.identifying()
     : phase = AiProcessingPhase.identifying,
       title = 'Analisando a sala...',
-      description = 'Comparando os rostos detectados com a lista da turma.',
+      description = 'Enviando a foto e comparando os rostos cadastrados.',
       steps = const [
         ProcessingStep(
           label: 'Foto recebida',
           status: ProcessingStepStatus.completed,
         ),
         ProcessingStep(
-          label: 'Rostos detectados',
-          status: ProcessingStepStatus.completed,
+          label: 'Detectando rostos',
+          status: ProcessingStepStatus.active,
         ),
         ProcessingStep(
           label: 'Identificando alunos',
-          status: ProcessingStepStatus.active,
+          status: ProcessingStepStatus.pending,
         ),
         ProcessingStep(
           label: 'Preparando conferência',
@@ -43,7 +43,7 @@ class AiProcessingState {
   const AiProcessingState.preparing()
     : phase = AiProcessingPhase.preparing,
       title = 'Preparando conferência...',
-      description = 'Organizando os dados identificados para sua revisão.',
+      description = 'Organizando os resultados para sua revisão.',
       steps = const [
         ProcessingStep(
           label: 'Foto recebida',
@@ -54,7 +54,7 @@ class AiProcessingState {
           status: ProcessingStepStatus.completed,
         ),
         ProcessingStep(
-          label: 'Identificando alunos',
+          label: 'Alunos identificados',
           status: ProcessingStepStatus.completed,
         ),
         ProcessingStep(
@@ -66,7 +66,7 @@ class AiProcessingState {
   const AiProcessingState.completed()
     : phase = AiProcessingPhase.completed,
       title = 'Análise concluída!',
-      description = 'A conferência está pronta para ser revisada.',
+      description = 'A chamada está pronta para ser revisada.',
       steps = const [
         ProcessingStep(
           label: 'Foto recebida',
@@ -77,12 +77,35 @@ class AiProcessingState {
           status: ProcessingStepStatus.completed,
         ),
         ProcessingStep(
-          label: 'Identificando alunos',
+          label: 'Alunos identificados',
           status: ProcessingStepStatus.completed,
         ),
         ProcessingStep(
-          label: 'Preparando conferência',
+          label: 'Conferência preparada',
           status: ProcessingStepStatus.completed,
+        ),
+      ];
+
+  AiProcessingState.failed(String message)
+    : phase = AiProcessingPhase.failed,
+      title = 'Não foi possível analisar',
+      description = message,
+      steps = const [
+        ProcessingStep(
+          label: 'Foto recebida',
+          status: ProcessingStepStatus.completed,
+        ),
+        ProcessingStep(
+          label: 'Reconhecimento facial',
+          status: ProcessingStepStatus.failed,
+        ),
+        ProcessingStep(
+          label: 'Identificando alunos',
+          status: ProcessingStepStatus.pending,
+        ),
+        ProcessingStep(
+          label: 'Preparando conferência',
+          status: ProcessingStepStatus.pending,
         ),
       ];
 
@@ -92,4 +115,5 @@ class AiProcessingState {
   final List<ProcessingStep> steps;
 
   bool get isCompleted => phase == AiProcessingPhase.completed;
+  bool get hasFailed => phase == AiProcessingPhase.failed;
 }

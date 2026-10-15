@@ -1,9 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_ui.dart';
+import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/services/facial_recognition_api.dart';
+import '../../attendance/views/attendance_review_page.dart';
 import '../../camera/views/camera_page.dart';
 import '../view_models/ai_processing_view_model.dart';
 import '../widgets/processing_orb.dart';
@@ -22,6 +27,7 @@ class AiProcessingPage extends StatefulWidget {
 class _AiProcessingPageState extends State<AiProcessingPage> {
   late final AiProcessingViewModel _viewModel;
   late final bool _ownsViewModel;
+  bool _navigating = false;
 
   @override
   void initState() {
@@ -29,21 +35,29 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
     _ownsViewModel = widget.viewModel == null;
     _viewModel =
         widget.viewModel ??
-        AiProcessingViewModel(stepDuration: const Duration(seconds: 1));
+        AiProcessingViewModel(
+          imagePath: widget.result.imagePath,
+          auditor: context.read<FacialRecognitionApi>().auditRoom,
+        );
     _viewModel.addListener(_onChanged);
     _viewModel.start();
   }
 
   void _onChanged() {
-    if (!_viewModel.state.isCompleted || !mounted) return;
-    Future<void>.delayed(const Duration(milliseconds: 550), () {
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(
-        context,
-        AppRoutes.review,
-        arguments: widget.result.classId,
-      );
-    });
+    if (!_viewModel.state.isCompleted || !mounted || _navigating) return;
+    final audit = _viewModel.result;
+    if (audit == null) return;
+    _navigating = true;
+
+    final repository = context.read<MockSchoolRepository>();
+    final classId = widget.result.classId ?? repository.classes.first.id;
+    repository.applyFacialRecognition(classId, audit);
+
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.review,
+      arguments: AttendanceReviewArgs(classId: classId, auditResult: audit),
+    );
   }
 
   @override
@@ -99,13 +113,33 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
                 Text(
                   state.description,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: state.hasFailed
+                        ? AppColors.error
+                        : AppColors.textSecondary,
                     fontSize: 12,
                   ),
                 ),
                 const SizedBox(height: 24),
                 ProcessingStatusCard(steps: state.steps),
+                if (state.hasFailed) ...[
+                  const SizedBox(height: 18),
+                  PrimaryButton(
+                    label: 'Tentar novamente',
+                    icon: Icons.refresh_rounded,
+                    onPressed: _viewModel.restart,
+                  ),
+                  const SizedBox(height: 9),
+                  PrimaryButton(
+                    label: 'Tirar nova foto',
+                    outlined: true,
+                    onPressed: () => Navigator.pushReplacementNamed(
+                      context,
+                      AppRoutes.camera,
+                      arguments: widget.result.classId,
+                    ),
+                  ),
+                ],
                 const Spacer(flex: 3),
               ],
             ),

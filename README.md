@@ -39,6 +39,20 @@ $ flutter pub get
 $ flutter run
 ```
 
+## Reconhecimento facial
+
+O app envia fotos em `multipart/form-data` para o microsserviço que está na
+pasta irmã `reconhecimento-facial-service`.
+
+- Emulador Android: `flutter run` usa automaticamente `http://10.0.2.2:5000`.
+- Dispositivo físico: use o IP da máquina na mesma rede, por exemplo:
+  `flutter run --dart-define=FACE_API_BASE_URL=http://192.168.0.10:5000`.
+- Desktop/iOS Simulator: o endereço padrão é `http://localhost:5000`.
+
+Antes de fazer uma chamada, abra uma turma, adicione um aluno e tire a foto
+facial solicitada. A matrícula usada nesse cadastro é a chave que relaciona o
+resultado da API ao aluno exibido no app.
+
 ## 📐 Estrutura do Projeto
 
 O projeto segue a estrutura padrão de um aplicativo Flutter, organizada nos seguintes diretórios principais identificados no repositório:

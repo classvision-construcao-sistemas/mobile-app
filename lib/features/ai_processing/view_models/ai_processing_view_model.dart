@@ -2,48 +2,72 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../data/models/facial_recognition_models.dart';
+import '../../../data/services/facial_recognition_api.dart';
 import '../models/ai_processing_state.dart';
 
-class AiProcessingViewModel extends ChangeNotifier {
-  AiProcessingViewModel({this.stepDuration = const Duration(seconds: 3)});
+typedef RoomAuditor = Future<RoomAuditResult> Function(String imagePath);
 
-  final Duration stepDuration;
+class AiProcessingViewModel extends ChangeNotifier {
+  AiProcessingViewModel({
+    required this.imagePath,
+    required this._auditor,
+    this.presentationDelay = const Duration(milliseconds: 350),
+  });
+
+  final String imagePath;
+  final RoomAuditor _auditor;
+  final Duration presentationDelay;
+
   AiProcessingState _state = const AiProcessingState.identifying();
-  Timer? _timer;
+  RoomAuditResult? _result;
+  bool _running = false;
+  bool _disposed = false;
 
   AiProcessingState get state => _state;
+  RoomAuditResult? get result => _result;
 
-  void start() {
-    if (_timer != null || _state.isCompleted) return;
-    _scheduleNextStep();
-  }
-
-  void restart() {
-    _timer?.cancel();
+  Future<void> start() async {
+    if (_running || _state.isCompleted) return;
+    _running = true;
+    _result = null;
     _state = const AiProcessingState.identifying();
-    notifyListeners();
-    _scheduleNextStep();
+    _notify();
+
+    try {
+      final result = await _auditor(imagePath);
+      if (_disposed) return;
+      _result = result;
+      _state = const AiProcessingState.preparing();
+      _notify();
+      await Future<void>.delayed(presentationDelay);
+      if (_disposed) return;
+      _state = const AiProcessingState.completed();
+      _notify();
+    } on FacialRecognitionException catch (error) {
+      if (_disposed) return;
+      _state = AiProcessingState.failed(error.message);
+      _notify();
+    } catch (_) {
+      if (_disposed) return;
+      _state = AiProcessingState.failed(
+        'Ocorreu um erro inesperado ao processar a foto. Tente novamente.',
+      );
+      _notify();
+    } finally {
+      _running = false;
+    }
   }
 
-  void _scheduleNextStep() {
-    _timer = Timer(stepDuration, _advance);
-  }
+  Future<void> restart() => start();
 
-  void _advance() {
-    _timer = null;
-    _state = switch (_state.phase) {
-      AiProcessingPhase.identifying => const AiProcessingState.preparing(),
-      AiProcessingPhase.preparing => const AiProcessingState.completed(),
-      AiProcessingPhase.completed => _state,
-    };
-    notifyListeners();
-
-    if (!_state.isCompleted) _scheduleNextStep();
+  void _notify() {
+    if (!_disposed) notifyListeners();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _disposed = true;
     super.dispose();
   }
 }
