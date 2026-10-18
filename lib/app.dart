@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/navigation/app_routes.dart';
 import 'core/theme/app_theme.dart';
-import 'data/repositories/mock_school_repository.dart';
+import 'data/repositories/school_repository.dart';
 import 'data/services/facial_recognition_api.dart';
 import 'features/ai_processing/views/ai_processing_page.dart';
 import 'features/attendance/views/attendance_review_page.dart';
@@ -21,7 +21,7 @@ class ClassVisionApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => MockSchoolRepository()),
+        ChangeNotifierProvider(create: (_) => SchoolRepository()),
         Provider(
           create: (_) => FacialRecognitionApi(),
           dispose: (_, api) => api.close(),

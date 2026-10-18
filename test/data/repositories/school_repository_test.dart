@@ -1,21 +1,30 @@
 import 'package:class_vision/data/models/facial_recognition_models.dart';
 import 'package:class_vision/data/models/school_models.dart';
-import 'package:class_vision/data/repositories/mock_school_repository.dart';
+import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('maps API registrations and confidence to attendance statuses', () {
-    final repository = MockSchoolRepository();
+  test('starts without seeded school data', () {
+    final repository = SchoolRepository();
+
+    expect(repository.classes, isEmpty);
+    expect(repository.history, isEmpty);
+    expect(repository.profile.name, isEmpty);
+  });
+
+  test('maps registrations returned by Milvus to attendance statuses', () {
+    final repository = SchoolRepository();
+    final classId = repository.prepareAuditClass(null);
     const audit = RoomAuditResult(
       message: 'ok',
       recognizedStudents: [
         RecognizedStudent(
-          studentId: '2026001',
+          studentId: 'student-1',
           confidenceScore: .92,
           facialArea: {},
         ),
         RecognizedStudent(
-          studentId: '2026002',
+          studentId: 'student-2',
           confidenceScore: .63,
           facialArea: {},
         ),
@@ -24,14 +33,13 @@ void main() {
       totalFacesDetected: 3,
     );
 
-    repository.applyFacialRecognition('2a', audit);
-    final students = repository.classById('2a').students;
+    repository.applyFacialRecognition(classId, audit);
+    final students = repository.classById(classId).students;
 
+    expect(students, hasLength(2));
     expect(students[0].status, AttendanceStatus.present);
     expect(students[0].confidence, .92);
     expect(students[1].status, AttendanceStatus.review);
     expect(students[1].confidence, .63);
-    expect(students[2].status, AttendanceStatus.absent);
-    expect(students[2].confidence, 0);
   });
 }

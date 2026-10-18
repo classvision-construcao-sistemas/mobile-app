@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 
 class CameraViewModel extends ChangeNotifier {
   CameraController? _controller;
+  List<CameraDescription> _cameras = const [];
+  CameraLensDirection _preferredLens = CameraLensDirection.back;
   bool _initializing = true;
   bool _capturing = false;
   String? _error;
@@ -15,6 +17,16 @@ class CameraViewModel extends ChangeNotifier {
   String? get error => _error;
   FlashMode get flashMode => _flashMode;
   bool get ready => _controller?.value.isInitialized ?? false;
+  bool get usingFrontCamera =>
+      _controller?.description.lensDirection == CameraLensDirection.front;
+  bool get canSwitchCamera =>
+      _cameras.any(
+        (camera) => camera.lensDirection == CameraLensDirection.back,
+      ) &&
+      _cameras.any(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+      );
+  bool get canUseFlash => ready && !usingFrontCamera;
 
   Future<void> initialize() async {
     if (_disposed) return;
@@ -24,14 +36,15 @@ class CameraViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) {
+      _cameras = await availableCameras();
+      if (_cameras.isEmpty) {
         throw CameraException('noCamera', 'Nenhuma câmera encontrada.');
       }
-      final preferred = cameras.where(
-        (camera) => camera.lensDirection == CameraLensDirection.back,
+      final preferred = _cameras.where(
+        (camera) => camera.lensDirection == _preferredLens,
       );
-      final selected = preferred.isEmpty ? cameras.first : preferred.first;
+      final selected = preferred.isEmpty ? _cameras.first : preferred.first;
+      _preferredLens = selected.lensDirection;
       final controller = CameraController(
         selected,
         ResolutionPreset.high,
@@ -43,7 +56,11 @@ class CameraViewModel extends ChangeNotifier {
         await controller.dispose();
         return;
       }
-      await controller.setFlashMode(_flashMode);
+      if (selected.lensDirection == CameraLensDirection.back) {
+        await controller.setFlashMode(_flashMode);
+      } else {
+        _flashMode = FlashMode.off;
+      }
       _controller = controller;
     } on CameraException catch (exception) {
       _error = switch (exception.code) {
@@ -69,10 +86,18 @@ class CameraViewModel extends ChangeNotifier {
   }
 
   Future<void> toggleFlash() async {
-    if (!ready) return;
+    if (!canUseFlash) return;
     _flashMode = _flashMode == FlashMode.off ? FlashMode.auto : FlashMode.off;
     await _controller!.setFlashMode(_flashMode);
     notifyListeners();
+  }
+
+  Future<void> toggleCamera() async {
+    if (!canSwitchCamera || _initializing || _capturing) return;
+    _preferredLens = usingFrontCamera
+        ? CameraLensDirection.back
+        : CameraLensDirection.front;
+    await initialize();
   }
 
   Future<XFile?> capture() async {

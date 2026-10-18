@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
-import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/repositories/school_repository.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -18,7 +18,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = context.watch<MockSchoolRepository>().profile;
+    final profile = context.watch<SchoolRepository>().profile;
+    final hasProfile = profile.name.trim().isNotEmpty;
     return ListView(
       key: const PageStorageKey('profile'),
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
@@ -29,24 +30,34 @@ class _ProfilePageState extends State<ProfilePage> {
           child: CircleAvatar(
             radius: 46,
             backgroundColor: AppColors.primarySoft,
-            child: Text(
-              profile.name.split(' ').take(2).map((part) => part[0]).join(),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+            child: hasProfile
+                ? Text(
+                    profile.name
+                        .split(RegExp(r'\s+'))
+                        .take(2)
+                        .map((part) => part[0])
+                        .join(),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                : const Icon(
+                    Icons.person_outline_rounded,
+                    color: AppColors.primary,
+                    size: 38,
+                  ),
           ),
         ),
         const SizedBox(height: 13),
         Text(
-          profile.name,
+          hasProfile ? profile.name : 'Perfil não cadastrado',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         Text(
-          profile.email,
+          hasProfile ? profile.email : 'Complete seus dados de coordenação',
           textAlign: TextAlign.center,
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
@@ -55,9 +66,19 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: EdgeInsets.zero,
           child: Column(
             children: [
-              _ProfileTile(icon: Icons.school_outlined, title: profile.school),
+              _ProfileTile(
+                icon: Icons.school_outlined,
+                title: profile.school.isEmpty
+                    ? 'Instituição não informada'
+                    : profile.school,
+              ),
               const Divider(height: 1),
-              _ProfileTile(icon: Icons.phone_outlined, title: profile.phone),
+              _ProfileTile(
+                icon: Icons.phone_outlined,
+                title: profile.phone.isEmpty
+                    ? 'Telefone não informado'
+                    : profile.phone,
+              ),
               const Divider(height: 1),
               SwitchListTile.adaptive(
                 secondary: const Icon(

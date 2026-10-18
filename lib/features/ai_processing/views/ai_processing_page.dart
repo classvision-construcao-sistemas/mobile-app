@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
-import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/repositories/school_repository.dart';
 import '../../../data/services/facial_recognition_api.dart';
 import '../../attendance/views/attendance_review_page.dart';
 import '../../camera/views/camera_page.dart';
@@ -49,8 +49,8 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
     if (audit == null) return;
     _navigating = true;
 
-    final repository = context.read<MockSchoolRepository>();
-    final classId = widget.result.classId ?? repository.classes.first.id;
+    final repository = context.read<SchoolRepository>();
+    final classId = repository.prepareAuditClass(widget.result.classId);
     repository.applyFacialRecognition(classId, audit);
 
     Navigator.pushReplacementNamed(

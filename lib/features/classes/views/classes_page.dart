@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/widgets/app_ui.dart';
-import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/repositories/school_repository.dart';
 import '../viewmodels/classes_view_model.dart';
 import '../widgets/school_class_card.dart';
 
@@ -22,7 +22,7 @@ class _ClassesContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repository = context.watch<MockSchoolRepository>();
+    final repository = context.watch<SchoolRepository>();
     final viewModel = context.watch<ClassesViewModel>();
     final classes = viewModel.filter(repository.classes);
 

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
-import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/repositories/school_repository.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -18,7 +18,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final allRecords = context.watch<MockSchoolRepository>().history;
+    final allRecords = context.watch<SchoolRepository>().history;
     final records = _selectedDate == null
         ? allRecords
         : allRecords

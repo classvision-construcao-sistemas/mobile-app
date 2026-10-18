@@ -5,7 +5,7 @@ import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
-import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/repositories/school_repository.dart';
 
 class ClassDetailsPage extends StatelessWidget {
   const ClassDetailsPage({super.key, required this.classId});
@@ -14,7 +14,7 @@ class ClassDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final classroom = context.watch<MockSchoolRepository>().classById(classId);
+    final classroom = context.watch<SchoolRepository>().classById(classId);
     return Scaffold(
       appBar: AppBar(title: Text(classroom.name)),
       body: ListView(

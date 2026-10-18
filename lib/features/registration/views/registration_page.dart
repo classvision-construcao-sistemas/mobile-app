@@ -1,12 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
-import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/repositories/school_repository.dart';
 import '../../../data/services/facial_recognition_api.dart';
 import '../../camera/views/camera_page.dart';
 
@@ -42,7 +43,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       if (!mounted || widget.type != RegistrationType.user || !widget.editing) {
         return;
       }
-      final profile = context.read<MockSchoolRepository>().profile;
+      final profile = context.read<SchoolRepository>().profile;
       _controllers[0].text = profile.name;
       _controllers[1].text = profile.email;
       _controllers[2].text = profile.school;
@@ -97,13 +98,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (widget.type == RegistrationType.student && _faceImagePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tire a foto facial do aluno.')),
+        const SnackBar(
+          content: Text('Tire uma foto ou selecione uma imagem do aluno.'),
+        ),
       );
       return;
     }
 
     setState(() => _saving = true);
-    final repository = context.read<MockSchoolRepository>();
+    final repository = context.read<SchoolRepository>();
     try {
       switch (widget.type) {
         case RegistrationType.user:
@@ -128,16 +131,19 @@ class _RegistrationPageState extends State<RegistrationPage> {
             imagePath: _faceImagePath!,
           );
           if (!mounted) return;
-          repository.addStudent(
-            widget.classId ?? repository.classes.first.id,
-            Student(
-              id: DateTime.now().microsecondsSinceEpoch.toString(),
-              name: _controllers[0].text.trim(),
-              registration: registration,
-              guardian: _controllers[2].text.trim(),
-              phone: _controllers[3].text.trim(),
-            ),
-          );
+          final classId = widget.classId;
+          if (classId != null && repository.findClassById(classId) != null) {
+            repository.addStudent(
+              classId,
+              Student(
+                id: registration,
+                name: _controllers[0].text.trim(),
+                registration: registration,
+                guardian: _controllers[2].text.trim(),
+                phone: _controllers[3].text.trim(),
+              ),
+            );
+          }
       }
       if (mounted) Navigator.pop(context);
     } on FacialRecognitionException catch (error) {
@@ -169,6 +175,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
       ),
     );
     if (path != null && mounted) setState(() => _faceImagePath = path);
+  }
+
+  Future<void> _pickFaceFromGallery() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 95,
+    );
+    if (image != null && mounted) {
+      setState(() => _faceImagePath = image.path);
+    }
   }
 
   @override
@@ -206,7 +222,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
               const SizedBox(height: 4),
               _FaceCaptureCard(
                 imagePath: _faceImagePath,
-                onPressed: _saving ? null : _captureFace,
+                onCamera: _saving ? null : _captureFace,
+                onGallery: _saving ? null : _pickFaceFromGallery,
               ),
             ],
             const SizedBox(height: 16),
@@ -223,10 +240,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
 }
 
 class _FaceCaptureCard extends StatelessWidget {
-  const _FaceCaptureCard({required this.imagePath, required this.onPressed});
+  const _FaceCaptureCard({
+    required this.imagePath,
+    required this.onCamera,
+    required this.onGallery,
+  });
 
   final String? imagePath;
-  final VoidCallback? onPressed;
+  final VoidCallback? onCamera;
+  final VoidCallback? onGallery;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -266,22 +288,27 @@ class _FaceCaptureCard extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 imagePath == null
-                    ? 'Obrigatória para reconhecer o aluno na chamada.'
-                    : 'Você pode tirar outra foto antes de salvar.',
+                    ? 'Use a câmera ou escolha uma imagem da galeria.'
+                    : 'Você pode trocar a imagem antes de salvar.',
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,
                 ),
               ),
-              TextButton.icon(
-                onPressed: onPressed,
-                icon: Icon(
-                  imagePath == null
-                      ? Icons.camera_alt_rounded
-                      : Icons.refresh_rounded,
-                  size: 18,
-                ),
-                label: Text(imagePath == null ? 'Tirar foto' : 'Refazer foto'),
+              Wrap(
+                spacing: 4,
+                children: [
+                  TextButton.icon(
+                    onPressed: onCamera,
+                    icon: const Icon(Icons.camera_alt_rounded, size: 18),
+                    label: Text(imagePath == null ? 'Câmera' : 'Refazer'),
+                  ),
+                  TextButton.icon(
+                    onPressed: onGallery,
+                    icon: const Icon(Icons.photo_library_outlined, size: 18),
+                    label: const Text('Galeria'),
+                  ),
+                ],
               ),
             ],
           ),

@@ -6,7 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/facial_recognition_models.dart';
 import '../../../data/models/school_models.dart';
-import '../../../data/repositories/mock_school_repository.dart';
+import '../../../data/repositories/school_repository.dart';
 
 class AttendanceReviewArgs {
   const AttendanceReviewArgs({required this.classId, this.auditResult});
@@ -23,7 +23,7 @@ class AttendanceReviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repository = context.watch<MockSchoolRepository>();
+    final repository = context.watch<SchoolRepository>();
     final classroom = repository.classById(classId);
     final present = classroom.students
         .where((student) => student.status == AttendanceStatus.present)

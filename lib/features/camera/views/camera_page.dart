@@ -95,7 +95,17 @@ class _CameraContent extends StatelessWidget {
                         onTap: () => Navigator.pop(context),
                       ),
                       const Spacer(),
-                      if (viewModel.ready)
+                      if (viewModel.ready && viewModel.canSwitchCamera) ...[
+                        _CameraAction(
+                          tooltip: viewModel.usingFrontCamera
+                              ? 'Usar câmera traseira'
+                              : 'Usar câmera frontal',
+                          icon: Icons.cameraswitch_rounded,
+                          onTap: viewModel.toggleCamera,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      if (viewModel.canUseFlash)
                         _CameraAction(
                           tooltip: 'Flash',
                           icon: viewModel.flashMode == FlashMode.off
