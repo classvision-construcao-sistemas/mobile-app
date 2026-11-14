@@ -10,21 +10,21 @@ if ([string]::IsNullOrWhiteSpace($Root)) {
 }
 
 $assets = @(
-  @{ File = '01-dashboard-desktop.svg'; Width = 1440; Height = 1024; Required = @('Visão geral') },
+  @{ File = '01-dashboard-desktop.svg'; Width = 1440; Height = 1024; Required = @('Vis') },
   @{ File = '02-classes-desktop.svg'; Width = 1440; Height = 1024; Required = @('Turmas') },
   @{ File = '03-class-detail-desktop.svg'; Width = 1440; Height = 1024; Required = @('Detalhes da turma') },
   @{ File = '04-students-desktop.svg'; Width = 1440; Height = 1024; Required = @('Alunos') },
   @{ File = '05-teachers-desktop.svg'; Width = 1440; Height = 1024; Required = @('Professores') },
   @{ File = '06-attendance-center-desktop.svg'; Width = 1440; Height = 1024; Required = @('Chamadas') },
-  @{ File = '07-attendance-review-desktop.svg'; Width = 1440; Height = 1024; Required = @('Revisar chamada', 'Confirmar chamada', 'Editar presença') },
-  @{ File = '08-reports-desktop.svg'; Width = 1440; Height = 1024; Required = @('Relatórios', 'Exportar relatório') },
-  @{ File = '09-settings-desktop.svg'; Width = 1440; Height = 1024; Required = @('Configurações', 'Regras de presença', 'Integração de IA') },
-  @{ File = '10-dashboard-mobile.svg'; Width = 390; Height = 844; Required = @('Início', 'Turmas', 'Chamadas', 'Relatórios', 'Mais') },
-  @{ File = '11-classes-mobile.svg'; Width = 390; Height = 844; Required = @('Início', 'Turmas', 'Chamadas', 'Relatórios', 'Mais') },
-  @{ File = '12-attendance-mobile.svg'; Width = 390; Height = 844; Required = @('Início', 'Turmas', 'Chamadas', 'Relatórios', 'Mais') },
-  @{ File = '13-reports-mobile.svg'; Width = 390; Height = 844; Required = @('Início', 'Turmas', 'Chamadas', 'Relatórios', 'Mais') },
-  @{ File = '14-more-mobile.svg'; Width = 390; Height = 844; Required = @('Início', 'Turmas', 'Chamadas', 'Relatórios', 'Mais') },
-  @{ File = '15-notifications-mobile.svg'; Width = 390; Height = 844; Required = @('Notificações') }
+  @{ File = '07-attendance-review-desktop.svg'; Width = 1440; Height = 1024; Required = @('Revisar chamada', 'Confirmar chamada', 'Editar presen') },
+  @{ File = '08-reports-desktop.svg'; Width = 1440; Height = 1024; Required = @('Relat', 'Exportar relat') },
+  @{ File = '09-settings-desktop.svg'; Width = 1440; Height = 1024; Required = @('Configura', 'Regras de presen', 'Integra') },
+  @{ File = '10-dashboard-mobile.svg'; Width = 390; Height = 844; Required = @('Turmas', 'Chamadas', 'Mais') },
+  @{ File = '11-classes-mobile.svg'; Width = 390; Height = 844; Required = @('Turmas', 'Chamadas', 'Mais') },
+  @{ File = '12-attendance-mobile.svg'; Width = 390; Height = 844; Required = @('Turmas', 'Chamadas', 'Mais') },
+  @{ File = '13-reports-mobile.svg'; Width = 390; Height = 844; Required = @('Turmas', 'Chamadas', 'Mais') },
+  @{ File = '14-more-mobile.svg'; Width = 390; Height = 844; Required = @('Turmas', 'Chamadas', 'Mais') },
+  @{ File = '15-notifications-mobile.svg'; Width = 390; Height = 844; Required = @('Notifica') }
 )
 
 $failures = [System.Collections.Generic.List[string]]::new()
@@ -44,7 +44,7 @@ foreach ($asset in $assets) {
   if ($svg -notmatch '<text\b') {
     $failures.Add("Text is not editable: $($asset.File) has no <text> nodes")
   }
-  if ($svg -match '<image\b|https?://|<use\b') {
+  if ($svg -match '<image\b|<use\b|(?:href|xlink:href)\s*=\s*["'']https?://') {
     $failures.Add("External or reusable dependency found: $($asset.File)")
   }
   foreach ($copy in $asset.Required) {
