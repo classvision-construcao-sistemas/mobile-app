@@ -7,19 +7,17 @@ class AppBottomNavigation extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.onSelected,
-    required this.onCamera,
   });
 
   final int currentIndex;
   final ValueChanged<int> onSelected;
-  final VoidCallback onCamera;
 
   static const _items = [
     (Icons.home_outlined, Icons.home_rounded, 'Início'),
     (Icons.grid_view_outlined, Icons.grid_view_rounded, 'Turmas'),
-    (Icons.camera_alt_outlined, Icons.camera_alt_rounded, 'Câmera'),
-    (Icons.history_outlined, Icons.history_rounded, 'Histórico'),
-    (Icons.person_outline_rounded, Icons.person_rounded, 'Perfil'),
+    (Icons.fact_check_outlined, Icons.fact_check_rounded, 'Chamadas'),
+    (Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Relatórios'),
+    (Icons.more_horiz_rounded, Icons.more_horiz_rounded, 'Mais'),
   ];
 
   @override
@@ -33,55 +31,6 @@ class AppBottomNavigation extends StatelessWidget {
         height: 72,
         child: Row(
           children: List.generate(_items.length, (index) {
-            if (index == 2) {
-              return Expanded(
-                child: Semantics(
-                  button: true,
-                  label: 'Câmera',
-                  child: InkWell(
-                    onTap: onCamera,
-                    child: Transform.translate(
-                      offset: const Offset(0, -14),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(
-                                    alpha: .28,
-                                  ),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          const Text(
-                            'Câmera',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }
             final selected = currentIndex == index;
             final item = _items[index];
             return Expanded(

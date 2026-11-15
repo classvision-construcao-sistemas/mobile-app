@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/app_session.dart';
+import '../../../core/auth/user_role.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/viewmodels/main_shell_view_model.dart';
+import '../../../core/widgets/admin_page_scaffold.dart';
 import '../../../core/widgets/app_bottom_navigation.dart';
 import '../../classes/views/classes_page.dart';
 import '../../history/views/history_page.dart';
 import '../../home/view/home_page.dart';
+import '../../notifications/views/notifications_page.dart';
 import '../../profile/views/profile_page.dart';
+import '../../reports/views/reports_page.dart';
+import '../../students/views/students_page.dart';
+import '../../teachers/views/teachers_page.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({super.key});
@@ -22,30 +29,66 @@ class MainShell extends StatelessWidget {
 class _MainShellContent extends StatelessWidget {
   const _MainShellContent();
 
+  static const _desktopDestinations = [
+    AdminDestination(label: 'Visão geral', icon: Icons.dashboard_outlined),
+    AdminDestination(label: 'Turmas', icon: Icons.meeting_room_outlined),
+    AdminDestination(label: 'Alunos', icon: Icons.school_outlined),
+    AdminDestination(label: 'Professores', icon: Icons.people_outline_rounded),
+    AdminDestination(label: 'Chamadas', icon: Icons.fact_check_outlined),
+    AdminDestination(label: 'Relatórios', icon: Icons.bar_chart_rounded),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<MainShellViewModel>();
     void openCamera() => Navigator.pushNamed(context, AppRoutes.camera);
+    void signOut() {
+      context.read<AppSession>().signOut();
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+    }
 
-    final pages = [
+    final pages = <Widget>[
       HomePage(onOpenCamera: openCamera),
       const ClassesPage(),
-      const SizedBox.shrink(),
-      const HistoryPage(),
-      const ProfilePage(),
+      const StudentsPage(),
+      const TeachersPage(),
+      HistoryPage(onOpenReview: openCamera),
+      const ReportsPage(),
+      ProfilePage(
+        onStudents: () => viewModel.select(2),
+        onTeachers: () => viewModel.select(3),
+        onNotifications: () => viewModel.select(7),
+        onSignOut: signOut,
+      ),
+      NotificationsPage(onBack: () => viewModel.select(6)),
     ];
 
-    return Scaffold(
-      key: const Key('coordinator-shell'),
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(index: viewModel.index, children: pages),
-      ),
-      bottomNavigationBar: AppBottomNavigation(
-        currentIndex: viewModel.index,
-        onSelected: viewModel.select,
-        onCamera: openCamera,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final desktop = constraints.maxWidth >= 900;
+        if (desktop) {
+          final desktopIndex = viewModel.index.clamp(0, 5);
+          return AdminPageScaffold(
+            key: const Key('coordinator-shell'),
+            role: UserRole.coordinator,
+            selectedIndex: desktopIndex,
+            destinations: _desktopDestinations,
+            onDestinationSelected: viewModel.select,
+            profileName: 'Lucas Ferreira',
+            profileRole: 'Coordenador',
+            onSignOut: signOut,
+            body: pages[desktopIndex],
+          );
+        }
+        return Scaffold(
+          key: const Key('coordinator-shell'),
+          body: SafeArea(bottom: false, child: pages[viewModel.index]),
+          bottomNavigationBar: AppBottomNavigation(
+            currentIndex: viewModel.mobileIndex,
+            onSelected: viewModel.selectMobile,
+          ),
+        );
+      },
     );
   }
 }

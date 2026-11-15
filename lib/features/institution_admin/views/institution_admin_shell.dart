@@ -5,8 +5,13 @@ import '../../../core/auth/app_session.dart';
 import '../../../core/auth/user_role.dart';
 import '../../../core/layout/app_breakpoints.dart';
 import '../../../core/navigation/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
+import '../../classes/views/classes_page.dart';
+import '../../history/views/history_page.dart';
+import '../../home/view/home_page.dart';
+import '../../reports/views/reports_page.dart';
+import '../../students/views/students_page.dart';
+import '../../teachers/views/teachers_page.dart';
 import 'coordinators_page.dart';
 import 'institution_settings_page.dart';
 
@@ -39,6 +44,16 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
           child: CoordinatorsPage(mobile: true),
         );
       }
+      void openCamera() => Navigator.pushNamed(context, AppRoutes.camera);
+      final body = switch (_selectedIndex) {
+        0 => HomePage(onOpenCamera: openCamera, userName: 'Marina'),
+        1 => const ClassesPage(),
+        2 => const StudentsPage(),
+        3 => const TeachersPage(),
+        4 => HistoryPage(onOpenReview: openCamera),
+        5 => const ReportsPage(),
+        _ => const InstitutionSettingsPage(),
+      };
       return AdminPageScaffold(
         key: const Key('institution-admin-shell'),
         role: UserRole.institutionAdmin,
@@ -53,40 +68,8 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
           Navigator.of(context)
               .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
         },
-        body: _selectedIndex == 6
-            ? const InstitutionSettingsPage()
-            : _OperationalPlaceholder(
-                destination: _destinations[_selectedIndex],
-              ),
+        body: body,
       );
     },
-  );
-}
-
-class _OperationalPlaceholder extends StatelessWidget {
-  const _OperationalPlaceholder({required this.destination});
-  final AdminDestination destination;
-
-  @override
-  Widget build(BuildContext context) => ColoredBox(
-    color: AppColors.background,
-    child: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(destination.icon, color: AppColors.primary, size: 34),
-          const SizedBox(height: 12),
-          Text(
-            destination.label,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 7),
-          const Text(
-            'A operação acadêmica responsiva será exibida aqui.',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    ),
   );
 }

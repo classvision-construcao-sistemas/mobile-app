@@ -28,12 +28,12 @@ void main() {
     await tester.pumpWidget(const ClassVisionApp());
     await tester.tap(find.text('Acessar plataforma'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Bom dia'), findsOneWidget);
+    expect(find.text('Olá, Lucas'), findsOneWidget);
 
     await tester.tap(find.text('Turmas'));
     await tester.pumpAndSettle();
-    expect(find.text('Nova turma'), findsOneWidget);
-    expect(find.text('Nenhuma turma encontrada'), findsOneWidget);
+    expect(find.text('Buscar turma'), findsOneWidget);
+    expect(find.text('28 turmas no semestre 2026/2'), findsOneWidget);
   });
 
   testWidgets('shows session students and editable attendance statuses', (

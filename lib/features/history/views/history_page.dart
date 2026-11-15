@@ -1,130 +1,273 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/app_ui.dart';
-import '../../../data/repositories/school_repository.dart';
+import '../../../core/widgets/admin_cards.dart';
 
-class HistoryPage extends StatefulWidget {
-  const HistoryPage({super.key});
+class HistoryPage extends StatelessWidget {
+  const HistoryPage({super.key, this.onOpenReview});
+  final VoidCallback? onOpenReview;
 
   @override
-  State<HistoryPage> createState() => _HistoryPageState();
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => constraints.maxWidth >= 900
+        ? _DesktopAttendance(onOpenReview: onOpenReview)
+        : _MobileAttendance(onOpenReview: onOpenReview),
+  );
 }
 
-class _HistoryPageState extends State<HistoryPage> {
-  DateTime? _selectedDate;
-
+class _DesktopAttendance extends StatelessWidget {
+  const _DesktopAttendance({this.onOpenReview});
+  final VoidCallback? onOpenReview;
   @override
-  Widget build(BuildContext context) {
-    final allRecords = context.watch<SchoolRepository>().history;
-    final records = _selectedDate == null
-        ? allRecords
-        : allRecords
-              .where(
-                (record) => DateUtils.isSameDay(record.date, _selectedDate),
-              )
-              .toList();
-
-    return ListView(
-      key: const PageStorageKey('history'),
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
-      children: [
-        AppPageTitle(
-          'Histórico',
-          subtitle: 'Acompanhe as chamadas já realizadas.',
-          trailing: IconButton.filledTonal(
-            tooltip: 'Filtrar por data',
-            onPressed: () async {
-              final value = await showDatePicker(
-                context: context,
-                initialDate: _selectedDate ?? DateTime.now(),
-                firstDate: DateTime(2025),
-                lastDate: DateTime(2027),
-              );
-              if (value != null) setState(() => _selectedDate = value);
-            },
-            icon: const Icon(Icons.calendar_month_rounded),
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
+    children: [
+      const Text(
+        'Gestão acadêmica / Controle de presença',
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+      ),
+      const SizedBox(height: 9),
+      const Text(
+        'Chamadas',
+        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 5),
+      const Text(
+        'Acompanhe chamadas confirmadas, pendentes e registros que exigem revisão.',
+        style: TextStyle(color: AppColors.textSecondary),
+      ),
+      const SizedBox(height: 22),
+      const Row(
+        children: [
+          Expanded(
+            child: MetricCard(
+              label: 'TOTAL NO PERÍODO',
+              value: '128',
+              supportingText: 'chamadas registradas',
+            ),
           ),
-        ),
-        if (_selectedDate != null) ...[
-          const SizedBox(height: 14),
-          InputChip(
-            avatar: const Icon(Icons.event_rounded, size: 18),
-            label: Text(DateFormat('dd/MM/yyyy').format(_selectedDate!)),
-            onDeleted: () => setState(() => _selectedDate = null),
+          SizedBox(width: 16),
+          Expanded(
+            child: MetricCard(
+              label: 'CONFIRMADAS',
+              value: '116',
+              supportingText: '90,6% do total',
+              valueColor: AppColors.success,
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: MetricCard(
+              label: 'EM REVISÃO',
+              value: '8',
+              supportingText: 'requerem sua atenção',
+              valueColor: AppColors.warning,
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: MetricCard(
+              label: 'PENDENTES',
+              value: '4',
+              supportingText: 'sem confirmação',
+            ),
           ),
         ],
-        const SizedBox(height: 20),
-        if (records.isEmpty)
-          const AppCard(
-            child: Center(child: Text('Nenhuma chamada nesta data.')),
-          )
-        else
-          for (final record in records) ...[
-            AppCard(
-              child: Row(
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: const Icon(
-                      Icons.fact_check_outlined,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 13),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          record.className,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat("dd/MM/yyyy 'às' HH:mm")
-                              .format(record.date),
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${record.present} presentes',
-                        style: const TextStyle(
-                          color: AppColors.success,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        '${record.absent} ausentes',
-                        style: const TextStyle(
-                          color: Color(0xFFC72933),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+      ),
+      const SizedBox(height: 22),
+      AdminSurface(
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(22, 20, 22, 12),
+              child: Text(
+                'Histórico de chamadas',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
             ),
-            const SizedBox(height: 11),
+            _AttendanceRow(
+              date: '14 nov. · 08:05',
+              className: '2º Ano A',
+              teacher: 'Rafael Mendes',
+              presence: '31 de 32',
+              status: 'Em revisão',
+              onTap: onOpenReview,
+            ),
+            const _AttendanceRow(
+              date: '14 nov. · 07:52',
+              className: '1º Ano C',
+              teacher: 'Camila Ribeiro',
+              presence: '30 de 31',
+              status: 'Confirmada',
+            ),
+            const _AttendanceRow(
+              date: '13 nov. · 10:18',
+              className: '3º Ano B',
+              teacher: 'João Vitor Lima',
+              presence: '24 de 29',
+              status: 'Pendente',
+            ),
           ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _MobileAttendance extends StatelessWidget {
+  const _MobileAttendance({this.onOpenReview});
+  final VoidCallback? onOpenReview;
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+    children: [
+      const Text(
+        'Chamadas',
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 4),
+      const Text(
+        'Histórico de presença e pendências',
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+      ),
+      const SizedBox(height: 18),
+      const Align(
+        alignment: Alignment.centerLeft,
+        child: Chip(label: Text('Esta semana  ⌄')),
+      ),
+      const SizedBox(height: 18),
+      const Text(
+        'Requer revisão',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 10),
+      _MobileAttendanceCard(
+        title: '2º Ano A · Matemática',
+        subtitle: 'Hoje, 08:05 · 31 de 32 detectados',
+        status: 'Em revisão',
+        action: 'Abrir',
+        onTap: onOpenReview,
+      ),
+      const SizedBox(height: 20),
+      const Text(
+        'Confirmadas',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 10),
+      const _MobileAttendanceCard(
+        title: '1º Ano C · Biologia',
+        subtitle: 'Hoje, 07:52 · 30 de 31 presentes',
+        status: 'Confirmada',
+      ),
+      const SizedBox(height: 10),
+      const _MobileAttendanceCard(
+        title: '3º Ano B · Química',
+        subtitle: '13 nov., 10:18 · 24 de 29 presentes',
+        status: 'Pendente',
+      ),
+    ],
+  );
+}
+
+class _AttendanceRow extends StatelessWidget {
+  const _AttendanceRow({
+    required this.date,
+    required this.className,
+    required this.teacher,
+    required this.presence,
+    required this.status,
+    this.onTap,
+  });
+  final String date;
+  final String className;
+  final String teacher;
+  final String presence;
+  final String status;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: AppColors.divider)),
+    ),
+    child: Row(
+      children: [
+        Expanded(child: Text(date)),
+        Expanded(
+          child: Text(
+            className,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+        Expanded(child: Text(teacher)),
+        Expanded(child: Text(presence)),
+        Expanded(
+          child: Text(
+            status,
+            style: TextStyle(
+              color: status == 'Confirmada'
+                  ? AppColors.success
+                  : AppColors.warning,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onTap,
+          child: Text(status == 'Em revisão' ? 'Revisar →' : 'Ver →'),
+        ),
       ],
-    );
-  }
+    ),
+  );
+}
+
+class _MobileAttendanceCard extends StatelessWidget {
+  const _MobileAttendanceCard({
+    required this.title,
+    required this.subtitle,
+    required this.status,
+    this.action,
+    this.onTap,
+  });
+  final String title;
+  final String subtitle;
+  final String status;
+  final String? action;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => AdminSurface(
+    padding: const EdgeInsets.all(15),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 5),
+        Text(
+          subtitle,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                status,
+                style: TextStyle(
+                  color: status == 'Confirmada'
+                      ? AppColors.success
+                      : AppColors.warning,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+            if (action != null)
+              TextButton(onPressed: onTap, child: Text(action!)),
+          ],
+        ),
+      ],
+    ),
+  );
 }
