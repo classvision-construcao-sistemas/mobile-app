@@ -11,19 +11,13 @@ import '../../../data/repositories/school_repository.dart';
 import '../../../data/services/facial_recognition_api.dart';
 import '../../camera/views/camera_page.dart';
 
-enum RegistrationType { user, classroom, student }
+enum RegistrationType { classroom, student }
 
 class RegistrationPage extends StatefulWidget {
-  const RegistrationPage({
-    super.key,
-    required this.type,
-    this.classId,
-    this.editing = false,
-  });
+  const RegistrationPage({super.key, required this.type, this.classId});
 
   final RegistrationType type;
   final String? classId;
-  final bool editing;
 
   @override
   State<RegistrationPage> createState() => _RegistrationPageState();
@@ -39,16 +33,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
   void initState() {
     super.initState();
     _controllers = List.generate(4, (_) => TextEditingController());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || widget.type != RegistrationType.user || !widget.editing) {
-        return;
-      }
-      final profile = context.read<SchoolRepository>().profile;
-      _controllers[0].text = profile.name;
-      _controllers[1].text = profile.email;
-      _controllers[2].text = profile.school;
-      _controllers[3].text = profile.phone;
-    });
   }
 
   @override
@@ -60,23 +44,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
   }
 
   String get _title => switch (widget.type) {
-    RegistrationType.user =>
-      widget.editing ? 'Editar perfil' : 'Cadastro de usuário',
     RegistrationType.classroom => 'Nova turma',
     RegistrationType.student => 'Novo aluno',
   };
 
   List<(String, IconData, TextInputType)> get _fields => switch (widget.type) {
-    RegistrationType.user => [
-      ('Nome completo', Icons.person_outline_rounded, TextInputType.name),
-      (
-        'E-mail institucional',
-        Icons.mail_outline_rounded,
-        TextInputType.emailAddress,
-      ),
-      ('Instituição', Icons.school_outlined, TextInputType.text),
-      ('Telefone', Icons.phone_outlined, TextInputType.phone),
-    ],
     RegistrationType.classroom => [
       ('Nome da turma', Icons.groups_2_outlined, TextInputType.text),
       ('Sala', Icons.meeting_room_outlined, TextInputType.text),
@@ -109,15 +81,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
     final repository = context.read<SchoolRepository>();
     try {
       switch (widget.type) {
-        case RegistrationType.user:
-          repository.updateProfile(
-            CoordinatorProfile(
-              name: _controllers[0].text.trim(),
-              email: _controllers[1].text.trim(),
-              school: _controllers[2].text.trim(),
-              phone: _controllers[3].text.trim(),
-            ),
-          );
         case RegistrationType.classroom:
           repository.addClass(
             name: _controllers[0].text.trim(),
@@ -198,8 +161,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
           children: [
             Text(switch (widget.type) {
-              RegistrationType.user =>
-                'Preencha seus dados de acesso e contato.',
               RegistrationType.classroom =>
                 'Cadastre os dados básicos da nova turma.',
               RegistrationType.student =>

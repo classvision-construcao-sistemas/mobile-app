@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../viewmodels/login_view_model.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,8 +16,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController(text: 'coordenacao@escola.edu.br');
-  final _password = TextEditingController(text: '12345678');
+  final _email = TextEditingController();
+  final _password = TextEditingController();
 
   @override
   void dispose() {
@@ -25,9 +26,20 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> _submit(LoginViewModel viewModel) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    final success = await viewModel.signIn(
+      email: _email.text,
+      password: _password.text,
+    );
+    if (!success || !mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
+  }
+
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-    create: (_) => LoginViewModel(),
+    create: (context) => LoginViewModel(context.read<AuthRepository>()),
     child: Consumer<LoginViewModel>(
       builder: (context, viewModel, _) => Scaffold(
         body: SafeArea(
@@ -77,8 +89,9 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _email,
                         icon: Icons.mail_outline_rounded,
                         keyboardType: TextInputType.emailAddress,
+                        onChanged: (_) => viewModel.clearError(),
                         validator: (value) =>
-                            value != null && value.contains('@')
+                            value != null && value.trim().contains('@')
                             ? null
                             : 'Informe um e-mail válido',
                       ),
@@ -96,51 +109,39 @@ class _LoginPageState extends State<LoginPage> {
                                 : Icons.visibility_off_outlined,
                           ),
                         ),
-                        validator: (value) => (value?.length ?? 0) >= 6
-                            ? null
-                            : 'A senha deve ter ao menos 6 caracteres',
+                        onChanged: (_) => viewModel.clearError(),
+                        onFieldSubmitted: (_) => _submit(viewModel),
+                        validator: (value) => (value?.isEmpty ?? true)
+                            ? 'Informe a sua senha'
+                            : null,
                       ),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () => showAppMessage(
                             context,
-                            'Um link de recuperação foi enviado para o e-mail mockado.',
+                            'Peça ao administrador da sua instituição para '
+                            'redefinir a sua senha.',
                           ),
                           child: const Text('Esqueceu a senha?'),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      if (viewModel.error != null) ...[
+                        AppErrorBanner(viewModel.error!),
+                        const SizedBox(height: 14),
+                      ] else
+                        const SizedBox(height: 8),
                       PrimaryButton(
                         label: 'Entrar',
                         loading: viewModel.loading,
-                        onPressed: () async {
-                          if (!(_formKey.currentState?.validate() ?? false)) {
-                            return;
-                          }
-                          await viewModel.signIn();
-                          if (!context.mounted) {
-                            return;
-                          }
-                          Navigator.pushReplacementNamed(
-                            context,
-                            AppRoutes.home,
-                          );
-                        },
+                        onPressed: () => _submit(viewModel),
                       ),
                       const SizedBox(height: 28),
                       const Text(
-                        'Ainda não tem uma conta?',
+                        'Ainda não tem acesso? As contas são criadas pelo '
+                        'administrador da sua instituição.',
+                        textAlign: TextAlign.center,
                         style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(height: 9),
-                      PrimaryButton(
-                        label: 'Criar conta',
-                        outlined: true,
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.userRegistration,
-                        ),
                       ),
                     ],
                   ),

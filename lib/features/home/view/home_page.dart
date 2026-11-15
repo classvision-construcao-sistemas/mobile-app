@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/school_repository.dart';
 import '../../classes/widgets/school_class_card.dart';
 
@@ -15,10 +16,11 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repository = context.watch<SchoolRepository>();
-    final profileName = repository.profile.name.trim();
-    final firstName = profileName.isEmpty
+    final session = context.watch<AuthRepository>().session;
+    final initials = session?.initials ?? '';
+    final firstName = session == null || session.name.isEmpty
         ? 'Coordenador'
-        : profileName.split(' ').first;
+        : session.firstName;
     final classes = repository.classes.take(2);
     final date = _formatDate(DateTime.now());
 
@@ -32,17 +34,13 @@ class HomePage extends StatelessWidget {
           trailing: CircleAvatar(
             radius: 22,
             backgroundColor: AppColors.primarySoft,
-            child: profileName.isEmpty
+            child: initials.isEmpty
                 ? const Icon(
                     Icons.person_outline_rounded,
                     color: AppColors.primary,
                   )
                 : Text(
-                    profileName
-                        .split(RegExp(r'\s+'))
-                        .take(2)
-                        .map((part) => part[0])
-                        .join(),
+                    initials,
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w800,
