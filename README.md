@@ -39,6 +39,56 @@ $ flutter pub get
 $ flutter run
 ```
 
+## Autenticação
+
+O login, os usuários e as instituições vêm do microsserviço
+[`cv-authentication-service`](https://github.com/classvision-construcao-sistemas/cv-authentication-service).
+
+- Emulador Android: `flutter run` usa automaticamente `http://10.0.2.2:8080`.
+- Dispositivo físico: use o IP da máquina na mesma rede, por exemplo:
+  `flutter run --dart-define=AUTH_API_BASE_URL=http://192.168.0.10:8080`.
+- Desktop/iOS Simulator: o endereço padrão é `http://localhost:8080`.
+- API publicada (Railway): `--dart-define=AUTH_API_BASE_URL=https://<dominio-da-api>`.
+
+As duas APIs podem ser configuradas juntas:
+
+```bash
+flutter run \
+  --dart-define=AUTH_API_BASE_URL=http://192.168.0.10:8080 \
+  --dart-define=FACE_API_BASE_URL=http://192.168.0.10:5000
+```
+
+Como funciona no app:
+
+- **Login** (`POST /api/auth/login`): o token JWT devolvido é decodificado para
+  obter `id`, `nome`, `email`, `role` e `instituicaoId`, que alimentam o início,
+  o perfil e os menus. Todas as chamadas protegidas enviam
+  `Authorization: Bearer <token>`.
+- **Sessão**: o token fica só em memória e vale 1 hora. Ao expirar, ou quando a
+  API responder `401` (usuário desativado, e-mail alterado...), o app volta para
+  o login com o motivo. "Sair da conta" descarta o token.
+- **Sem autocadastro**: as contas são criadas por um administrador, como define
+  o serviço. A tela de login não oferece "Criar conta".
+- **Perfil**: mostra nome, perfil de acesso, e-mail e a instituição
+  (`GET /api/instituicoes/buscar-instituicao/{id}`).
+- **Usuários** (Perfil → Administração): `COORDENADOR` consulta;
+  `ADMIN_INSTITUICAO` e `ADMINISTRADOR` cadastram, editam, ativam, desativam e
+  excluem, sempre só com roles até o próprio nível. A edição exige informar a
+  senha, porque a API sempre a substitui ao salvar. Ao editar o próprio perfil,
+  o app entra de novo para atualizar o token.
+- **Instituições**: o `ADMINISTRADOR` cadastra, edita, ativa e desativa; o
+  `ADMIN_INSTITUICAO` edita nome e telefone da própria instituição.
+
+O app esconde o que o perfil não pode fazer, mas quem garante as permissões é
+a API: as mensagens de erro dela (`descricao`) são exibidas como vieram.
+
+> No navegador (`flutter run -d chrome`), o serviço de autenticação ainda não
+> tem CORS configurado, então as chamadas são bloqueadas. Use Android, iOS ou
+> desktop.
+
+Na primeira subida do serviço é criado o administrador geral
+`admin@classvision.com` / `admin123456` (troque a senha fora do ambiente local).
+
 ## Reconhecimento facial
 
 O app envia fotos em `multipart/form-data` para o microsserviço que está na
