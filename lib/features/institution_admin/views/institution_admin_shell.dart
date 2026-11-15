@@ -10,6 +10,7 @@ import '../../../data/repositories/school_repository.dart';
 import '../../classes/views/classes_page.dart';
 import '../../history/views/history_page.dart';
 import '../../home/view/home_page.dart';
+import '../../notifications/views/notifications_page.dart';
 import '../../reports/views/reports_page.dart';
 import '../../students/views/students_page.dart';
 import '../../teachers/views/teachers_page.dart';
@@ -17,7 +18,9 @@ import 'coordinators_page.dart';
 import 'institution_settings_page.dart';
 
 class InstitutionAdminShell extends StatefulWidget {
-  const InstitutionAdminShell({super.key});
+  const InstitutionAdminShell({super.key, this.initialIndex = 6});
+
+  final int initialIndex;
 
   @override
   State<InstitutionAdminShell> createState() => _InstitutionAdminShellState();
@@ -34,7 +37,14 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
     AdminDestination(label: 'Configurações', icon: Icons.settings_outlined),
   ];
 
-  int _selectedIndex = 6;
+  late int _selectedIndex;
+  bool _showNotifications = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -61,13 +71,14 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
       );
       void openReview(String id) =>
           Navigator.pushNamed(context, AppRoutes.review, arguments: id);
-      final body = switch (_selectedIndex) {
+      final sectionBody = switch (_selectedIndex) {
         0 => HomePage(
           onOpenCamera: openCamera,
           onOpenReview: firstClassId == null
               ? null
               : () => openReview(firstClassId),
           onViewAllPending: () => setState(() => _selectedIndex = 4),
+          onOpenNotifications: () => setState(() => _showNotifications = true),
           userName: 'Marina',
         ),
         1 => ClassesPage(
@@ -83,13 +94,20 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
         5 => const ReportsPage(),
         _ => const InstitutionSettingsPage(),
       };
+      final body = _showNotifications
+          ? NotificationsPage(
+              onBack: () => setState(() => _showNotifications = false),
+            )
+          : sectionBody;
       return AdminPageScaffold(
         key: const Key('institution-admin-shell'),
         role: UserRole.institutionAdmin,
         selectedIndex: _selectedIndex,
         destinations: _destinations,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
+        onDestinationSelected: (index) => setState(() {
+          _showNotifications = false;
+          _selectedIndex = index;
+        }),
         profileName: 'Marina Costa',
         profileRole: 'Administrador da instituição',
         onSignOut: () {

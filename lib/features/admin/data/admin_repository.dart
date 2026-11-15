@@ -115,6 +115,7 @@ class AdminRepository extends ChangeNotifier {
   List<PlatformActivity> _activities = const [
     PlatformActivity(
       id: 'activity-if-1',
+      institutionId: 'if-goiano',
       action: 'Coordenador convidado',
       institution: 'IF Goiano',
       user: 'Marina Costa',
@@ -122,6 +123,7 @@ class AdminRepository extends ChangeNotifier {
     ),
     PlatformActivity(
       id: 'activity-1',
+      institutionId: 'colegio-horizonte',
       action: 'Instituição criada',
       institution: 'Colégio Horizonte',
       user: 'Arthur Silva',
@@ -129,6 +131,7 @@ class AdminRepository extends ChangeNotifier {
     ),
     PlatformActivity(
       id: 'activity-2',
+      institutionId: 'escola-caminhos',
       action: 'Convite reenviado',
       institution: 'Escola Caminhos',
       user: 'Arthur Silva',
@@ -136,6 +139,7 @@ class AdminRepository extends ChangeNotifier {
     ),
     PlatformActivity(
       id: 'activity-3',
+      institutionId: 'centro-vale',
       action: 'Instituição suspensa',
       institution: 'Centro Educacional Vale',
       user: 'Arthur Silva',
@@ -221,6 +225,7 @@ class AdminRepository extends ChangeNotifier {
     _activities = [
       PlatformActivity(
         id: 'activity-${_sequence++}',
+        institutionId: institution.id,
         action: 'Instituição criada',
         institution: institution.name,
         user: 'Arthur Silva',
@@ -272,7 +277,7 @@ class AdminRepository extends ChangeNotifier {
           .toList(growable: false);
 
   List<PlatformActivity> activitiesFor(Institution institution) => _activities
-      .where((item) => item.institution == institution.name)
+      .where((item) => item.institutionId == institution.id)
       .toList(growable: false);
 
   CoordinatorAccount inviteCoordinator(

@@ -134,6 +134,7 @@ class CoordinatorAccount {
 class PlatformActivity {
   const PlatformActivity({
     required this.id,
+    required this.institutionId,
     required this.action,
     required this.institution,
     required this.user,
@@ -141,6 +142,7 @@ class PlatformActivity {
   });
 
   final String id;
+  final String institutionId;
   final String action;
   final String institution;
   final String user;

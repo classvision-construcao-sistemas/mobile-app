@@ -109,6 +109,7 @@ void main() {
 
     expect(find.byKey(const Key('institution-admin-shell')), findsOneWidget);
     expect(find.byKey(const Key('coordinator-shell')), findsNothing);
+    expect(find.text('Bom dia, Marina'), findsOneWidget);
   });
 
   testWidgets('signing out returns to the neutral login', (tester) async {

@@ -9,7 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  Future<void> pumpShell(WidgetTester tester, Size size) async {
+  Future<void> pumpShell(
+    WidgetTester tester,
+    Size size, {
+    int initialIndex = 6,
+  }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
@@ -21,7 +25,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
-          home: const InstitutionAdminShell(),
+          home: InstitutionAdminShell(initialIndex: initialIndex),
         ),
       ),
     );
@@ -84,6 +88,18 @@ void main() {
     await tester.tap(find.text('Salvar alterações'));
     await tester.pump();
     expect(find.text('Alterações salvas.'), findsOneWidget);
+  });
+
+  testWidgets('overview notification button opens the notifications page', (
+    tester,
+  ) async {
+    await pumpShell(tester, const Size(1440, 1024), initialIndex: 0);
+
+    await tester.tap(find.byIcon(Icons.notifications_none_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Notificações'), findsOneWidget);
+    expect(find.text('3 notificações não lidas'), findsOneWidget);
   });
 
   testWidgets('coordinator login never exposes institution administration', (

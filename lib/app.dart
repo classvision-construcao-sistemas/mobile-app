@@ -42,12 +42,15 @@ class ClassVisionApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           initialRoute: AppRoutes.login,
           onGenerateRoute: (settings) {
-            Widget roleHome() => switch (session.user?.role) {
-              UserRole.systemAdmin => const SystemAdminShell(),
-              UserRole.institutionAdmin => const InstitutionAdminShell(),
-              UserRole.coordinator => const MainShell(),
-              null => const LoginPage(),
-            };
+            Widget roleHome({bool overview = false}) =>
+                switch (session.user?.role) {
+                  UserRole.systemAdmin => const SystemAdminShell(),
+                  UserRole.institutionAdmin => InstitutionAdminShell(
+                    initialIndex: overview ? 0 : 6,
+                  ),
+                  UserRole.coordinator => const MainShell(),
+                  null => const LoginPage(),
+                };
 
             if (settings.name != AppRoutes.login && !session.isAuthenticated) {
               return MaterialPageRoute<void>(
@@ -60,14 +63,16 @@ class ClassVisionApp extends StatelessWidget {
                 currentRole != null &&
                 !RoutePolicy.canAccess(currentRole, settings.name)) {
               return MaterialPageRoute<void>(
-                builder: (_) => roleHome(),
+                builder: (_) =>
+                    roleHome(overview: settings.name == AppRoutes.home),
                 settings: settings,
               );
             }
             if (currentRole != null &&
                 RoutePolicy.shellAliases.contains(settings.name)) {
               return MaterialPageRoute<void>(
-                builder: (_) => roleHome(),
+                builder: (_) =>
+                    roleHome(overview: settings.name == AppRoutes.home),
                 settings: settings,
               );
             }
