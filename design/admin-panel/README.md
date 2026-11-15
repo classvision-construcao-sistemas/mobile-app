@@ -25,3 +25,9 @@ powershell -ExecutionPolicy Bypass -File design/admin-panel/scripts/validate-svg
 ```
 
 O comando confirma o inventário, as dimensões, os textos editáveis e a ausência de imagens ou URLs externas.
+
+## Papéis representados
+
+- **Administrador do Sistema:** arquivos 16–24, com acesso administrativo global e sem dados acadêmicos.
+- **Administrador da Instituição:** configurações, integrações e gestão de Coordenadores nos arquivos 09 e 25.
+- **Coordenador:** operação acadêmica nas telas institucionais compartilhadas.
