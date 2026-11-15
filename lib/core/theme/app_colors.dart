@@ -12,6 +12,7 @@ class AppColors {
 
   // Cores de fundo
   static const Color background = Color(0xFFF5F7FA);
+  static const Color globalSidebar = Color(0xFF0F172A);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color cardBackground = Color(0xFFFFFFFF);
 
