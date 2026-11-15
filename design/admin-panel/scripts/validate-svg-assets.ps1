@@ -28,7 +28,7 @@ $assets = @(
   @{ File = '16-system-admin-login-desktop.svg'; Width = 1440; Height = 1024; Required = @('Administrador do Sistema', 'Acessar plataforma') },
   @{ File = '17-system-dashboard-desktop.svg'; Width = 1440; Height = 1024; Required = @('Vis', 'Institui', 'Atividade recente') },
   @{ File = '18-institutions-desktop.svg'; Width = 1440; Height = 1024; Required = @('Institui', 'Nova institui') },
-  @{ File = '19-create-institution-desktop.svg'; Width = 1440; Height = 1024; Required = @('Cadastrar institui', 'Primeiro administrador', 'Enviar convite') },
+  @{ File = '19-create-institution-desktop.svg'; Width = 1440; Height = 1024; Required = @('Cadastrar institui', 'Primeiro administrador', 'Nome do administrador', 'E-mail do administrador', 'Telefone do administrador', 'Enviar convite') },
   @{ File = '20-institution-detail-desktop.svg'; Width = 1440; Height = 1024; Required = @('Detalhes da institui', 'Coordenadores', 'Somente leitura') },
   @{ File = '21-institution-admins-desktop.svg'; Width = 1440; Height = 1024; Required = @('Administradores institucionais', 'Institui', 'ltimo acesso') },
   @{ File = '22-platform-activity-desktop.svg'; Width = 1440; Height = 1024; Required = @('Atividade da plataforma', 'Auditoria', 'Per') },

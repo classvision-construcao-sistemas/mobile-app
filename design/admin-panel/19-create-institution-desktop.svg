@@ -1,1 +1,76 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1024" viewBox="0 0 1440 1024"><rect width="1440" height="1024" fill="#F5F7FA"/><rect width="252" height="1024" fill="#0F172A"/><text x="28" y="54" font-family="Inter,Arial" font-size="22" font-weight="700" fill="#FFF">✦ ClassVision</text><text x="28" y="89" font-family="Inter,Arial" font-size="10" fill="#94A3B8">ADMINISTRAÇÃO GLOBAL</text><text x="34" y="148" font-family="Inter,Arial" font-size="14" fill="#CBD5E1">▦  Visão geral</text><rect x="16" y="173" width="220" height="46" rx="12" fill="#1E3A8A"/><text x="34" y="202" font-family="Inter,Arial" font-size="14" font-weight="700" fill="#FFF">▤  Instituições</text><text x="292" y="58" font-family="Inter,Arial" font-size="13" fill="#667085">Instituições / Novo cadastro</text><text x="292" y="99" font-family="Inter,Arial" font-size="28" font-weight="700" fill="#1A1A2E">Cadastrar instituição</text><text x="292" y="125" font-family="Inter,Arial" font-size="14" fill="#6B7280">Crie a instituição e envie o acesso ao primeiro administrador.</text><rect x="292" y="163" width="1056" height="88" rx="16" fill="#FFF"/><circle cx="360" cy="207" r="20" fill="#2563EB"/><text x="360" y="213" text-anchor="middle" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#FFF">1</text><text x="394" y="203" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#1A1A2E">Dados da instituição</text><text x="394" y="224" font-family="Inter,Arial" font-size="11" fill="#6B7280">Identificação e contato</text><path d="M565 207H755" stroke="#CBD5E1" stroke-width="2"/><circle cx="795" cy="207" r="20" fill="#E5E7EB"/><text x="795" y="213" text-anchor="middle" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#667085">2</text><text x="829" y="203" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#667085">Primeiro administrador</text><text x="829" y="224" font-family="Inter,Arial" font-size="11" fill="#98A2B3">Convite de acesso</text><rect x="292" y="275" width="1056" height="616" rx="16" fill="#FFF"/><text x="332" y="320" font-family="Inter,Arial" font-size="18" font-weight="700" fill="#1A1A2E">Dados da instituição</text><text x="332" y="344" font-family="Inter,Arial" font-size="12" fill="#6B7280">Preencha as informações oficiais.</text><text x="332" y="392" font-family="Inter,Arial" font-size="12" font-weight="600" fill="#344054">Nome da instituição</text><rect x="332" y="405" width="476" height="48" rx="10" fill="#FFF" stroke="#E5E7EB"/><text x="350" y="435" font-family="Inter,Arial" font-size="13" fill="#98A2B3">Ex.: Instituto Federal Goiano</text><text x="832" y="392" font-family="Inter,Arial" font-size="12" font-weight="600" fill="#344054">CNPJ ou código INEP</text><rect x="832" y="405" width="476" height="48" rx="10" fill="#FFF" stroke="#E5E7EB"/><text x="850" y="435" font-family="Inter,Arial" font-size="13" fill="#98A2B3">00.000.000/0000-00</text><text x="332" y="496" font-family="Inter,Arial" font-size="12" font-weight="600" fill="#344054">E-mail institucional</text><rect x="332" y="509" width="476" height="48" rx="10" fill="#FFF" stroke="#E5E7EB"/><text x="350" y="539" font-family="Inter,Arial" font-size="13" fill="#98A2B3">contato@instituicao.edu.br</text><text x="832" y="496" font-family="Inter,Arial" font-size="12" font-weight="600" fill="#344054">Telefone</text><rect x="832" y="509" width="476" height="48" rx="10" fill="#FFF" stroke="#E5E7EB"/><text x="850" y="539" font-family="Inter,Arial" font-size="13" fill="#98A2B3">(00) 0000-0000</text><text x="332" y="600" font-family="Inter,Arial" font-size="12" font-weight="600" fill="#344054">Endereço</text><rect x="332" y="613" width="976" height="48" rx="10" fill="#FFF" stroke="#E5E7EB"/><text x="350" y="643" font-family="Inter,Arial" font-size="13" fill="#98A2B3">Rua, número, bairro, cidade e estado</text><text x="332" y="704" font-family="Inter,Arial" font-size="12" font-weight="600" fill="#344054">Status inicial</text><rect x="332" y="717" width="220" height="48" rx="10" fill="#FFF" stroke="#E5E7EB"/><text x="350" y="747" font-family="Inter,Arial" font-size="13" fill="#1A1A2E">Ativa  ⌄</text><rect x="1108" y="813" width="200" height="48" rx="12" fill="#2563EB"/><text x="1208" y="843" text-anchor="middle" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#FFF">Continuar</text><text x="1110" y="880" font-family="Inter,Arial" font-size="11" fill="#6B7280">Na próxima etapa: Primeiro administrador · Enviar convite</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1024" viewBox="0 0 1440 1024">
+  <rect width="1440" height="1024" fill="#F5F7FA"/>
+  <rect width="252" height="1024" fill="#0F172A"/>
+  <text x="28" y="54" font-family="Inter,Arial" font-size="22" font-weight="700" fill="#FFFFFF">✦ ClassVision</text>
+  <text x="28" y="89" font-family="Inter,Arial" font-size="10" fill="#94A3B8">ADMINISTRAÇÃO GLOBAL</text>
+  <text x="34" y="148" font-family="Inter,Arial" font-size="14" fill="#CBD5E1">▦  Visão geral</text>
+  <rect x="16" y="173" width="220" height="46" rx="12" fill="#1E3A8A"/>
+  <text x="34" y="202" font-family="Inter,Arial" font-size="14" font-weight="700" fill="#FFFFFF">▤  Instituições</text>
+  <text x="34" y="248" font-family="Inter,Arial" font-size="14" fill="#CBD5E1">♙  Administradores</text>
+  <text x="34" y="294" font-family="Inter,Arial" font-size="14" fill="#CBD5E1">⌁  Atividade</text>
+  <text x="34" y="340" font-family="Inter,Arial" font-size="14" fill="#CBD5E1">⚙  Configurações</text>
+
+  <text x="292" y="58" font-family="Inter,Arial" font-size="13" fill="#667085">Instituições / Novo cadastro</text>
+  <text x="292" y="99" font-family="Inter,Arial" font-size="28" font-weight="700" fill="#1A1A2E">Cadastrar instituição</text>
+  <text x="292" y="125" font-family="Inter,Arial" font-size="14" fill="#6B7280">Crie a instituição e envie o acesso ao primeiro administrador em uma única operação.</text>
+
+  <rect x="292" y="154" width="1056" height="82" rx="16" fill="#FFFFFF"/>
+  <circle cx="360" cy="195" r="20" fill="#2563EB"/>
+  <text x="360" y="201" text-anchor="middle" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#FFFFFF">✓</text>
+  <text x="394" y="191" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#1A1A2E">1. Dados da instituição</text>
+  <text x="394" y="212" font-family="Inter,Arial" font-size="11" fill="#6B7280">Identificação e contato</text>
+  <path d="M568 195H760" stroke="#93C5FD" stroke-width="2"/>
+  <circle cx="800" cy="195" r="20" fill="#2563EB"/>
+  <text x="800" y="201" text-anchor="middle" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="834" y="191" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#1A1A2E">2. Primeiro administrador</text>
+  <text x="834" y="212" font-family="Inter,Arial" font-size="11" fill="#6B7280">Convite de acesso por e-mail</text>
+
+  <rect x="292" y="260" width="516" height="656" rx="16" fill="#FFFFFF"/>
+  <text x="324" y="303" font-family="Inter,Arial" font-size="17" font-weight="700" fill="#1A1A2E">Dados da instituição</text>
+  <text x="324" y="326" font-family="Inter,Arial" font-size="12" fill="#6B7280">Informações oficiais da nova organização.</text>
+  <text x="324" y="369" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Nome da instituição</text>
+  <rect x="324" y="380" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="341" y="407" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Instituto Federal Goiano — Câmpus Urutaí</text>
+  <text x="324" y="458" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">CNPJ ou código INEP</text>
+  <rect x="324" y="469" width="214" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="341" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">52018437</text>
+  <text x="562" y="458" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Telefone</text>
+  <rect x="562" y="469" width="214" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="579" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">(64) 3465-1900</text>
+  <text x="324" y="547" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">E-mail institucional</text>
+  <rect x="324" y="558" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="341" y="585" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">contato.urutai@ifgoiano.edu.br</text>
+  <text x="324" y="636" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Endereço</text>
+  <rect x="324" y="647" width="452" height="64" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="341" y="674" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Rodovia Geraldo Silva Nascimento, km 2,5</text>
+  <text x="341" y="694" font-family="Inter,Arial" font-size="12" fill="#667085">Urutaí — GO · 75790-000</text>
+  <text x="324" y="751" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Status inicial</text>
+  <rect x="324" y="762" width="214" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="341" y="789" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Ativa  ⌄</text>
+  <rect x="324" y="837" width="452" height="48" rx="11" fill="#F8FAFC"/>
+  <text x="341" y="858" font-family="Inter,Arial" font-size="11" font-weight="700" fill="#475467">ETAPA 1 CONCLUÍDA</text>
+  <text x="341" y="876" font-family="Inter,Arial" font-size="10.5" fill="#667085">Revise os dados antes de criar o acesso administrativo.</text>
+
+  <rect x="832" y="260" width="516" height="656" rx="16" fill="#FFFFFF"/>
+  <text x="864" y="303" font-family="Inter,Arial" font-size="17" font-weight="700" fill="#1A1A2E">Primeiro administrador</text>
+  <text x="864" y="326" font-family="Inter,Arial" font-size="12" fill="#6B7280">Responsável inicial pela administração da instituição.</text>
+  <text x="864" y="369" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Nome do administrador</text>
+  <rect x="864" y="380" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="881" y="407" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Marina Costa</text>
+  <text x="864" y="458" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">E-mail do administrador</text>
+  <rect x="864" y="469" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="881" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">marina.costa@ifgoiano.edu.br</text>
+  <text x="864" y="547" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Telefone do administrador</text>
+  <rect x="864" y="558" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
+  <text x="881" y="585" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">(64) 99942-1808</text>
+  <rect x="864" y="636" width="452" height="104" rx="12" fill="#EFF6FF"/>
+  <circle cx="894" cy="669" r="15" fill="#DBEAFE"/>
+  <text x="894" y="674" text-anchor="middle" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#2563EB">✉</text>
+  <text x="920" y="665" font-family="Inter,Arial" font-size="12.5" font-weight="700" fill="#1D4ED8">Acesso por convite</text>
+  <text x="920" y="687" font-family="Inter,Arial" font-size="11.5" fill="#475467">Marina receberá um link seguro para criar a senha.</text>
+  <text x="920" y="707" font-family="Inter,Arial" font-size="11.5" fill="#475467">Nenhuma senha temporária será exibida.</text>
+  <rect x="864" y="770" width="452" height="48" rx="11" fill="#2563EB"/>
+  <text x="1090" y="800" text-anchor="middle" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#FFFFFF">Criar instituição e enviar convite</text>
+  <text x="1090" y="847" text-anchor="middle" font-family="Inter,Arial" font-size="11" fill="#667085">Ao continuar, a instituição será criada com status ativo.</text>
+  <text x="1090" y="866" text-anchor="middle" font-family="Inter,Arial" font-size="11" fill="#667085">O convite expira em 48 horas.</text>
+</svg>

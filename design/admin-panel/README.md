@@ -1,6 +1,6 @@
 # Painel administrativo ClassVision
 
-Este diretório contém 15 pranchetas SVG independentes para o painel usado por coordenadores do Instituto Federal Goiano — Câmpus Urutaí.
+Este diretório contém 25 pranchetas SVG independentes para a operação acadêmica, a administração institucional e a administração global do ClassVision.
 
 ## Importação no Figma
 
