@@ -14,8 +14,8 @@ void main() {
 
     await tester.pumpWidget(const ClassVisionApp());
 
-    expect(find.text('Entrar'), findsOneWidget);
-    expect(find.text('Criar conta'), findsOneWidget);
+    expect(find.text('Acessar plataforma'), findsOneWidget);
+    expect(find.text('Acessos de demonstração'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
   });
 
@@ -26,7 +26,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(const ClassVisionApp());
-    await tester.tap(find.text('Entrar'));
+    await tester.tap(find.text('Acessar plataforma'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Bom dia'), findsOneWidget);
 

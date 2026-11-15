@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/navigation/app_routes.dart';
+import '../../../core/auth/app_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../viewmodels/login_view_model.dart';
@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'ClassVision',
+                        'Acesso ao ClassVision',
                         style: TextStyle(
                           fontSize: 27,
                           fontWeight: FontWeight.w800,
@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 5),
                       const Text(
-                        'Acesso da coordenação',
+                        'Entre com seu e-mail institucional',
                         style: TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 34),
@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8),
                       PrimaryButton(
-                        label: 'Entrar',
+                        label: 'Acessar plataforma',
                         loading: viewModel.loading,
                         onPressed: () async {
                           if (!(_formKey.currentState?.validate() ?? false)) {
@@ -122,25 +122,38 @@ class _LoginPageState extends State<LoginPage> {
                           if (!context.mounted) {
                             return;
                           }
+                          final session = context.read<AppSession>()
+                            ..signIn(_email.text);
                           Navigator.pushReplacementNamed(
                             context,
-                            AppRoutes.home,
+                            session.homeRoute,
                           );
                         },
                       ),
                       const SizedBox(height: 28),
                       const Text(
-                        'Ainda não tem uma conta?',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        'Acessos de demonstração',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 9),
-                      PrimaryButton(
-                        label: 'Criar conta',
-                        outlined: true,
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.userRegistration,
-                        ),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final demo in const [
+                            ('Sistema', 'arthur@classvision.app'),
+                            ('Instituição', 'marina.costa@ifgoiano.edu.br'),
+                            ('Coordenação', 'coordenacao@escola.edu.br'),
+                          ])
+                            ActionChip(
+                              label: Text(demo.$1),
+                              onPressed: () => _email.text = demo.$2,
+                            ),
+                        ],
                       ),
                     ],
                   ),

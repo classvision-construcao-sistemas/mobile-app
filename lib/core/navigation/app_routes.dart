@@ -1,5 +1,8 @@
 abstract final class AppRoutes {
   static const login = '/login';
+  static const systemAdmin = '/system-admin';
+  static const institutionAdmin = '/institution-admin';
+  static const coordinator = '/coordinator';
   static const home = '/home';
   static const classes = '/classes';
   static const classDetails = '/class-details';

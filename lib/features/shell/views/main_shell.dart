@@ -36,6 +36,7 @@ class _MainShellContent extends StatelessWidget {
     ];
 
     return Scaffold(
+      key: const Key('coordinator-shell'),
       body: SafeArea(
         bottom: false,
         child: IndexedStack(index: viewModel.index, children: pages),
