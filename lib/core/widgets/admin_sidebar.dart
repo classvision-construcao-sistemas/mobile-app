@@ -13,6 +13,8 @@ class AdminSidebar extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.onSignOut,
+    this.profileName,
+    this.profileRole,
   });
 
   final UserRole role;
@@ -20,6 +22,8 @@ class AdminSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final VoidCallback? onSignOut;
+  final String? profileName;
+  final String? profileRole;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +72,61 @@ class AdminSidebar extends StatelessWidget {
             const SizedBox(height: 6),
           ],
           const Spacer(),
+          if (profileName != null) ...[
+            const Divider(),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 19,
+                    backgroundColor: global
+                        ? const Color(0xFF28479D)
+                        : AppColors.primarySoft,
+                    foregroundColor: global ? Colors.white : AppColors.primary,
+                    child: Text(
+                      profileName!
+                          .split(' ')
+                          .map((part) => part[0])
+                          .take(2)
+                          .join(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profileName!,
+                          style: TextStyle(
+                            color: global
+                                ? Colors.white
+                                : AppColors.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (profileRole != null)
+                          Text(
+                            profileRole!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: foreground, fontSize: 9),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
           if (onSignOut != null)
             Material(
               color: Colors.transparent,

@@ -22,6 +22,8 @@ class AdminPageScaffold extends StatelessWidget {
     required this.onDestinationSelected,
     required this.body,
     this.onSignOut,
+    this.profileName,
+    this.profileRole,
   });
 
   final UserRole role;
@@ -30,6 +32,8 @@ class AdminPageScaffold extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final Widget body;
   final VoidCallback? onSignOut;
+  final String? profileName;
+  final String? profileRole;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -48,6 +52,8 @@ class AdminPageScaffold extends StatelessWidget {
                 selectedIndex: selectedIndex,
                 onSelected: onDestinationSelected,
                 onSignOut: onSignOut,
+                profileName: profileName,
+                profileRole: profileRole,
               ),
               Expanded(child: SafeArea(child: body)),
             ],

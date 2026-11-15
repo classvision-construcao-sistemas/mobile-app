@@ -11,9 +11,9 @@ import 'features/ai_processing/views/ai_processing_page.dart';
 import 'features/attendance/views/attendance_review_page.dart';
 import 'features/attendance/views/attendance_saved_page.dart';
 import 'features/auth/views/login_page.dart';
-import 'features/auth/views/role_landing_page.dart';
 import 'features/admin/data/admin_repository.dart';
 import 'features/admin/views/system_admin_shell.dart';
+import 'features/institution_admin/views/institution_admin_shell.dart';
 import 'features/camera/views/camera_page.dart';
 import 'features/classes/views/class_details_page.dart';
 import 'features/registration/views/registration_page.dart';
@@ -43,9 +43,7 @@ class ClassVisionApp extends StatelessWidget {
           onGenerateRoute: (settings) {
             Widget roleHome() => switch (session.user?.role) {
               UserRole.systemAdmin => const SystemAdminShell(),
-              UserRole.institutionAdmin => const RoleLandingPage(
-                role: UserRole.institutionAdmin,
-              ),
+              UserRole.institutionAdmin => const InstitutionAdminShell(),
               UserRole.coordinator => const MainShell(),
               null => const LoginPage(),
             };
@@ -72,9 +70,7 @@ class ClassVisionApp extends StatelessWidget {
             final page = switch (settings.name) {
               AppRoutes.login => const LoginPage(),
               AppRoutes.systemAdmin => const SystemAdminShell(),
-              AppRoutes.institutionAdmin => const RoleLandingPage(
-                role: UserRole.institutionAdmin,
-              ),
+              AppRoutes.institutionAdmin => const InstitutionAdminShell(),
               AppRoutes.coordinator => const MainShell(),
               AppRoutes.home ||
               AppRoutes.classes ||
