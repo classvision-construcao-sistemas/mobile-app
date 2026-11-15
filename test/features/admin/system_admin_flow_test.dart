@@ -51,7 +51,9 @@ void main() {
     expect(find.text('Colégio Horizonte'), findsWidgets);
   });
 
-  testWidgets('cancels onboarding back to the institution list', (tester) async {
+  testWidgets('cancels onboarding back to the institution list', (
+    tester,
+  ) async {
     await pumpSystemAdmin(tester);
     await tester.tap(find.text('+ Nova instituição'));
     await tester.pumpAndSettle();

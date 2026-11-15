@@ -39,6 +39,18 @@ $ flutter pub get
 $ flutter run
 ```
 
+## Acessos de demonstração
+
+A tela de login identifica o perfil pelo e-mail e abre automaticamente a área permitida:
+
+- `arthur@classvision.app` — Administrador do Sistema. O painel global é exclusivo para desktop; no celular o app orienta o usuário a acessar pelo computador.
+- `marina.costa@ifgoiano.edu.br` — Administradora da Instituição. Configurações e equipe aparecem no desktop, e a gestão de coordenadores possui uma versão mobile dedicada.
+- `lucas.ferreira@ifgoiano.edu.br` — Coordenador. A área acadêmica é responsiva, com barra lateral no desktop e navegação inferior no celular.
+
+A senha de demonstração pode ser qualquer valor não vazio. As permissões continuam protegidas após o login: coordenadores não acessam administração institucional ou global, e administradores globais não recebem destinos acadêmicos.
+
+As telas de referência editáveis estão em `design/admin-panel/`, com pranchetas desktop de `1440 × 1024` e mobile de `390 × 844`.
+
 ## Reconhecimento facial
 
 O app envia fotos em `multipart/form-data` para o microsserviço que está na

@@ -15,100 +15,110 @@ class ClassDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final classroom = context.watch<SchoolRepository>().classById(classId);
-    if (MediaQuery.sizeOf(context).width >= 700) {
-      return Scaffold(body: _DesktopClassDetails(classroom: classroom));
-    }
-    return Scaffold(
-      appBar: AppBar(title: Text(classroom.name)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-        children: [
-          AppCard(
-            child: Row(
-              children: [
-                _Info(
-                  icon: Icons.schedule_rounded,
-                  label: 'Horário',
-                  value: classroom.time,
-                ),
-                const _Divider(),
-                _Info(
-                  icon: Icons.meeting_room_outlined,
-                  label: 'Sala',
-                  value: classroom.room,
-                ),
-                const _Divider(),
-                _Info(
-                  icon: Icons.groups_2_outlined,
-                  label: 'Alunos',
-                  value: '${classroom.students.length}',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 900) {
+          return Scaffold(body: _DesktopClassDetails(classroom: classroom));
+        }
+        return Scaffold(
+          appBar: AppBar(title: Text(classroom.name)),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
             children: [
-              const Expanded(
-                child: Text(
-                  'Alunos',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              AppCard(
+                child: Row(
+                  children: [
+                    _Info(
+                      icon: Icons.schedule_rounded,
+                      label: 'Horário',
+                      value: classroom.time,
+                    ),
+                    const _Divider(),
+                    _Info(
+                      icon: Icons.meeting_room_outlined,
+                      label: 'Sala',
+                      value: classroom.room,
+                    ),
+                    const _Divider(),
+                    _Info(
+                      icon: Icons.groups_2_outlined,
+                      label: 'Alunos',
+                      value: '${classroom.students.length}',
+                    ),
+                  ],
                 ),
               ),
-              TextButton.icon(
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  AppRoutes.studentRegistration,
-                  arguments: classroom.id,
-                ),
-                icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                label: const Text('Adicionar'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (classroom.students.isEmpty)
-            const AppCard(
-              child: Center(
-                child: Text('Nenhum aluno cadastrado nesta turma.'),
-              ),
-            )
-          else
-            for (final student in classroom.students) ...[
-              _StudentRow(student: student),
-              const SizedBox(height: 9),
-            ],
-          const SizedBox(height: 18),
-          if (classroom.attendanceCompleted)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.successLight,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Row(
+              const SizedBox(height: 22),
+              Row(
                 children: [
-                  Icon(Icons.check_circle_rounded, color: AppColors.success),
-                  SizedBox(width: 10),
-                  Text(
-                    'Chamada realizada hoje',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  const Expanded(
+                    child: Text(
+                      'Alunos',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.studentRegistration,
+                      arguments: classroom.id,
+                    ),
+                    icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                    label: const Text('Adicionar'),
                   ),
                 ],
               ),
-            )
-          else
-            PrimaryButton(
-              label: 'Fazer chamada com IA',
-              icon: Icons.camera_alt_rounded,
-              onPressed: () => Navigator.pushNamed(
-                context,
-                AppRoutes.camera,
-                arguments: classroom.id,
-              ),
-            ),
-        ],
-      ),
+              const SizedBox(height: 8),
+              if (classroom.students.isEmpty)
+                const AppCard(
+                  child: Center(
+                    child: Text('Nenhum aluno cadastrado nesta turma.'),
+                  ),
+                )
+              else
+                for (final student in classroom.students) ...[
+                  _StudentRow(student: student),
+                  const SizedBox(height: 9),
+                ],
+              const SizedBox(height: 18),
+              if (classroom.attendanceCompleted)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.successLight,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.success,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Chamada realizada hoje',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                PrimaryButton(
+                  label: 'Fazer chamada com IA',
+                  icon: Icons.camera_alt_rounded,
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.camera,
+                    arguments: classroom.id,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
