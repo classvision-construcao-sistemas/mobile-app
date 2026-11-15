@@ -12,12 +12,14 @@ class AdminSidebar extends StatelessWidget {
     required this.destinations,
     required this.selectedIndex,
     required this.onSelected,
+    this.onSignOut,
   });
 
   final UserRole role;
   final List<AdminDestination> destinations;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final VoidCallback? onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +68,33 @@ class AdminSidebar extends StatelessWidget {
             const SizedBox(height: 6),
           ],
           const Spacer(),
+          if (onSignOut != null)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: onSignOut,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 13,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout_rounded, size: 19, color: foreground),
+                      const SizedBox(width: 13),
+                      Text(
+                        'Sair',
+                        style: TextStyle(
+                          color: foreground,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

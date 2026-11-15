@@ -12,6 +12,8 @@ import 'features/attendance/views/attendance_review_page.dart';
 import 'features/attendance/views/attendance_saved_page.dart';
 import 'features/auth/views/login_page.dart';
 import 'features/auth/views/role_landing_page.dart';
+import 'features/admin/data/admin_repository.dart';
+import 'features/admin/views/system_admin_shell.dart';
 import 'features/camera/views/camera_page.dart';
 import 'features/classes/views/class_details_page.dart';
 import 'features/registration/views/registration_page.dart';
@@ -26,6 +28,7 @@ class ClassVisionApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AppSession()),
         ChangeNotifierProvider(create: (_) => SchoolRepository()),
+        ChangeNotifierProvider(create: (_) => AdminRepository()),
         Provider(
           create: (_) => FacialRecognitionApi(),
           dispose: (_, api) => api.close(),
@@ -39,9 +42,7 @@ class ClassVisionApp extends StatelessWidget {
           initialRoute: AppRoutes.login,
           onGenerateRoute: (settings) {
             Widget roleHome() => switch (session.user?.role) {
-              UserRole.systemAdmin => const RoleLandingPage(
-                role: UserRole.systemAdmin,
-              ),
+              UserRole.systemAdmin => const SystemAdminShell(),
               UserRole.institutionAdmin => const RoleLandingPage(
                 role: UserRole.institutionAdmin,
               ),
@@ -70,9 +71,7 @@ class ClassVisionApp extends StatelessWidget {
 
             final page = switch (settings.name) {
               AppRoutes.login => const LoginPage(),
-              AppRoutes.systemAdmin => const RoleLandingPage(
-                role: UserRole.systemAdmin,
-              ),
+              AppRoutes.systemAdmin => const SystemAdminShell(),
               AppRoutes.institutionAdmin => const RoleLandingPage(
                 role: UserRole.institutionAdmin,
               ),
