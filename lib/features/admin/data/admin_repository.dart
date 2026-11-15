@@ -87,6 +87,7 @@ class AdminRepository extends ChangeNotifier {
   List<CoordinatorAccount> _coordinators = const [
     CoordinatorAccount(
       id: 'coordinator-lucas',
+      institutionId: 'if-goiano',
       name: 'Lucas Ferreira',
       email: 'lucas.ferreira@ifgoiano.edu.br',
       status: AccountStatus.active,
@@ -94,6 +95,7 @@ class AdminRepository extends ChangeNotifier {
     ),
     CoordinatorAccount(
       id: 'coordinator-juliana',
+      institutionId: 'if-goiano',
       name: 'Juliana Prado',
       email: 'juliana.prado@ifgoiano.edu.br',
       status: AccountStatus.inactive,
@@ -101,6 +103,7 @@ class AdminRepository extends ChangeNotifier {
     ),
     CoordinatorAccount(
       id: 'coordinator-fernanda',
+      institutionId: 'if-goiano',
       name: 'Fernanda Alves',
       email: 'fernanda.alves@ifgoiano.edu.br',
       status: AccountStatus.pending,
@@ -110,6 +113,13 @@ class AdminRepository extends ChangeNotifier {
   ];
 
   List<PlatformActivity> _activities = const [
+    PlatformActivity(
+      id: 'activity-if-1',
+      action: 'Coordenador convidado',
+      institution: 'IF Goiano',
+      user: 'Marina Costa',
+      whenLabel: 'Hoje, 09:42',
+    ),
     PlatformActivity(
       id: 'activity-1',
       action: 'Instituição criada',
@@ -146,7 +156,8 @@ class AdminRepository extends ChangeNotifier {
       name: 'Reconhecimento facial',
       health: ServiceHealth.operational,
     ),
-    PlatformService(name: 'Envio de e-mails', health: ServiceHealth.degraded),
+    PlatformService(name: 'Envio de convites', health: ServiceHealth.degraded),
+    PlatformService(name: 'Armazenamento', health: ServiceHealth.operational),
   ];
 
   int _sequence = 100;
@@ -246,7 +257,28 @@ class AdminRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  CoordinatorAccount inviteCoordinator(String email) {
+  void updateInstitution(Institution updated) {
+    final current = findInstitution(updated.id);
+    if (current == null) return;
+    _institutions = _institutions
+        .map((item) => item.id == updated.id ? updated : item)
+        .toList(growable: false);
+    notifyListeners();
+  }
+
+  List<CoordinatorAccount> coordinatorsFor(String institutionId) =>
+      _coordinators
+          .where((item) => item.institutionId == institutionId)
+          .toList(growable: false);
+
+  List<PlatformActivity> activitiesFor(Institution institution) => _activities
+      .where((item) => item.institution == institution.name)
+      .toList(growable: false);
+
+  CoordinatorAccount inviteCoordinator(
+    String email, {
+    String institutionId = 'if-goiano',
+  }) {
     final normalized = email.trim().toLowerCase();
     if (!_isEmail(normalized)) {
       throw ArgumentError.value(email, 'email', 'Informe um e-mail válido.');
@@ -259,6 +291,7 @@ class AdminRepository extends ChangeNotifier {
         .join(' ');
     final account = CoordinatorAccount(
       id: 'coordinator-${_sequence++}',
+      institutionId: institutionId,
       name: name,
       email: normalized,
       status: AccountStatus.pending,

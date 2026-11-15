@@ -4,7 +4,9 @@ import '../theme/app_colors.dart';
 import 'classvision_logo.dart';
 
 class DesktopRequiredView extends StatelessWidget {
-  const DesktopRequiredView({super.key});
+  const DesktopRequiredView({super.key, this.onSignOut});
+
+  final VoidCallback? onSignOut;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -43,6 +45,14 @@ class DesktopRequiredView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary, height: 1.5),
             ),
+            if (onSignOut != null) ...[
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: onSignOut,
+                icon: const Icon(Icons.logout_rounded, size: 18),
+                label: const Text('Sair'),
+              ),
+            ],
             const Spacer(),
           ],
         ),

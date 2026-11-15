@@ -54,15 +54,20 @@ class SchoolClass {
   final List<Student> students;
   final bool attendanceCompleted;
 
-  SchoolClass copyWith({List<Student>? students, bool? attendanceCompleted}) =>
-      SchoolClass(
-        id: id,
-        name: name,
-        room: room,
-        time: time,
-        students: students ?? this.students,
-        attendanceCompleted: attendanceCompleted ?? this.attendanceCompleted,
-      );
+  SchoolClass copyWith({
+    String? name,
+    String? room,
+    String? time,
+    List<Student>? students,
+    bool? attendanceCompleted,
+  }) => SchoolClass(
+    id: id,
+    name: name ?? this.name,
+    room: room ?? this.room,
+    time: time ?? this.time,
+    students: students ?? this.students,
+    attendanceCompleted: attendanceCompleted ?? this.attendanceCompleted,
+  );
 }
 
 class AttendanceRecord {

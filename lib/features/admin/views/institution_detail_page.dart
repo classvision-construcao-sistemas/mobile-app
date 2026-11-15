@@ -17,6 +17,100 @@ class InstitutionDetailPage extends StatelessWidget {
   final String institutionId;
   final VoidCallback onBack;
 
+  Future<void> _edit(BuildContext context, Institution institution) async {
+    final name = TextEditingController(text: institution.name);
+    final email = TextEditingController(text: institution.institutionalEmail);
+    final phone = TextEditingController(text: institution.phone);
+    final address = TextEditingController(text: institution.address);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Editar instituição'),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: name,
+                  decoration: const InputDecoration(labelText: 'Nome'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: email,
+                  decoration: const InputDecoration(labelText: 'E-mail'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phone,
+                  decoration: const InputDecoration(labelText: 'Telefone'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: address,
+                  decoration: const InputDecoration(labelText: 'Localização'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (saved != true || !context.mounted) return;
+    context.read<AdminRepository>().updateInstitution(
+      institution.copyWith(
+        name: name.text.trim(),
+        institutionalEmail: email.text.trim(),
+        phone: phone.text.trim(),
+        address: address.text.trim(),
+      ),
+    );
+  }
+
+  Future<void> _toggleStatus(
+    BuildContext context,
+    Institution institution,
+  ) async {
+    final suspending = institution.status != InstitutionStatus.suspended;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(suspending ? 'Suspender acesso?' : 'Reativar acesso?'),
+        content: Text(
+          suspending
+              ? 'Os usuários de ${institution.name} perderão o acesso até a reativação.'
+              : '${institution.name} voltará a acessar a plataforma.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(suspending ? 'Suspender' : 'Reativar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    context.read<AdminRepository>().setInstitutionStatus(
+      institution.id,
+      suspending ? InstitutionStatus.suspended : InstitutionStatus.active,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final repository = context.watch<AdminRepository>();
@@ -29,6 +123,14 @@ class InstitutionDetailPage extends StatelessWidget {
         ),
       );
     }
+    final coordinators = repository.coordinatorsFor(institution.id);
+    final activities = repository.activitiesFor(institution);
+    final activeCoordinators = coordinators
+        .where((item) => item.status == AccountStatus.active)
+        .length;
+    final pendingCoordinators = coordinators
+        .where((item) => item.status == AccountStatus.pending)
+        .length;
     return ListView(
       padding: const EdgeInsets.fromLTRB(40, 28, 40, 40),
       children: [
@@ -45,29 +147,29 @@ class InstitutionDetailPage extends StatelessWidget {
         AdminPageHeader(
           title: 'Detalhes da instituição',
           subtitle: institution.name,
-          action: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-            decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.visibility_outlined,
-                  size: 17,
-                  color: AppColors.primary,
+          action: Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _toggleStatus(context, institution),
+                icon: Icon(
+                  institution.status == InstitutionStatus.suspended
+                      ? Icons.play_arrow_rounded
+                      : Icons.pause_circle_outline_rounded,
+                  size: 18,
                 ),
-                SizedBox(width: 7),
-                Text(
-                  'Somente leitura',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                label: Text(
+                  institution.status == InstitutionStatus.suspended
+                      ? 'Reativar acesso'
+                      : 'Suspender acesso',
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              FilledButton.icon(
+                onPressed: () => _edit(context, institution),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Editar'),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 28),
@@ -84,8 +186,9 @@ class InstitutionDetailPage extends StatelessWidget {
             Expanded(
               child: MetricCard(
                 label: 'Coordenadores',
-                value: '${repository.coordinators.length}',
-                supportingText: '2 ativos e 1 convite pendente',
+                value: '${coordinators.length}',
+                supportingText:
+                    '$activeCoordinators ativos e $pendingCoordinators convite pendente',
               ),
             ),
             const SizedBox(width: 20),
@@ -116,9 +219,7 @@ class InstitutionDetailPage extends StatelessWidget {
                   const SizedBox(height: 22),
                   AdminSurface(
                     padding: EdgeInsets.zero,
-                    child: _CoordinatorsTable(
-                      coordinators: repository.coordinators,
-                    ),
+                    child: _CoordinatorsTable(coordinators: coordinators),
                   ),
                 ],
               ),
@@ -127,7 +228,7 @@ class InstitutionDetailPage extends StatelessWidget {
             Expanded(
               flex: 2,
               child: AdminSurface(
-                child: _InstitutionActivity(activities: repository.activities),
+                child: _InstitutionActivity(activities: activities),
               ),
             ),
           ],
@@ -213,11 +314,30 @@ class _CoordinatorsTable extends StatelessWidget {
     children: [
       const Padding(
         padding: EdgeInsets.fromLTRB(24, 22, 24, 12),
-        child: Text(
-          'Coordenadores',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Coordenadores',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              ),
+            ),
+            StatusBadge(
+              label: 'Somente leitura',
+              foreground: AppColors.primary,
+              background: AppColors.primarySoft,
+            ),
+          ],
         ),
       ),
+      if (coordinators.isEmpty)
+        const Padding(
+          padding: EdgeInsets.fromLTRB(24, 10, 24, 24),
+          child: Text(
+            'Nenhum coordenador vinculado.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
       for (final coordinator in coordinators)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
@@ -295,6 +415,11 @@ class _InstitutionActivity extends StatelessWidget {
         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
       ),
       const SizedBox(height: 16),
+      if (activities.isEmpty)
+        const Text(
+          'Nenhuma atividade registrada.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
       for (final activity in activities.take(3))
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 11),

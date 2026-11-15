@@ -68,11 +68,79 @@ void main() {
     expect(find.byKey(const Key('system-admin-shell')), findsNothing);
   });
 
+  testWidgets('blocks system administrators from every academic route', (
+    tester,
+  ) async {
+    await pumpApp(tester, size: const Size(1440, 1024));
+    await signIn(tester, 'arthur@classvision.app');
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    for (final route in [
+      AppRoutes.home,
+      AppRoutes.classes,
+      AppRoutes.camera,
+      AppRoutes.review,
+      AppRoutes.classRegistration,
+    ]) {
+      navigator.pushNamed(route);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('system-admin-shell')),
+        findsOneWidget,
+        reason: route,
+      );
+      expect(
+        find.byKey(const Key('coordinator-shell')),
+        findsNothing,
+        reason: route,
+      );
+    }
+  });
+
+  testWidgets('keeps institution administrators in their role-aware shell', (
+    tester,
+  ) async {
+    await pumpApp(tester, size: const Size(1440, 1024));
+    await signIn(tester, 'marina.costa@ifgoiano.edu.br');
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.pushNamed(AppRoutes.home);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('institution-admin-shell')), findsOneWidget);
+    expect(find.byKey(const Key('coordinator-shell')), findsNothing);
+  });
+
   testWidgets('signing out returns to the neutral login', (tester) async {
     await pumpApp(tester, size: const Size(1440, 1024));
     await signIn(tester, 'arthur@classvision.app');
 
     await tester.tap(find.text('Sair'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Acesso ao ClassVision'), findsOneWidget);
+  });
+
+  testWidgets('system administrator can sign out from the mobile blocker', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await signIn(tester, 'arthur@classvision.app');
+
+    expect(find.text('Acesse pelo computador'), findsOneWidget);
+    await tester.tap(find.text('Sair'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Acesso ao ClassVision'), findsOneWidget);
+  });
+
+  testWidgets('institution administrator can sign out from mobile management', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await signIn(tester, 'marina.costa@ifgoiano.edu.br');
+
+    await tester.tap(find.byTooltip('Sair'));
     await tester.pumpAndSettle();
 
     expect(find.text('Acesso ao ClassVision'), findsOneWidget);

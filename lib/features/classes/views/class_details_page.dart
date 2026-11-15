@@ -127,6 +127,57 @@ class _DesktopClassDetails extends StatelessWidget {
   const _DesktopClassDetails({required this.classroom});
   final SchoolClass classroom;
 
+  Future<void> _edit(BuildContext context) async {
+    final name = TextEditingController(text: classroom.name);
+    final room = TextEditingController(text: classroom.room);
+    final time = TextEditingController(text: classroom.time);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Editar turma'),
+        content: SizedBox(
+          width: 440,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                decoration: const InputDecoration(labelText: 'Nome da turma'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: room,
+                decoration: const InputDecoration(labelText: 'Sala'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: time,
+                decoration: const InputDecoration(labelText: 'Horário'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (saved != true || !context.mounted) return;
+    context.read<SchoolRepository>().updateClass(
+      id: classroom.id,
+      name: name.text.trim(),
+      room: room.text.trim(),
+      time: time.text.trim(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
@@ -158,7 +209,7 @@ class _DesktopClassDetails extends StatelessWidget {
             ),
           ),
           OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: () => _edit(context),
             icon: const Icon(Icons.edit_outlined),
             label: const Text('Editar turma'),
           ),
@@ -314,7 +365,7 @@ class _DesktopClassDetails extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 20),
-          const Expanded(
+          Expanded(
             child: AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,16 +379,27 @@ class _DesktopClassDetails extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.person_add_alt_1_rounded),
                     title: Text('Adicionar aluno'),
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.studentRegistration,
+                      arguments: classroom.id,
+                    ),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.fact_check_outlined),
                     title: Text('Ver últimas chamadas'),
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.home),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.download_outlined),
                     title: Text('Exportar lista de alunos'),
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lista preparada para exportação.'),
+                      ),
+                    ),
                   ),
                 ],
               ),

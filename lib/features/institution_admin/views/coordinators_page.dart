@@ -8,8 +8,9 @@ import '../../admin/data/admin_repository.dart';
 import '../../admin/domain/admin_models.dart';
 
 class CoordinatorsPage extends StatefulWidget {
-  const CoordinatorsPage({super.key, this.mobile = false});
+  const CoordinatorsPage({super.key, this.mobile = false, this.onBack});
   final bool mobile;
+  final VoidCallback? onBack;
 
   @override
   State<CoordinatorsPage> createState() => _CoordinatorsPageState();
@@ -117,11 +118,14 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.chevron_left_rounded,
-                color: AppColors.textPrimary,
+              IconButton(
+                tooltip: 'Sair',
+                onPressed: widget.onBack,
+                icon: const Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.textPrimary,
+                ),
               ),
-              const SizedBox(width: 4),
               const Expanded(
                 child: Text(
                   'Coordenadores',

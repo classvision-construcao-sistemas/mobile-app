@@ -3,9 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key, required this.onBack});
   final VoidCallback onBack;
+
+  @override
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  bool _allRead = false;
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
@@ -13,7 +21,7 @@ class NotificationsPage extends StatelessWidget {
       Row(
         children: [
           IconButton(
-            onPressed: onBack,
+            onPressed: widget.onBack,
             icon: const Icon(Icons.chevron_left_rounded),
           ),
           const Expanded(
@@ -24,11 +32,13 @@ class NotificationsPage extends StatelessWidget {
           ),
         ],
       ),
-      const Padding(
+      Padding(
         padding: EdgeInsets.only(left: 48),
         child: Text(
-          '3 notificações não lidas',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          _allRead
+              ? 'Nenhuma notificação não lida'
+              : '3 notificações não lidas',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
       ),
       const SizedBox(height: 22),
@@ -75,8 +85,8 @@ class NotificationsPage extends StatelessWidget {
       ),
       const SizedBox(height: 16),
       TextButton(
-        onPressed: () {},
-        child: const Text('Marcar todas como lidas'),
+        onPressed: _allRead ? null : () => setState(() => _allRead = true),
+        child: Text(_allRead ? 'Tudo em dia' : 'Marcar todas como lidas'),
       ),
     ],
   );

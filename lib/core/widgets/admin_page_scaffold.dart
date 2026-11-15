@@ -40,7 +40,7 @@ class AdminPageScaffold extends StatelessWidget {
     builder: (context, constraints) {
       final desktop = AppBreakpoints.isDesktop(constraints.maxWidth);
       if (!desktop && role == UserRole.systemAdmin) {
-        return const DesktopRequiredView();
+        return DesktopRequiredView(onSignOut: onSignOut);
       }
       if (desktop) {
         return Scaffold(

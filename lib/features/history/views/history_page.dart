@@ -1,23 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../data/models/school_models.dart';
+import '../../../data/repositories/school_repository.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key, this.onOpenReview});
-  final VoidCallback? onOpenReview;
+  final ValueChanged<String>? onOpenReview;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => constraints.maxWidth >= 900
-        ? _DesktopAttendance(onOpenReview: onOpenReview)
-        : _MobileAttendance(onOpenReview: onOpenReview),
-  );
+  Widget build(BuildContext context) {
+    final repository = context.watch<SchoolRepository>();
+    final records = repository.history;
+    String? idFor(AttendanceRecord record) => repository.classes
+        .where((item) => item.name == record.className)
+        .firstOrNull
+        ?.id;
+    return LayoutBuilder(
+      builder: (context, constraints) => constraints.maxWidth >= 900
+          ? _DesktopAttendance(
+              records: records,
+              idFor: idFor,
+              onOpenReview: onOpenReview,
+            )
+          : _MobileAttendance(
+              records: records,
+              idFor: idFor,
+              onOpenReview: onOpenReview,
+            ),
+    );
+  }
 }
 
 class _DesktopAttendance extends StatelessWidget {
-  const _DesktopAttendance({this.onOpenReview});
-  final VoidCallback? onOpenReview;
+  const _DesktopAttendance({
+    required this.records,
+    required this.idFor,
+    this.onOpenReview,
+  });
+  final List<AttendanceRecord> records;
+  final String? Function(AttendanceRecord) idFor;
+  final ValueChanged<String>? onOpenReview;
+
+  VoidCallback? _callbackFor(AttendanceRecord record) {
+    final id = idFor(record);
+    if (id == null || onOpenReview == null) return null;
+    return () => onOpenReview!(id);
+  }
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
@@ -87,28 +119,18 @@ class _DesktopAttendance extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
             ),
-            _AttendanceRow(
-              date: '14 nov. · 08:05',
-              className: '2º Ano A',
-              teacher: 'Rafael Mendes',
-              presence: '31 de 32',
-              status: 'Em revisão',
-              onTap: onOpenReview,
-            ),
-            const _AttendanceRow(
-              date: '14 nov. · 07:52',
-              className: '1º Ano C',
-              teacher: 'Camila Ribeiro',
-              presence: '30 de 31',
-              status: 'Confirmada',
-            ),
-            const _AttendanceRow(
-              date: '13 nov. · 10:18',
-              className: '3º Ano B',
-              teacher: 'João Vitor Lima',
-              presence: '24 de 29',
-              status: 'Pendente',
-            ),
+            if (records.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(40),
+                child: Text('Nenhuma chamada registrada nesta sessão.'),
+              )
+            else
+              for (var index = 0; index < records.length; index++)
+                _AttendanceRow(
+                  record: records[index],
+                  status: index == 0 ? 'Em revisão' : 'Confirmada',
+                  onTap: _callbackFor(records[index]),
+                ),
           ],
         ),
       ),
@@ -117,8 +139,21 @@ class _DesktopAttendance extends StatelessWidget {
 }
 
 class _MobileAttendance extends StatelessWidget {
-  const _MobileAttendance({this.onOpenReview});
-  final VoidCallback? onOpenReview;
+  const _MobileAttendance({
+    required this.records,
+    required this.idFor,
+    this.onOpenReview,
+  });
+  final List<AttendanceRecord> records;
+  final String? Function(AttendanceRecord) idFor;
+  final ValueChanged<String>? onOpenReview;
+
+  VoidCallback? _callbackFor(AttendanceRecord record) {
+    final id = idFor(record);
+    if (id == null || onOpenReview == null) return null;
+    return () => onOpenReview!(id);
+  }
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
@@ -138,54 +173,51 @@ class _MobileAttendance extends StatelessWidget {
         child: Chip(label: Text('Esta semana  ⌄')),
       ),
       const SizedBox(height: 18),
-      const Text(
-        'Requer revisão',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 10),
-      _MobileAttendanceCard(
-        title: '2º Ano A · Matemática',
-        subtitle: 'Hoje, 08:05 · 31 de 32 detectados',
-        status: 'Em revisão',
-        action: 'Abrir',
-        onTap: onOpenReview,
-      ),
-      const SizedBox(height: 20),
-      const Text(
-        'Confirmadas',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 10),
-      const _MobileAttendanceCard(
-        title: '1º Ano C · Biologia',
-        subtitle: 'Hoje, 07:52 · 30 de 31 presentes',
-        status: 'Confirmada',
-      ),
-      const SizedBox(height: 10),
-      const _MobileAttendanceCard(
-        title: '3º Ano B · Química',
-        subtitle: '13 nov., 10:18 · 24 de 29 presentes',
-        status: 'Pendente',
-      ),
+      if (records.isEmpty)
+        const AdminSurface(
+          child: Center(
+            child: Text('Nenhuma chamada registrada nesta sessão.'),
+          ),
+        )
+      else ...[
+        const Text(
+          'Requer revisão',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 10),
+        _MobileAttendanceCard(
+          record: records.first,
+          status: 'Em revisão',
+          action: 'Abrir',
+          onTap: _callbackFor(records.first),
+        ),
+        if (records.length > 1) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'Confirmadas',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 10),
+          for (final record in records.skip(1)) ...[
+            _MobileAttendanceCard(record: record, status: 'Confirmada'),
+            const SizedBox(height: 10),
+          ],
+        ],
+      ],
     ],
   );
 }
 
 class _AttendanceRow extends StatelessWidget {
   const _AttendanceRow({
-    required this.date,
-    required this.className,
-    required this.teacher,
-    required this.presence,
+    required this.record,
     required this.status,
     this.onTap,
   });
-  final String date;
-  final String className;
-  final String teacher;
-  final String presence;
+  final AttendanceRecord record;
   final String status;
   final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
@@ -194,15 +226,17 @@ class _AttendanceRow extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Expanded(child: Text(date)),
+        Expanded(child: Text(_dateLabel(record.date))),
         Expanded(
           child: Text(
-            className,
+            record.className,
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
-        Expanded(child: Text(teacher)),
-        Expanded(child: Text(presence)),
+        const Expanded(child: Text('Professor responsável')),
+        Expanded(
+          child: Text('${record.present} de ${record.present + record.absent}'),
+        ),
         Expanded(
           child: Text(
             status,
@@ -225,27 +259,29 @@ class _AttendanceRow extends StatelessWidget {
 
 class _MobileAttendanceCard extends StatelessWidget {
   const _MobileAttendanceCard({
-    required this.title,
-    required this.subtitle,
+    required this.record,
     required this.status,
     this.action,
     this.onTap,
   });
-  final String title;
-  final String subtitle;
+  final AttendanceRecord record;
   final String status;
   final String? action;
   final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) => AdminSurface(
     padding: const EdgeInsets.all(15),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(
+          '${record.className} · ${_subject(record.className)}',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 5),
         Text(
-          subtitle,
+          '${_dateLabel(record.date)} · ${record.present} de ${record.present + record.absent} presentes',
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
         ),
         const SizedBox(height: 10),
@@ -271,3 +307,13 @@ class _MobileAttendanceCard extends StatelessWidget {
     ),
   );
 }
+
+String _dateLabel(DateTime date) =>
+    '${date.day.toString().padLeft(2, '0')} nov. · ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+String _subject(String className) => switch (className) {
+  '2º Ano A' => 'Matemática',
+  '1º Ano C' => 'Biologia',
+  '3º Ano B' => 'Química',
+  _ => 'Chamada',
+};

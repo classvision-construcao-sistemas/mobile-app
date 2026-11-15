@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/navigation/app_routes.dart';
+import 'core/navigation/route_policy.dart';
 import 'core/auth/app_session.dart';
 import 'core/auth/user_role.dart';
 import 'core/theme/app_theme.dart';
@@ -27,7 +28,7 @@ class ClassVisionApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppSession()),
-        ChangeNotifierProvider(create: (_) => SchoolRepository()),
+        ChangeNotifierProvider(create: (_) => SchoolRepository.demo()),
         ChangeNotifierProvider(create: (_) => AdminRepository()),
         Provider(
           create: (_) => FacialRecognitionApi(),
@@ -48,19 +49,23 @@ class ClassVisionApp extends StatelessWidget {
               null => const LoginPage(),
             };
 
-            final requestedRole = switch (settings.name) {
-              AppRoutes.systemAdmin => UserRole.systemAdmin,
-              AppRoutes.institutionAdmin => UserRole.institutionAdmin,
-              AppRoutes.coordinator => UserRole.coordinator,
-              _ => null,
-            };
             if (settings.name != AppRoutes.login && !session.isAuthenticated) {
               return MaterialPageRoute<void>(
                 builder: (_) => const LoginPage(),
                 settings: settings,
               );
             }
-            if (requestedRole != null && requestedRole != session.user?.role) {
+            final currentRole = session.user?.role;
+            if (settings.name != AppRoutes.login &&
+                currentRole != null &&
+                !RoutePolicy.canAccess(currentRole, settings.name)) {
+              return MaterialPageRoute<void>(
+                builder: (_) => roleHome(),
+                settings: settings,
+              );
+            }
+            if (currentRole != null &&
+                RoutePolicy.shellAliases.contains(settings.name)) {
               return MaterialPageRoute<void>(
                 builder: (_) => roleHome(),
                 settings: settings,

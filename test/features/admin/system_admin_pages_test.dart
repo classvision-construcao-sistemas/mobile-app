@@ -91,4 +91,32 @@ void main() {
     expectNoAcademicDestinations();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('scopes institution details and supports edit and suspension', (
+    tester,
+  ) async {
+    await pumpSystemAdmin(tester);
+    await tester.tap(find.text('Instituições'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Colégio Horizonte'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nenhum coordenador vinculado.'), findsOneWidget);
+    expect(find.text('Lucas Ferreira'), findsNothing);
+
+    await tester.tap(find.text('Editar'));
+    await tester.pumpAndSettle();
+    final phoneField = find.widgetWithText(TextField, 'Telefone');
+    await tester.enterText(phoneField, '(62) 3000-4000');
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+    expect(find.text('(62) 3000-4000'), findsOneWidget);
+
+    await tester.tap(find.text('Suspender acesso'));
+    await tester.pumpAndSettle();
+    expect(find.text('Suspender acesso?'), findsOneWidget);
+    await tester.tap(find.text('Suspender').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Reativar acesso'), findsOneWidget);
+  });
 }

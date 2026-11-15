@@ -6,6 +6,7 @@ import '../../../core/auth/user_role.dart';
 import '../../../core/layout/app_breakpoints.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
+import '../../../data/repositories/school_repository.dart';
 import '../../classes/views/classes_page.dart';
 import '../../history/views/history_page.dart';
 import '../../home/view/home_page.dart';
@@ -39,18 +40,46 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       if (!AppBreakpoints.isDesktop(constraints.maxWidth)) {
-        return const KeyedSubtree(
+        return KeyedSubtree(
           key: Key('institution-admin-shell'),
-          child: CoordinatorsPage(mobile: true),
+          child: CoordinatorsPage(
+            mobile: true,
+            onBack: () {
+              context.read<AppSession>().signOut();
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+            },
+          ),
         );
       }
-      void openCamera() => Navigator.pushNamed(context, AppRoutes.camera);
+      final repository = context.watch<SchoolRepository>();
+      final firstClassId = repository.classes.firstOrNull?.id;
+      void openCamera([String? id]) => Navigator.pushNamed(
+        context,
+        AppRoutes.camera,
+        arguments: id ?? firstClassId,
+      );
+      void openReview(String id) =>
+          Navigator.pushNamed(context, AppRoutes.review, arguments: id);
       final body = switch (_selectedIndex) {
-        0 => HomePage(onOpenCamera: openCamera, userName: 'Marina'),
-        1 => const ClassesPage(),
+        0 => HomePage(
+          onOpenCamera: openCamera,
+          onOpenReview: firstClassId == null
+              ? null
+              : () => openReview(firstClassId),
+          onViewAllPending: () => setState(() => _selectedIndex = 4),
+          userName: 'Marina',
+        ),
+        1 => ClassesPage(
+          onOpenClass: (id) => Navigator.pushNamed(
+            context,
+            AppRoutes.classDetails,
+            arguments: id,
+          ),
+        ),
         2 => const StudentsPage(),
         3 => const TeachersPage(),
-        4 => HistoryPage(onOpenReview: openCamera),
+        4 => HistoryPage(onOpenReview: openReview),
         5 => const ReportsPage(),
         _ => const InstitutionSettingsPage(),
       };

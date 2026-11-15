@@ -1,11 +1,6 @@
 import 'package:class_vision/app.dart';
-import 'package:class_vision/core/theme/app_theme.dart';
-import 'package:class_vision/data/models/school_models.dart';
-import 'package:class_vision/data/repositories/school_repository.dart';
-import 'package:class_vision/features/attendance/views/attendance_review_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 
 void main() {
   Future<void> startApp(WidgetTester tester, Size size) async {
@@ -59,32 +54,21 @@ void main() {
   testWidgets(
     'references 03 and 07 render session-backed desktop detail flows',
     (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1440, 1024));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final repository = SchoolRepository()
-        ..addClass(name: '2º Ano A', room: 'Sala 204', time: '07:30–12:50');
-      final id = repository.classes.single.id;
-      repository.addStudent(
-        id,
-        const Student(
-          id: 'student-1',
-          name: 'Beatriz Nogueira',
-          registration: '20260242',
-          guardian: '',
-          phone: '',
-          status: AttendanceStatus.review,
-          confidence: .61,
-        ),
-      );
-      await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: repository,
-          child: MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: AttendanceReviewPage(classId: id),
-          ),
-        ),
-      );
+      await startApp(tester, const Size(1440, 1024));
+      await login(tester, 'lucas.ferreira@ifgoiano.edu.br');
+      await tester.tap(find.text('Turmas'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('2º Ano A').first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Detalhes da turma'), findsOneWidget); // 03
+      expect(find.text('Lista de alunos'), findsNothing);
+
+      tester.state<NavigatorState>(find.byType(Navigator)).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chamadas'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Revisar →'));
+      await tester.pumpAndSettle();
       expect(find.text('Revisar chamada'), findsOneWidget); // 07
       expect(find.text('Lista de presença'), findsOneWidget);
       expect(find.text('Beatriz Nogueira'), findsOneWidget);
@@ -166,6 +150,21 @@ void main() {
     await tester.tap(find.text('Criar instituição e enviar convite'));
     await tester.pumpAndSettle();
     expect(find.text('Instituição cadastrada!'), findsOneWidget); // 24
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('responsive boundary switches shells exactly at 900 px', (
+    tester,
+  ) async {
+    await startApp(tester, const Size(899, 844));
+    await login(tester, 'lucas.ferreira@ifgoiano.edu.br');
+    expect(find.text('Olá, Lucas'), findsOneWidget);
+    expect(find.text('Mais'), findsOneWidget);
+
+    await tester.binding.setSurfaceSize(const Size(900, 844));
+    await tester.pumpAndSettle();
+    expect(find.text('Lucas Ferreira'), findsOneWidget);
+    expect(find.text('Mais'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

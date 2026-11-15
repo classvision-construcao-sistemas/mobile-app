@@ -99,6 +99,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('3 notificações não lidas'), findsOneWidget);
     expect(find.text('Marcar todas como lidas'), findsOneWidget);
+    await tester.tap(find.text('Marcar todas como lidas'));
+    await tester.pump();
+    expect(find.text('Nenhuma notificação não lida'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -135,6 +138,16 @@ void main() {
     expect(find.text('Presença mensal'), findsOneWidget);
     expect(find.text('Ações rápidas'), findsOneWidget);
     expect(find.text('Beatriz Nogueira'), findsOneWidget);
+
+    await tester.tap(find.text('Editar turma'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField).first,
+      '2º Ano A — Atualizada',
+    );
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+    expect(find.text('2º Ano A — Atualizada'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

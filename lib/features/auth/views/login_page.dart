@@ -14,6 +14,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController(text: 'coordenacao@escola.edu.br');
   final _password = TextEditingController(text: '12345678');
@@ -78,7 +79,8 @@ class _LoginPageState extends State<LoginPage> {
                         icon: Icons.mail_outline_rounded,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) =>
-                            value != null && value.contains('@')
+                            value != null &&
+                                _emailPattern.hasMatch(value.trim())
                             ? null
                             : 'Informe um e-mail válido',
                       ),

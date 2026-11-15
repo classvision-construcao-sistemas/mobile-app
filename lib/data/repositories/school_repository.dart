@@ -9,6 +9,44 @@ import '../models/school_models.dart';
 /// repositório começa vazio e mantém apenas o contexto necessário para as telas
 /// durante a sessão atual; nenhum dado fictício é pré-carregado.
 class SchoolRepository extends ChangeNotifier {
+  SchoolRepository();
+
+  SchoolRepository.demo() {
+    _profile = const CoordinatorProfile(
+      name: 'Lucas Ferreira',
+      email: 'lucas.ferreira@ifgoiano.edu.br',
+      school: 'Instituto Federal Goiano — Câmpus Urutaí',
+      phone: '(64) 99942-1808',
+    );
+    _classes = [
+      _demoClass('class-2a', '2º Ano A', 'Sala 204', '07:30–12:50', 32),
+      _demoClass('class-1c', '1º Ano C', 'Sala 118', '07:30–12:50', 31),
+      _demoClass('class-3b', '3º Ano B', 'Laboratório 2', '07:30–12:50', 29),
+      _demoClass('class-2d', '2º Ano D', 'Sala 207', '13:00–18:20', 34),
+      _demoClass('class-1b', '1º Ano B', 'Sala 112', '13:00–18:20', 30),
+    ];
+    _history.addAll([
+      AttendanceRecord(
+        className: '2º Ano A',
+        date: DateTime(2026, 11, 14, 8, 5),
+        present: 31,
+        absent: 1,
+      ),
+      AttendanceRecord(
+        className: '1º Ano C',
+        date: DateTime(2026, 11, 14, 7, 52),
+        present: 30,
+        absent: 1,
+      ),
+      AttendanceRecord(
+        className: '3º Ano B',
+        date: DateTime(2026, 11, 13, 10, 18),
+        present: 24,
+        absent: 5,
+      ),
+    ]);
+  }
+
   CoordinatorProfile _profile = const CoordinatorProfile(
     name: '',
     email: '',
@@ -76,6 +114,22 @@ class SchoolRepository extends ChangeNotifier {
         students: const [],
       ),
     ];
+    notifyListeners();
+  }
+
+  void updateClass({
+    required String id,
+    required String name,
+    required String room,
+    required String time,
+  }) {
+    _classes = _classes
+        .map(
+          (item) => item.id == id
+              ? item.copyWith(name: name, room: room, time: time)
+              : item,
+        )
+        .toList(growable: false);
     notifyListeners();
   }
 
@@ -198,4 +252,34 @@ class SchoolRepository extends ChangeNotifier {
 
   static AttendanceStatus _statusForConfidence(double confidence) =>
       confidence >= .75 ? AttendanceStatus.present : AttendanceStatus.review;
+
+  static SchoolClass _demoClass(
+    String id,
+    String name,
+    String room,
+    String time,
+    int studentCount,
+  ) => SchoolClass(
+    id: id,
+    name: name,
+    room: room,
+    time: time,
+    students: List.generate(
+      studentCount,
+      (index) => Student(
+        id: '$id-student-$index',
+        name: index == 0
+            ? 'Beatriz Nogueira'
+            : index == 1
+            ? 'Lucas Martins'
+            : 'Aluno ${(index + 1).toString().padLeft(2, '0')}',
+        registration: '2026${(index + 1).toString().padLeft(4, '0')}',
+        guardian: '',
+        phone: '',
+        status: index == 1 ? AttendanceStatus.review : AttendanceStatus.present,
+        confidence: index == 1 ? .61 : .96,
+      ),
+      growable: false,
+    ),
+  );
 }

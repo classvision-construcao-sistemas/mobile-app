@@ -8,23 +8,48 @@ class HomePage extends StatelessWidget {
     super.key,
     required this.onOpenCamera,
     this.userName = 'Lucas',
+    this.onOpenReview,
+    this.onOpenNotifications,
+    this.onViewAllPending,
   });
 
   final VoidCallback onOpenCamera;
   final String userName;
+  final VoidCallback? onOpenReview;
+  final VoidCallback? onOpenNotifications;
+  final VoidCallback? onViewAllPending;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => constraints.maxWidth >= 900
-        ? _DesktopDashboard(userName: userName, onOpenCamera: onOpenCamera)
-        : _MobileDashboard(userName: userName, onOpenCamera: onOpenCamera),
+        ? _DesktopDashboard(
+            userName: userName,
+            onOpenCamera: onOpenCamera,
+            onOpenReview: onOpenReview,
+            onOpenNotifications: onOpenNotifications,
+            onViewAllPending: onViewAllPending,
+          )
+        : _MobileDashboard(
+            userName: userName,
+            onOpenCamera: onOpenCamera,
+            onOpenReview: onOpenReview,
+          ),
   );
 }
 
 class _DesktopDashboard extends StatelessWidget {
-  const _DesktopDashboard({required this.userName, required this.onOpenCamera});
+  const _DesktopDashboard({
+    required this.userName,
+    required this.onOpenCamera,
+    this.onOpenReview,
+    this.onOpenNotifications,
+    this.onViewAllPending,
+  });
   final String userName;
   final VoidCallback onOpenCamera;
+  final VoidCallback? onOpenReview;
+  final VoidCallback? onOpenNotifications;
+  final VoidCallback? onViewAllPending;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -64,7 +89,7 @@ class _DesktopDashboard extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           IconButton.filledTonal(
-            onPressed: () {},
+            onPressed: onOpenNotifications,
             icon: const Icon(Icons.notifications_none_rounded),
           ),
           const SizedBox(width: 10),
@@ -141,7 +166,13 @@ class _DesktopDashboard extends StatelessWidget {
         children: [
           const Expanded(flex: 3, child: _PresenceChart()),
           const SizedBox(width: 20),
-          Expanded(flex: 2, child: _ReviewPanel(onOpenCamera: onOpenCamera)),
+          Expanded(
+            flex: 2,
+            child: _ReviewPanel(
+              onOpenReview: onOpenReview ?? onOpenCamera,
+              onViewAllPending: onViewAllPending,
+            ),
+          ),
         ],
       ),
       const SizedBox(height: 22),
@@ -151,9 +182,14 @@ class _DesktopDashboard extends StatelessWidget {
 }
 
 class _MobileDashboard extends StatelessWidget {
-  const _MobileDashboard({required this.userName, required this.onOpenCamera});
+  const _MobileDashboard({
+    required this.userName,
+    required this.onOpenCamera,
+    this.onOpenReview,
+  });
   final String userName;
   final VoidCallback onOpenCamera;
+  final VoidCallback? onOpenReview;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -262,14 +298,14 @@ class _MobileDashboard extends StatelessWidget {
         title: '2º Ano A · Matemática',
         subtitle: '6 alunos com baixa confiança',
         action: 'Revisar',
-        onTap: onOpenCamera,
+        onTap: onOpenReview ?? onOpenCamera,
       ),
       const SizedBox(height: 10),
       _MobileReviewCard(
         title: '3º Ano B · Química',
         subtitle: 'Chamada aguardando confirmação',
         action: 'Abrir',
-        onTap: onOpenCamera,
+        onTap: onOpenReview ?? onOpenCamera,
       ),
       const SizedBox(height: 24),
       const Text(
@@ -380,8 +416,9 @@ class _PresenceChart extends StatelessWidget {
 }
 
 class _ReviewPanel extends StatelessWidget {
-  const _ReviewPanel({required this.onOpenCamera});
-  final VoidCallback onOpenCamera;
+  const _ReviewPanel({required this.onOpenReview, this.onViewAllPending});
+  final VoidCallback onOpenReview;
+  final VoidCallback? onViewAllPending;
   @override
   Widget build(BuildContext context) => AdminSurface(
     child: Column(
@@ -400,16 +437,16 @@ class _ReviewPanel extends StatelessWidget {
         _DesktopReviewRow(
           title: '2º Ano A — Matemática',
           subtitle: '6 alunos com baixa confiança',
-          onTap: onOpenCamera,
+          onTap: onOpenReview,
         ),
         const Divider(),
         _DesktopReviewRow(
           title: '3º Ano B — Química',
           subtitle: 'Chamada não confirmada',
-          onTap: onOpenCamera,
+          onTap: onOpenReview,
         ),
         TextButton(
-          onPressed: () {},
+          onPressed: onViewAllPending,
           child: const Text('Ver todas as pendências →'),
         ),
       ],

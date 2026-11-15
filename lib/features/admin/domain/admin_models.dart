@@ -55,15 +55,24 @@ class Institution {
   final DateTime createdAt;
   final InstitutionStatus status;
 
-  Institution copyWith({InstitutionStatus? status}) => Institution(
+  Institution copyWith({
+    String? name,
+    String? document,
+    String? institutionalEmail,
+    String? phone,
+    String? address,
+    String? adminName,
+    int? users,
+    InstitutionStatus? status,
+  }) => Institution(
     id: id,
-    name: name,
-    document: document,
-    institutionalEmail: institutionalEmail,
-    phone: phone,
-    address: address,
-    adminName: adminName,
-    users: users,
+    name: name ?? this.name,
+    document: document ?? this.document,
+    institutionalEmail: institutionalEmail ?? this.institutionalEmail,
+    phone: phone ?? this.phone,
+    address: address ?? this.address,
+    adminName: adminName ?? this.adminName,
+    users: users ?? this.users,
     createdAt: createdAt,
     status: status ?? this.status,
   );
@@ -94,6 +103,7 @@ class InstitutionAdminAccount {
 class CoordinatorAccount {
   const CoordinatorAccount({
     required this.id,
+    required this.institutionId,
     required this.name,
     required this.email,
     required this.status,
@@ -102,6 +112,7 @@ class CoordinatorAccount {
   });
 
   final String id;
+  final String institutionId;
   final String name;
   final String email;
   final AccountStatus status;
@@ -111,6 +122,7 @@ class CoordinatorAccount {
   CoordinatorAccount copyWith({AccountStatus? status, int? inviteSendCount}) =>
       CoordinatorAccount(
         id: id,
+        institutionId: institutionId,
         name: name,
         email: email,
         status: status ?? this.status,

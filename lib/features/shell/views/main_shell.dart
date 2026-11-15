@@ -7,6 +7,7 @@ import '../../../core/navigation/app_routes.dart';
 import '../../../core/viewmodels/main_shell_view_model.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
 import '../../../core/widgets/app_bottom_navigation.dart';
+import '../../../data/repositories/school_repository.dart';
 import '../../classes/views/classes_page.dart';
 import '../../history/views/history_page.dart';
 import '../../home/view/home_page.dart';
@@ -41,18 +42,35 @@ class _MainShellContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<MainShellViewModel>();
-    void openCamera() => Navigator.pushNamed(context, AppRoutes.camera);
+    final repository = context.watch<SchoolRepository>();
+    final firstClassId = repository.classes.firstOrNull?.id;
+    void openCamera([String? id]) => Navigator.pushNamed(
+      context,
+      AppRoutes.camera,
+      arguments: id ?? firstClassId,
+    );
+    void openReview(String id) =>
+        Navigator.pushNamed(context, AppRoutes.review, arguments: id);
+    void openClass(String id) =>
+        Navigator.pushNamed(context, AppRoutes.classDetails, arguments: id);
     void signOut() {
       context.read<AppSession>().signOut();
       Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
     }
 
     final pages = <Widget>[
-      HomePage(onOpenCamera: openCamera),
-      const ClassesPage(),
+      HomePage(
+        onOpenCamera: openCamera,
+        onOpenReview: firstClassId == null
+            ? null
+            : () => openReview(firstClassId),
+        onOpenNotifications: () => viewModel.select(7),
+        onViewAllPending: () => viewModel.select(4),
+      ),
+      ClassesPage(onOpenClass: openClass),
       const StudentsPage(),
       const TeachersPage(),
-      HistoryPage(onOpenReview: openCamera),
+      HistoryPage(onOpenReview: openReview),
       const ReportsPage(),
       ProfilePage(
         onStudents: () => viewModel.select(2),
@@ -77,7 +95,7 @@ class _MainShellContent extends StatelessWidget {
             profileName: 'Lucas Ferreira',
             profileRole: 'Coordenador',
             onSignOut: signOut,
-            body: pages[desktopIndex],
+            body: viewModel.index == 7 ? pages[7] : pages[desktopIndex],
           );
         }
         return Scaffold(

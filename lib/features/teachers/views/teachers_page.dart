@@ -19,6 +19,40 @@ class TeachersPage extends StatelessWidget {
     ('AR', 'Ana Paula Rocha', 'Programação', '2º Ano D', '94,7%', 'Ativo'),
   ];
 
+  Future<void> _invite(BuildContext context) async {
+    final controller = TextEditingController();
+    final sent = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Convidar professor'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'E-mail institucional',
+            hintText: 'professor@instituicao.edu.br',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              controller.text.contains('@') && controller.text.contains('.'),
+            ),
+            child: const Text('Enviar convite'),
+          ),
+        ],
+      ),
+    );
+    if (sent != true || !context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Convite enviado.')));
+  }
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
@@ -50,7 +84,7 @@ class TeachersPage extends StatelessWidget {
             ),
           ),
           FilledButton.icon(
-            onPressed: () {},
+            onPressed: () => _invite(context),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Convidar professor'),
           ),

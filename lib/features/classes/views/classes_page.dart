@@ -1,64 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../data/models/school_models.dart';
+import '../../../data/repositories/school_repository.dart';
 
 class ClassesPage extends StatelessWidget {
-  const ClassesPage({super.key});
-
-  static const classes = [
-    (
-      '2A',
-      '2º Ano A',
-      'Informática · 32 alunos',
-      'Rafael Mendes',
-      '96,8%',
-      'Ativa',
-    ),
-    (
-      '1C',
-      '1º Ano C',
-      'Agropecuária · 31 alunos',
-      'Camila Ribeiro',
-      '95,3%',
-      'Ativa',
-    ),
-    (
-      '3B',
-      '3º Ano B',
-      'Química · 29 alunos',
-      'João Vitor Lima',
-      '82,1%',
-      'Atenção',
-    ),
-    (
-      '2D',
-      '2º Ano D',
-      'Informática · 34 alunos',
-      'Ana Paula Rocha',
-      '94,7%',
-      'Ativa',
-    ),
-    (
-      '1B',
-      '1º Ano B',
-      'Alimentos · 30 alunos',
-      'Fernanda Alves',
-      '93,9%',
-      'Ativa',
-    ),
-  ];
+  const ClassesPage({super.key, this.onOpenClass});
+  final ValueChanged<String>? onOpenClass;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => constraints.maxWidth >= 900
-        ? const _DesktopClasses()
-        : const _MobileClasses(),
-  );
+  Widget build(BuildContext context) {
+    final classes = context.watch<SchoolRepository>().classes;
+    final rows = [
+      for (var index = 0; index < classes.length; index++)
+        _ClassRowData.fromClass(classes[index], index),
+    ];
+    void open(String id) => onOpenClass != null
+        ? onOpenClass!(id)
+        : Navigator.pushNamed(context, AppRoutes.classDetails, arguments: id);
+    return LayoutBuilder(
+      builder: (context, constraints) => constraints.maxWidth >= 900
+          ? _DesktopClasses(rows: rows, onOpenClass: open)
+          : _MobileClasses(rows: rows, onOpenClass: open),
+    );
+  }
 }
 
 class _DesktopClasses extends StatelessWidget {
-  const _DesktopClasses();
+  const _DesktopClasses({required this.rows, required this.onOpenClass});
+  final List<_ClassRowData> rows;
+  final ValueChanged<String> onOpenClass;
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
@@ -91,7 +65,8 @@ class _DesktopClasses extends StatelessWidget {
             ),
           ),
           FilledButton.icon(
-            onPressed: () {},
+            onPressed: () =>
+                Navigator.pushNamed(context, AppRoutes.classRegistration),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Nova turma'),
           ),
@@ -146,7 +121,17 @@ class _DesktopClasses extends StatelessWidget {
         child: Column(
           children: [
             const _ClassTableHeader(),
-            for (final item in ClassesPage.classes) _ClassTableRow(item: item),
+            if (rows.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(48),
+                child: Text('Nenhuma turma cadastrada nesta sessão.'),
+              )
+            else
+              for (final item in rows)
+                _ClassTableRow(
+                  item: item,
+                  onTap: () => onOpenClass(item.classroom.id),
+                ),
           ],
         ),
       ),
@@ -167,7 +152,9 @@ class _DesktopClasses extends StatelessWidget {
 }
 
 class _MobileClasses extends StatelessWidget {
-  const _MobileClasses();
+  const _MobileClasses({required this.rows, required this.onOpenClass});
+  final List<_ClassRowData> rows;
+  final ValueChanged<String> onOpenClass;
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
@@ -189,53 +176,62 @@ class _MobileClasses extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 16),
-      for (final item in ClassesPage.classes.take(3)) ...[
-        AdminSurface(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.primarySoft,
-                foregroundColor: AppColors.primary,
-                child: Text(
-                  item.$1,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.$2,
+      if (rows.isEmpty)
+        const AdminSurface(
+          child: Center(child: Text('Nenhuma turma cadastrada nesta sessão.')),
+        )
+      else
+        for (final item in rows.take(5)) ...[
+          InkWell(
+            onTap: () => onOpenClass(item.classroom.id),
+            borderRadius: BorderRadius.circular(16),
+            child: AdminSurface(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: AppColors.primarySoft,
+                    foregroundColor: AppColors.primary,
+                    child: Text(
+                      item.initials,
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      item.$3,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.classroom.name,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${item.course} · ${item.classroom.students.length} alunos',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    item.presence,
+                    style: TextStyle(
+                      color: item.status == 'Atenção'
+                          ? AppColors.warning
+                          : const Color(0xFF15803D),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                item.$5,
-                style: TextStyle(
-                  color: item.$6 == 'Atenção'
-                      ? AppColors.warning
-                      : const Color(0xFF15803D),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-      ],
+          const SizedBox(height: 10),
+        ],
       const SizedBox(height: 14),
       const Text(
         'Filtros rápidos',
@@ -293,64 +289,119 @@ class _ClassTableHeader extends StatelessWidget {
 }
 
 class _ClassTableRow extends StatelessWidget {
-  const _ClassTableRow({required this.item});
-  final (String, String, String, String, String, String) item;
+  const _ClassTableRow({required this.item, required this.onTap});
+  final _ClassRowData item;
+  final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-    decoration: const BoxDecoration(
-      border: Border(top: BorderSide(color: AppColors.divider)),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.primarySoft,
-                child: Text(item.$1),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.$2,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  Text(
-                    item.$3,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 10,
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.primarySoft,
+                  child: Text(item.initials),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.classroom.name,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(flex: 2, child: Text(item.$4)),
-        const Expanded(child: Text('32')),
-        Expanded(
-          child: Text(
-            item.$5,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            item.$6,
-            style: TextStyle(
-              color: item.$6 == 'Atenção'
-                  ? AppColors.warning
-                  : const Color(0xFF15803D),
-              fontWeight: FontWeight.w700,
+                    Text(
+                      '${item.course} · ${item.classroom.room}',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+          Expanded(flex: 2, child: Text(item.teacher)),
+          Expanded(child: Text('${item.classroom.students.length}')),
+          Expanded(
+            child: Text(
+              item.presence,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              item.status,
+              style: TextStyle(
+                color: item.status == 'Atenção'
+                    ? AppColors.warning
+                    : const Color(0xFF15803D),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     ),
   );
+}
+
+class _ClassRowData {
+  const _ClassRowData({
+    required this.classroom,
+    required this.initials,
+    required this.course,
+    required this.teacher,
+    required this.presence,
+    required this.status,
+  });
+
+  final SchoolClass classroom;
+  final String initials;
+  final String course;
+  final String teacher;
+  final String presence;
+  final String status;
+
+  factory _ClassRowData.fromClass(SchoolClass classroom, int index) {
+    const metadata = [
+      ('Informática', 'Rafael Mendes', '96,8%', 'Ativa'),
+      ('Agropecuária', 'Camila Ribeiro', '95,3%', 'Ativa'),
+      ('Química', 'João Vitor Lima', '82,1%', 'Atenção'),
+      ('Informática', 'Ana Paula Rocha', '94,7%', 'Ativa'),
+      ('Alimentos', 'Fernanda Alves', '93,9%', 'Ativa'),
+    ];
+    final meta = index < metadata.length
+        ? metadata[index]
+        : const (
+            'Curso não informado',
+            'Professor não atribuído',
+            '—',
+            'Ativa',
+          );
+    final words = classroom.name.split(' ');
+    final initials = words.length >= 2
+        ? '${words.first.replaceAll(RegExp(r'\D'), '')}${words.last[0]}'
+              .toUpperCase()
+        : classroom.name
+              .substring(0, classroom.name.length.clamp(0, 2))
+              .toUpperCase();
+    return _ClassRowData(
+      classroom: classroom,
+      initials: initials.isEmpty ? 'T' : initials,
+      course: meta.$1,
+      teacher: meta.$2,
+      presence: meta.$3,
+      status: meta.$4,
+    );
+  }
 }

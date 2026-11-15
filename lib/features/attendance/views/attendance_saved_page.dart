@@ -44,20 +44,27 @@ class AttendanceSavedPage extends StatelessWidget {
             const Spacer(),
             PrimaryButton(
               label: 'Voltar para a turma',
-              onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.classDetails,
-                (route) => route.settings.name == AppRoutes.home,
-                arguments: classId,
-              ),
+              onPressed: () {
+                final navigator = Navigator.of(context);
+                navigator.pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
+                if (classId != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    navigator.pushNamed(
+                      AppRoutes.classDetails,
+                      arguments: classId,
+                    );
+                  });
+                }
+              },
             ),
             const SizedBox(height: 10),
             PrimaryButton(
               label: 'Ir para o início',
               outlined: true,
-              onPressed: () => Navigator.popUntil(
+              onPressed: () => Navigator.pushNamedAndRemoveUntil(
                 context,
-                (route) => route.settings.name == AppRoutes.home,
+                AppRoutes.home,
+                (_) => false,
               ),
             ),
           ],

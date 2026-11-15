@@ -1,5 +1,7 @@
 import 'package:class_vision/app.dart';
 import 'package:class_vision/core/theme/app_theme.dart';
+import 'package:class_vision/core/auth/app_session.dart';
+import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:class_vision/features/admin/data/admin_repository.dart';
 import 'package:class_vision/features/institution_admin/views/institution_admin_shell.dart';
 import 'package:flutter/material.dart';
@@ -11,8 +13,12 @@ void main() {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => AdminRepository(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AdminRepository()),
+          ChangeNotifierProvider(create: (_) => SchoolRepository.demo()),
+          ChangeNotifierProvider(create: (_) => AppSession()),
+        ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
           home: const InstitutionAdminShell(),
@@ -56,11 +62,28 @@ void main() {
     expect(find.text('+ Convidar coordenador'), findsOneWidget);
     expect(find.text('Equipe da instituição'), findsOneWidget);
     expect(find.text('Lucas Ferreira'), findsOneWidget);
+    await tester.drag(find.byType(ListView).first, const Offset(0, -700));
+    await tester.pumpAndSettle();
     expect(
       find.text('Somente administradores da instituição podem'),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('settings tabs expose integration state and save changes', (
+    tester,
+  ) async {
+    await pumpShell(tester, const Size(1440, 1024));
+
+    await tester.tap(find.text('Integração de IA'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reconhecimento facial'), findsOneWidget);
+    expect(find.text('Conectada'), findsOneWidget);
+
+    await tester.tap(find.text('Salvar alterações'));
+    await tester.pump();
+    expect(find.text('Alterações salvas.'), findsOneWidget);
   });
 
   testWidgets('coordinator login never exposes institution administration', (

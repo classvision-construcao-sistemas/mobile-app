@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../data/repositories/school_repository.dart';
 
 class StudentsPage extends StatelessWidget {
   const StudentsPage({super.key});
@@ -75,7 +78,23 @@ class StudentsPage extends StatelessWidget {
             ),
           ),
           FilledButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              final classroom = context
+                  .read<SchoolRepository>()
+                  .classes
+                  .firstOrNull;
+              if (classroom == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cadastre uma turma primeiro.')),
+                );
+                return;
+              }
+              Navigator.pushNamed(
+                context,
+                AppRoutes.studentRegistration,
+                arguments: classroom.id,
+              );
+            },
             icon: const Icon(Icons.add_rounded),
             label: const Text('Novo aluno'),
           ),
