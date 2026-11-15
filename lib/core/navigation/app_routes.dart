@@ -10,7 +10,10 @@ abstract final class AppRoutes {
   static const history = '/history';
   static const calendar = '/calendar';
   static const profile = '/profile';
+  static const users = '/users';
   static const userRegistration = '/user-registration';
+  static const institutions = '/institutions';
+  static const institutionRegistration = '/institution-registration';
   static const classRegistration = '/class-registration';
   static const studentRegistration = '/student-registration';
 }

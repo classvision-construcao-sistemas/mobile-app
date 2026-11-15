@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 
@@ -142,6 +143,10 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.suffixIcon,
+    this.inputFormatters,
+    this.enabled = true,
+    this.helperText,
+    this.onFieldSubmitted,
   });
 
   final String label;
@@ -153,6 +158,10 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
   final Widget? suffixIcon;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool enabled;
+  final String? helperText;
+  final ValueChanged<String>? onFieldSubmitted;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -161,18 +170,186 @@ class AppTextField extends StatelessWidget {
     obscureText: obscureText,
     validator: validator,
     onChanged: onChanged,
-    textInputAction: TextInputAction.next,
+    inputFormatters: inputFormatters,
+    enabled: enabled,
+    onFieldSubmitted: onFieldSubmitted,
+    textInputAction: onFieldSubmitted == null
+        ? TextInputAction.next
+        : TextInputAction.done,
     decoration: InputDecoration(
       labelText: label,
       hintText: hint,
+      helperText: helperText,
+      helperMaxLines: 3,
       prefixIcon: icon == null ? null : Icon(icon, size: 20),
       suffixIcon: suffixIcon,
     ),
   );
 }
 
-void showAppMessage(BuildContext context, String message) {
+/// Mensagem de erro em destaque (ex.: resposta da API).
+class AppErrorBanner extends StatelessWidget {
+  const AppErrorBanner(this.message, {super.key, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+    decoration: BoxDecoration(
+      color: AppColors.error.withValues(alpha: .07),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.error.withValues(alpha: .25)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline_rounded, color: AppColors.error),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(
+              color: AppColors.error,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        if (onRetry != null)
+          TextButton(onPressed: onRetry, child: const Text('Tentar de novo')),
+      ],
+    ),
+  );
+}
+
+/// Bloco "rótulo + valor" usado nas telas de perfil e detalhes.
+class AppInfoTile extends StatelessWidget {
+  const AppInfoTile({
+    super.key,
+    required this.label,
+    required this.value,
+    this.icon,
+    this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final IconData? icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    onTap: onTap,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+    child: Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, color: AppColors.primary, size: 22),
+          const SizedBox(width: 14),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (onTap != null)
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textSecondary,
+          ),
+      ],
+    ),
+  );
+}
+
+/// Etiqueta pequena de status (ativo, inativo, perfil...).
+class AppStatusChip extends StatelessWidget {
+  const AppStatusChip({
+    super.key,
+    required this.label,
+    this.color = AppColors.primary,
+  });
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: .1),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: color,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
+}
+
+Future<bool> showConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+  bool destructive = false,
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          style: destructive
+              ? FilledButton.styleFrom(backgroundColor: AppColors.error)
+              : null,
+          child: Text(confirmLabel),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}
+
+void showAppMessage(
+  BuildContext context,
+  String message, {
+  bool error = false,
+}) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? AppColors.error : null,
+      ),
+    );
 }

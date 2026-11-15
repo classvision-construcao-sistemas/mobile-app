@@ -9,17 +9,9 @@ import '../models/school_models.dart';
 /// repositório começa vazio e mantém apenas o contexto necessário para as telas
 /// durante a sessão atual; nenhum dado fictício é pré-carregado.
 class SchoolRepository extends ChangeNotifier {
-  CoordinatorProfile _profile = const CoordinatorProfile(
-    name: '',
-    email: '',
-    school: '',
-    phone: '',
-  );
-
   List<SchoolClass> _classes = [];
   final List<AttendanceRecord> _history = [];
 
-  CoordinatorProfile get profile => _profile;
   List<SchoolClass> get classes => List.unmodifiable(_classes);
   List<AttendanceRecord> get history => List.unmodifiable(_history);
 
@@ -191,8 +183,11 @@ class SchoolRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile(CoordinatorProfile profile) {
-    _profile = profile;
+  /// Descarta os dados da sessão (chamado no logout).
+  void clear() {
+    if (_classes.isEmpty && _history.isEmpty) return;
+    _classes = [];
+    _history.clear();
     notifyListeners();
   }
 

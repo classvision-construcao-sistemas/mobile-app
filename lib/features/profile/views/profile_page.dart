@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_ui.dart';
-import '../../../data/repositories/school_repository.dart';
+import '../../../data/repositories/auth_repository.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -18,117 +19,161 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = context.watch<SchoolRepository>().profile;
-    final hasProfile = profile.name.trim().isNotEmpty;
+    final auth = context.watch<AuthRepository>();
+    final session = auth.session;
+    if (session == null) return const SizedBox.shrink();
+
+    final role = session.role;
+    final institution = auth.institution;
+    final institutionId = session.institutionId;
+
     return ListView(
       key: const PageStorageKey('profile'),
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
       children: [
-        const AppPageTitle('Perfil', subtitle: 'Sua conta de coordenação.'),
+        const AppPageTitle('Perfil', subtitle: 'Sua conta no ClassVision.'),
         const SizedBox(height: 24),
         Center(
           child: CircleAvatar(
             radius: 46,
             backgroundColor: AppColors.primarySoft,
-            child: hasProfile
-                ? Text(
-                    profile.name
-                        .split(RegExp(r'\s+'))
-                        .take(2)
-                        .map((part) => part[0])
-                        .join(),
+            child: session.initials.isEmpty
+                ? const Icon(
+                    Icons.person_outline_rounded,
+                    color: AppColors.primary,
+                    size: 38,
+                  )
+                : Text(
+                    session.initials,
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                     ),
-                  )
-                : const Icon(
-                    Icons.person_outline_rounded,
-                    color: AppColors.primary,
-                    size: 38,
                   ),
           ),
         ),
         const SizedBox(height: 13),
         Text(
-          hasProfile ? profile.name : 'Perfil não cadastrado',
+          session.name.isEmpty ? session.email : session.name,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         Text(
-          hasProfile ? profile.email : 'Complete seus dados de coordenação',
+          session.roleLabel,
           textAlign: TextAlign.center,
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 24),
+        AppInfoTile(
+          icon: Icons.school_outlined,
+          label: 'Instituição',
+          value:
+              institution?.name ??
+              (institutionId == null
+                  ? 'Instituição não informada'
+                  : 'Instituição #$institutionId'),
+        ),
+        if (institution != null && institution.phone.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          AppInfoTile(
+            icon: Icons.phone_outlined,
+            label: 'Telefone da instituição',
+            value: institution.formattedPhone,
+          ),
+        ],
+        const SizedBox(height: 12),
+        AppInfoTile(
+          icon: Icons.mail_outline_rounded,
+          label: 'E-mail',
+          value: session.email,
+        ),
+        const SizedBox(height: 12),
+        AppInfoTile(
+          icon: Icons.verified_user_outlined,
+          label: 'Permissões',
+          value: role?.permissionsSummary ?? 'Turmas, chamadas e histórico',
+        ),
+        if (role != null && (role.canViewUsers || role.canEditInstitution)) ...[
+          const SizedBox(height: 24),
+          const Text(
+            'Administração',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          if (role.canViewUsers) ...[
+            AppInfoTile(
+              icon: Icons.manage_accounts_outlined,
+              label: role.canManageUsers
+                  ? 'Cadastrar e gerenciar'
+                  : 'Consultar',
+              value: 'Usuários',
+              onTap: () => Navigator.pushNamed(context, AppRoutes.users),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (role.canManageInstitutions)
+            AppInfoTile(
+              icon: Icons.apartment_rounded,
+              label: 'Cadastrar, editar, ativar e desativar',
+              value: 'Instituições',
+              onTap: () => Navigator.pushNamed(context, AppRoutes.institutions),
+            )
+          else if (role.canEditInstitution && institutionId != null)
+            AppInfoTile(
+              icon: Icons.apartment_rounded,
+              label: 'Nome e telefone',
+              value: 'Dados da instituição',
+              onTap: () => Navigator.pushNamed(
+                context,
+                AppRoutes.institutionRegistration,
+                arguments: institution ?? institutionId,
+              ),
+            ),
+        ],
+        const SizedBox(height: 12),
         AppCard(
           padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _ProfileTile(
-                icon: Icons.school_outlined,
-                title: profile.school.isEmpty
-                    ? 'Instituição não informada'
-                    : profile.school,
-              ),
-              const Divider(height: 1),
-              _ProfileTile(
-                icon: Icons.phone_outlined,
-                title: profile.phone.isEmpty
-                    ? 'Telefone não informado'
-                    : profile.phone,
-              ),
-              const Divider(height: 1),
-              SwitchListTile.adaptive(
-                secondary: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: AppColors.primary,
-                ),
-                title: const Text(
-                  'Notificações',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                value: _notifications,
-                onChanged: (value) => setState(() => _notifications = value),
-              ),
-            ],
+          child: SwitchListTile.adaptive(
+            secondary: const Icon(
+              Icons.notifications_none_rounded,
+              color: AppColors.primary,
+            ),
+            title: const Text(
+              'Notificações',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            value: _notifications,
+            onChanged: (value) => setState(() => _notifications = value),
           ),
         ),
         const SizedBox(height: 18),
+        if (role != null && role.canManageUsers && session.userId != null) ...[
+          PrimaryButton(
+            label: 'Editar perfil',
+            icon: Icons.edit_outlined,
+            outlined: true,
+            onPressed: () => Navigator.pushNamed(
+              context,
+              AppRoutes.userRegistration,
+              arguments: session.userId,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         PrimaryButton(
-          label: 'Editar perfil',
-          icon: Icons.edit_outlined,
+          label: 'Sair da conta',
+          icon: Icons.logout_rounded,
           outlined: true,
-          onPressed: () => Navigator.pushNamed(
-            context,
-            AppRoutes.userRegistration,
-            arguments: true,
-          ),
+          onPressed: auth.logout,
         ),
-        const SizedBox(height: 12),
-        TextButton.icon(
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.login,
-            (_) => false,
-          ),
-          icon: const Icon(Icons.logout_rounded),
-          label: const Text('Sair da conta'),
+        const SizedBox(height: 10),
+        Text(
+          'Sessão válida até ${formatBrDateTime(session.expiresAt)}',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
         ),
       ],
     );
   }
-}
-
-class _ProfileTile extends StatelessWidget {
-  const _ProfileTile({required this.icon, required this.title});
-  final IconData icon;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-    leading: Icon(icon, color: AppColors.primary),
-    title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-  );
 }
