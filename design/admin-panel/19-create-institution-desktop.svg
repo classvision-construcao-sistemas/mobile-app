@@ -30,20 +30,20 @@
   <text x="324" y="326" font-family="Inter,Arial" font-size="12" fill="#6B7280">Informações oficiais da nova organização.</text>
   <text x="324" y="369" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Nome da instituição</text>
   <rect x="324" y="380" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="341" y="407" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Instituto Federal Goiano — Câmpus Urutaí</text>
+  <text x="341" y="407" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Colégio Horizonte</text>
   <text x="324" y="458" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">CNPJ ou código INEP</text>
   <rect x="324" y="469" width="214" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="341" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">52018437</text>
+  <text x="341" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">12.345.678/0001-90</text>
   <text x="562" y="458" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Telefone</text>
   <rect x="562" y="469" width="214" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="579" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">(64) 3465-1900</text>
+  <text x="579" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">(62) 3251-4200</text>
   <text x="324" y="547" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">E-mail institucional</text>
   <rect x="324" y="558" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="341" y="585" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">contato.urutai@ifgoiano.edu.br</text>
+  <text x="341" y="585" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">contato@horizonte.edu.br</text>
   <text x="324" y="636" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Endereço</text>
   <rect x="324" y="647" width="452" height="64" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="341" y="674" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Rodovia Geraldo Silva Nascimento, km 2,5</text>
-  <text x="341" y="694" font-family="Inter,Arial" font-size="12" fill="#667085">Urutaí — GO · 75790-000</text>
+  <text x="341" y="674" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Avenida Central, 850 · Setor Universitário</text>
+  <text x="341" y="694" font-family="Inter,Arial" font-size="12" fill="#667085">Goiânia — GO · 74605-010</text>
   <text x="324" y="751" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Status inicial</text>
   <rect x="324" y="762" width="214" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
   <text x="341" y="789" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Ativa  ⌄</text>
@@ -56,18 +56,18 @@
   <text x="864" y="326" font-family="Inter,Arial" font-size="12" fill="#6B7280">Responsável inicial pela administração da instituição.</text>
   <text x="864" y="369" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Nome do administrador</text>
   <rect x="864" y="380" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="881" y="407" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Marina Costa</text>
+  <text x="881" y="407" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">Paulo Nunes</text>
   <text x="864" y="458" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">E-mail do administrador</text>
   <rect x="864" y="469" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="881" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">marina.costa@ifgoiano.edu.br</text>
+  <text x="881" y="496" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">paulo@horizonte.edu.br</text>
   <text x="864" y="547" font-family="Inter,Arial" font-size="11.5" font-weight="600" fill="#344054">Telefone do administrador</text>
   <rect x="864" y="558" width="452" height="44" rx="9" fill="#FFFFFF" stroke="#D0D5DD"/>
-  <text x="881" y="585" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">(64) 99942-1808</text>
+  <text x="881" y="585" font-family="Inter,Arial" font-size="12.5" fill="#1A1A2E">(62) 99814-2330</text>
   <rect x="864" y="636" width="452" height="104" rx="12" fill="#EFF6FF"/>
   <circle cx="894" cy="669" r="15" fill="#DBEAFE"/>
   <text x="894" y="674" text-anchor="middle" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#2563EB">✉</text>
   <text x="920" y="665" font-family="Inter,Arial" font-size="12.5" font-weight="700" fill="#1D4ED8">Acesso por convite</text>
-  <text x="920" y="687" font-family="Inter,Arial" font-size="11.5" fill="#475467">Marina receberá um link seguro para criar a senha.</text>
+  <text x="920" y="687" font-family="Inter,Arial" font-size="11.5" fill="#475467">Paulo receberá um link seguro para criar a senha.</text>
   <text x="920" y="707" font-family="Inter,Arial" font-size="11.5" fill="#475467">Nenhuma senha temporária será exibida.</text>
   <rect x="864" y="770" width="452" height="48" rx="11" fill="#2563EB"/>
   <text x="1090" y="800" text-anchor="middle" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#FFFFFF">Criar instituição e enviar convite</text>

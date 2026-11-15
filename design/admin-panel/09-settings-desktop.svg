@@ -51,16 +51,16 @@
   <text x="648" y="487" font-family="Inter,Arial" font-size="11.5" fill="#667085">lucas.ferreira@ifgoiano.edu.br · 8 turmas</text>
   <rect x="1079" y="456" width="75" height="28" rx="14" fill="#ECFDF3"/>
   <text x="1116" y="474" text-anchor="middle" font-family="Inter,Arial" font-size="11" font-weight="700" fill="#15803D">Ativo</text>
-  <text x="1181" y="475" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#2563EB">Editar</text>
+  <text x="1181" y="475" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#B45309">Desativar</text>
   <text x="1260" y="475" font-family="Inter,Arial" font-size="12" fill="#B42318">Remover</text>
   <rect x="582" y="520" width="734" height="70" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
   <circle cx="616" cy="555" r="18" fill="#FCE7F3"/>
   <text x="616" y="560" text-anchor="middle" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#BE185D">JP</text>
   <text x="648" y="550" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#1A1A2E">Juliana Prado</text>
   <text x="648" y="569" font-family="Inter,Arial" font-size="11.5" fill="#667085">juliana.prado@ifgoiano.edu.br · 6 turmas</text>
-  <rect x="1079" y="538" width="75" height="28" rx="14" fill="#ECFDF3"/>
-  <text x="1116" y="556" text-anchor="middle" font-family="Inter,Arial" font-size="11" font-weight="700" fill="#15803D">Ativo</text>
-  <text x="1181" y="557" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#2563EB">Editar</text>
+  <rect x="1079" y="538" width="75" height="28" rx="14" fill="#F2F4F7"/>
+  <text x="1116" y="556" text-anchor="middle" font-family="Inter,Arial" font-size="11" font-weight="700" fill="#667085">Inativo</text>
+  <text x="1181" y="557" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#2563EB">Ativar</text>
   <text x="1260" y="557" font-family="Inter,Arial" font-size="12" fill="#B42318">Remover</text>
   <rect x="582" y="602" width="734" height="70" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
   <circle cx="616" cy="637" r="18" fill="#FEF3C7"/>
