@@ -14,8 +14,18 @@ abstract final class ApiConfig {
   static String get facialRecognitionBaseUrl =>
       _resolve(_configuredFacialBaseUrl, port: 5000);
 
+  /// Endereço publicado do `cv-authentication-service` no Railway.
+  static const defaultAuthBaseUrl =
+      'https://cv-authentication-service-production.up.railway.app';
+
   /// Microsserviço de autenticação (`cv-authentication-service`).
-  static String get authBaseUrl => _resolve(_configuredAuthBaseUrl, port: 8080);
+  ///
+  /// Usa a API publicada por padrão. Para apontar para um backend local, rode
+  /// com `--dart-define=AUTH_API_BASE_URL=http://localhost:8080`.
+  static String get authBaseUrl => (_configuredAuthBaseUrl.isNotEmpty
+          ? _configuredAuthBaseUrl
+          : defaultAuthBaseUrl)
+      .replaceFirst(RegExp(r'/+$'), '');
 
   static String _resolve(String configured, {required int port}) {
     if (configured.isNotEmpty) {
