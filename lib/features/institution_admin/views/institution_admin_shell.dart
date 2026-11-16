@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/auth/app_session.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../../core/auth/user_role.dart';
 import '../../../core/layout/app_breakpoints.dart';
 import '../../../core/navigation/app_routes.dart';
@@ -55,9 +55,7 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
           child: CoordinatorsPage(
             mobile: true,
             onBack: () {
-              context.read<AppSession>().signOut();
-              Navigator.of(context)
-                  .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+              context.read<AuthRepository>().logout();
             },
           ),
         );
@@ -111,9 +109,7 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
         profileName: 'Marina Costa',
         profileRole: 'Administrador da instituição',
         onSignOut: () {
-          context.read<AppSession>().signOut();
-          Navigator.of(context)
-              .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+          context.read<AuthRepository>().logout();
         },
         body: body,
       );

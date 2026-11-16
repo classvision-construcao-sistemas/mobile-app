@@ -1,6 +1,6 @@
-import 'package:class_vision/core/auth/user_role.dart';
 import 'package:class_vision/core/navigation/app_routes.dart';
 import 'package:class_vision/core/navigation/route_policy.dart';
+import 'package:class_vision/data/models/auth_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -8,24 +8,24 @@ void main() {
     test('system administrator is isolated from every academic route', () {
       for (final route in RoutePolicy.academicRoutes) {
         expect(
-          RoutePolicy.canAccess(UserRole.systemAdmin, route),
+          RoutePolicy.canAccess(UserRole.administrador, route),
           isFalse,
           reason: route,
         );
       }
       expect(
-        RoutePolicy.canAccess(UserRole.systemAdmin, AppRoutes.systemAdmin),
+        RoutePolicy.canAccess(UserRole.administrador, AppRoutes.systemAdmin),
         isTrue,
       );
     });
 
     test('coordinator cannot access either administrative root', () {
       expect(
-        RoutePolicy.canAccess(UserRole.coordinator, AppRoutes.systemAdmin),
+        RoutePolicy.canAccess(UserRole.coordenador, AppRoutes.systemAdmin),
         isFalse,
       );
       expect(
-        RoutePolicy.canAccess(UserRole.coordinator, AppRoutes.institutionAdmin),
+        RoutePolicy.canAccess(UserRole.coordenador, AppRoutes.institutionAdmin),
         isFalse,
       );
     });
@@ -33,20 +33,20 @@ void main() {
     test('institution administrator can operate academics and settings', () {
       for (final route in RoutePolicy.academicRoutes) {
         expect(
-          RoutePolicy.canAccess(UserRole.institutionAdmin, route),
+          RoutePolicy.canAccess(UserRole.adminInstituicao, route),
           isTrue,
           reason: route,
         );
       }
       expect(
         RoutePolicy.canAccess(
-          UserRole.institutionAdmin,
+          UserRole.adminInstituicao,
           AppRoutes.institutionAdmin,
         ),
         isTrue,
       );
       expect(
-        RoutePolicy.canAccess(UserRole.institutionAdmin, AppRoutes.systemAdmin),
+        RoutePolicy.canAccess(UserRole.adminInstituicao, AppRoutes.systemAdmin),
         isFalse,
       );
     });

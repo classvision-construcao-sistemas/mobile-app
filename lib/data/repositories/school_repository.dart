@@ -12,12 +12,6 @@ class SchoolRepository extends ChangeNotifier {
   SchoolRepository();
 
   SchoolRepository.demo() {
-    _profile = const CoordinatorProfile(
-      name: 'Lucas Ferreira',
-      email: 'lucas.ferreira@ifgoiano.edu.br',
-      school: 'Instituto Federal Goiano — Câmpus Urutaí',
-      phone: '(64) 99942-1808',
-    );
     _classes = [
       _demoClass('class-2a', '2º Ano A', 'Sala 204', '07:30–12:50', 32),
       _demoClass('class-1c', '1º Ano C', 'Sala 118', '07:30–12:50', 31),
@@ -46,18 +40,9 @@ class SchoolRepository extends ChangeNotifier {
       ),
     ]);
   }
-
-  CoordinatorProfile _profile = const CoordinatorProfile(
-    name: '',
-    email: '',
-    school: '',
-    phone: '',
-  );
-
   List<SchoolClass> _classes = [];
   final List<AttendanceRecord> _history = [];
 
-  CoordinatorProfile get profile => _profile;
   List<SchoolClass> get classes => List.unmodifiable(_classes);
   List<AttendanceRecord> get history => List.unmodifiable(_history);
 
@@ -245,8 +230,11 @@ class SchoolRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile(CoordinatorProfile profile) {
-    _profile = profile;
+  /// Descarta os dados da sessão (chamado no logout).
+  void clear() {
+    if (_classes.isEmpty && _history.isEmpty) return;
+    _classes = [];
+    _history.clear();
     notifyListeners();
   }
 

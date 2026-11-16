@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/auth/user_role.dart';
-import '../../../core/auth/app_session.dart';
-import '../../../core/navigation/app_routes.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
@@ -115,9 +114,7 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
       destinations: _destinations,
       onDestinationSelected: _selectDestination,
       onSignOut: () {
-        context.read<AppSession>().signOut();
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+        context.read<AuthRepository>().logout();
       },
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),

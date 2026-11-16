@@ -83,29 +83,3 @@ class AttendanceRecord {
   final int present;
   final int absent;
 }
-
-class CoordinatorProfile {
-  const CoordinatorProfile({
-    required this.name,
-    required this.email,
-    required this.school,
-    required this.phone,
-  });
-
-  final String name;
-  final String email;
-  final String school;
-  final String phone;
-
-  CoordinatorProfile copyWith({
-    String? name,
-    String? email,
-    String? school,
-    String? phone,
-  }) => CoordinatorProfile(
-    name: name ?? this.name,
-    email: email ?? this.email,
-    school: school ?? this.school,
-    phone: phone ?? this.phone,
-  );
-}

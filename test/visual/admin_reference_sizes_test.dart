@@ -2,15 +2,18 @@ import 'package:class_vision/app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/fake_auth_server.dart';
+
 void main() {
   Future<void> startApp(WidgetTester tester, Size size) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const ClassVisionApp());
+    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
   }
 
   Future<void> login(WidgetTester tester, String email) async {
     await tester.enterText(find.byType(TextFormField).first, email);
+    await tester.enterText(find.byType(TextFormField).at(1), 'senha123');
     await tester.tap(find.text('Acessar plataforma'));
     await tester.pumpAndSettle();
   }
@@ -105,7 +108,7 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
-    await tester.pumpWidget(const ClassVisionApp());
+    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
     await login(tester, 'marina.costa@ifgoiano.edu.br');
     expect(find.text('Equipe da instituição'), findsOneWidget); // 25
     expect(tester.takeException(), isNull);

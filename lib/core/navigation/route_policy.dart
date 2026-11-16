@@ -1,4 +1,4 @@
-import '../auth/user_role.dart';
+import '../../data/models/auth_models.dart';
 import 'app_routes.dart';
 
 abstract final class RoutePolicy {
@@ -13,7 +13,6 @@ abstract final class RoutePolicy {
     AppRoutes.history,
     AppRoutes.calendar,
     AppRoutes.profile,
-    AppRoutes.userRegistration,
     AppRoutes.classRegistration,
     AppRoutes.studentRegistration,
   };
@@ -28,12 +27,20 @@ abstract final class RoutePolicy {
 
   static Set<UserRole> allowedRoles(String? route) => switch (route) {
     AppRoutes.login => UserRole.values.toSet(),
-    AppRoutes.systemAdmin => const {UserRole.systemAdmin},
-    AppRoutes.institutionAdmin => const {UserRole.institutionAdmin},
-    AppRoutes.coordinator => const {UserRole.coordinator},
+    AppRoutes.systemAdmin => const {UserRole.administrador},
+    AppRoutes.institutionAdmin => const {UserRole.adminInstituicao},
+    AppRoutes.coordinator => const {
+      UserRole.coordenador,
+      UserRole.professor,
+      UserRole.secretario,
+      UserRole.assistente,
+    },
     final String value when academicRoutes.contains(value) => const {
-      UserRole.institutionAdmin,
-      UserRole.coordinator,
+      UserRole.adminInstituicao,
+      UserRole.coordenador,
+      UserRole.professor,
+      UserRole.secretario,
+      UserRole.assistente,
     },
     _ => const {},
   };

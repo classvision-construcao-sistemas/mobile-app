@@ -7,15 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import '../../helpers/fake_auth_server.dart';
+
 void main() {
   Future<void> signIn(WidgetTester tester, Size size) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const ClassVisionApp());
+    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
     await tester.enterText(
       find.byType(TextFormField).first,
       'lucas.ferreira@ifgoiano.edu.br',
     );
+    await tester.enterText(find.byType(TextFormField).at(1), 'senha123');
     await tester.tap(find.text('Acessar plataforma'));
     await tester.pumpAndSettle();
   }

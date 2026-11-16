@@ -1,12 +1,13 @@
 import 'package:class_vision/app.dart';
 import 'package:class_vision/core/theme/app_theme.dart';
-import 'package:class_vision/core/auth/app_session.dart';
 import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:class_vision/features/admin/data/admin_repository.dart';
 import 'package:class_vision/features/institution_admin/views/institution_admin_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+
+import '../../helpers/fake_auth_server.dart';
 
 void main() {
   Future<void> pumpShell(
@@ -21,7 +22,6 @@ void main() {
         providers: [
           ChangeNotifierProvider(create: (_) => AdminRepository()),
           ChangeNotifierProvider(create: (_) => SchoolRepository.demo()),
-          ChangeNotifierProvider(create: (_) => AppSession()),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -107,11 +107,12 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const ClassVisionApp());
+    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
     await tester.enterText(
       find.byType(TextFormField).first,
       'coordenacao@escola.edu.br',
     );
+    await tester.enterText(find.byType(TextFormField).at(1), 'senha123');
     await tester.tap(find.text('Acessar plataforma'));
     await tester.pumpAndSettle();
 

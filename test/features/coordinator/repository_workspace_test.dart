@@ -13,7 +13,6 @@ void main() {
     expect(SchoolRepository().history, isEmpty);
 
     final demo = SchoolRepository.demo();
-    expect(demo.profile.name, 'Lucas Ferreira');
     expect(demo.classes, isNotEmpty);
     expect(demo.history, isNotEmpty);
   });

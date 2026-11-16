@@ -7,33 +7,83 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'helpers/fake_auth_server.dart';
+
 void main() {
-  testWidgets('starts on the interactive coordinator login', (tester) async {
+  Future<void> pumpApp(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(ClassVisionApp(authApi: fakeAuthApi()));
+  }
 
-    await tester.pumpWidget(const ClassVisionApp());
+  Future<void> signIn(
+    WidgetTester tester, {
+    String password = 'senha123',
+  }) async {
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'maria@classvision.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), password);
+    await tester.tap(find.text('Acessar plataforma'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('starts on the login of the authentication service', (
+    tester,
+  ) async {
+    await pumpApp(tester);
 
     expect(find.text('Acessar plataforma'), findsOneWidget);
-    expect(find.text('Acessos de demonstração'), findsOneWidget);
+    expect(find.text('Criar conta'), findsNothing);
     expect(find.byType(TextFormField), findsNWidgets(2));
   });
 
-  testWidgets('navigates from login to classes and preserves the shell', (
+  testWidgets('shows the message returned for invalid credentials', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpApp(tester);
 
-    await tester.pumpWidget(const ClassVisionApp());
-    await tester.tap(find.text('Acessar plataforma'));
-    await tester.pumpAndSettle();
-    expect(find.text('Olá, Lucas'), findsOneWidget);
+    await signIn(tester, password: 'errada');
+
+    expect(find.text('Email ou senha inválidos.'), findsOneWidget);
+    expect(find.textContaining('Bom dia'), findsNothing);
+  });
+
+  testWidgets('signs in, navigates to classes and preserves the shell', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await signIn(tester);
+    expect(find.text('Olá, Maria'), findsOneWidget);
 
     await tester.tap(find.text('Turmas'));
     await tester.pumpAndSettle();
     expect(find.text('Buscar turma'), findsOneWidget);
     expect(find.text('28 turmas no semestre 2026/2'), findsOneWidget);
+  });
+
+  testWidgets('shows the token data on the profile and logs out', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await signIn(tester);
+
+    await tester.tap(find.text('Mais'));
+    await tester.pumpAndSettle();
+    expect(find.text('Maria Souza'), findsOneWidget);
+    expect(find.text('Professor · IF Goiano'), findsOneWidget);
+    expect(
+      find.text('Instituto Federal Goiano - Campus Urutaí'),
+      findsOneWidget,
+    );
+    expect(find.text('Usuários'), findsNothing);
+
+    await tester.ensureVisible(find.text('Sair da conta'));
+    await tester.tap(find.text('Sair da conta'));
+    await tester.pumpAndSettle();
+    expect(find.text('Acessar plataforma'), findsOneWidget);
   });
 
   testWidgets('shows session students and editable attendance statuses', (

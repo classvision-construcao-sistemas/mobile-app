@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../data/models/auth_models.dart';
+import '../../../data/repositories/auth_repository.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
@@ -11,119 +14,158 @@ class ProfilePage extends StatelessWidget {
     this.onNotifications,
     this.onSignOut,
   });
+
   final VoidCallback? onStudents;
   final VoidCallback? onTeachers;
   final VoidCallback? onNotifications;
   final VoidCallback? onSignOut;
 
   @override
-  Widget build(BuildContext context) => ListView(
-    key: const PageStorageKey('more'),
-    padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-    children: [
-      const Text(
-        'Mais',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 20),
-      const AdminSurface(
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: AppColors.primarySoft,
-              foregroundColor: AppColors.primary,
-              child: Text('LF', style: TextStyle(fontWeight: FontWeight.w800)),
-            ),
-            SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Lucas Ferreira',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Coordenador · IF Goiano',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthRepository>();
+    final session = auth.session;
+    final institution = auth.institution;
+    final name = session?.name.isNotEmpty == true
+        ? session!.name
+        : 'Lucas Ferreira';
+    final initials = session?.initials.isNotEmpty == true
+        ? session!.initials
+        : 'LF';
+    final role = session?.role == UserRole.coordenador
+        ? 'Coordenador'
+        : session?.roleLabel.isNotEmpty == true
+        ? session!.roleLabel
+        : 'Coordenador';
+    final institutionShort = institution?.name.contains('Goiano') == true
+        ? 'IF Goiano'
+        : institution?.name ?? 'IF Goiano';
+
+    return ListView(
+      key: const PageStorageKey('more'),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+      children: [
+        const Text(
+          'Mais',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 20),
+        AdminSurface(
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: AppColors.primarySoft,
+                foregroundColor: AppColors.primary,
+                child: Text(
+                  initials,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: AppColors.navInactive),
-          ],
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$role · $institutionShort',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                    if (institution != null &&
+                        institution.name != institutionShort)
+                      Text(
+                        institution.name,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 10,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.navInactive,
+              ),
+            ],
+          ),
         ),
-      ),
-      const SizedBox(height: 22),
-      const Text(
-        'GESTÃO',
-        style: TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+        const SizedBox(height: 22),
+        const Text(
+          'GESTÃO',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-      ),
-      const SizedBox(height: 8),
-      AdminSurface(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            _MoreTile(
-              icon: Icons.school_outlined,
-              label: 'Alunos',
-              onTap: onStudents,
-            ),
-            const Divider(height: 1),
-            _MoreTile(
-              icon: Icons.people_outline_rounded,
-              label: 'Professores',
-              onTap: onTeachers,
-            ),
-            const Divider(height: 1),
-            _MoreTile(
-              icon: Icons.notifications_none_rounded,
-              label: 'Notificações',
-              badge: '3',
-              onTap: onNotifications,
-            ),
-          ],
+        const SizedBox(height: 8),
+        AdminSurface(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _MoreTile(
+                icon: Icons.school_outlined,
+                label: 'Alunos',
+                onTap: onStudents,
+              ),
+              const Divider(height: 1),
+              _MoreTile(
+                icon: Icons.people_outline_rounded,
+                label: 'Professores',
+                onTap: onTeachers,
+              ),
+              const Divider(height: 1),
+              _MoreTile(
+                icon: Icons.notifications_none_rounded,
+                label: 'Notificações',
+                badge: '3',
+                onTap: onNotifications,
+              ),
+            ],
+          ),
         ),
-      ),
-      const SizedBox(height: 22),
-      const Text(
-        'PREFERÊNCIAS',
-        style: TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+        const SizedBox(height: 22),
+        const Text(
+          'PREFERÊNCIAS',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-      ),
-      const SizedBox(height: 8),
-      AdminSurface(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            const _MoreTile(
-              icon: Icons.help_outline_rounded,
-              label: 'Ajuda e suporte',
-            ),
-            const Divider(height: 1),
-            _MoreTile(
-              icon: Icons.logout_rounded,
-              label: 'Sair da conta',
-              onTap: onSignOut,
-              danger: true,
-            ),
-          ],
+        const SizedBox(height: 8),
+        AdminSurface(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              const _MoreTile(
+                icon: Icons.help_outline_rounded,
+                label: 'Ajuda e suporte',
+              ),
+              const Divider(height: 1),
+              _MoreTile(
+                icon: Icons.logout_rounded,
+                label: 'Sair da conta',
+                onTap: onSignOut,
+                danger: true,
+              ),
+            ],
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class _MoreTile extends StatelessWidget {
@@ -134,11 +176,13 @@ class _MoreTile extends StatelessWidget {
     this.onTap,
     this.danger = false,
   });
+
   final IconData icon;
   final String label;
   final String? badge;
   final VoidCallback? onTap;
   final bool danger;
+
   @override
   Widget build(BuildContext context) => Material(
     color: Colors.transparent,

@@ -5,6 +5,8 @@ import 'package:class_vision/features/attendance/views/attendance_saved_page.dar
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/fake_auth_server.dart';
+
 void main() {
   Widget app() => MaterialApp(
     theme: AppTheme.lightTheme,
@@ -45,11 +47,12 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(1440, 1024));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const ClassVisionApp());
+    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
     await tester.enterText(
       find.byType(TextFormField).first,
       'marina.costa@ifgoiano.edu.br',
     );
+    await tester.enterText(find.byType(TextFormField).at(1), 'senha123');
     await tester.tap(find.text('Acessar plataforma'));
     await tester.pumpAndSettle();
 

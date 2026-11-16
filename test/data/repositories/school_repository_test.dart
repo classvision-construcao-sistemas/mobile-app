@@ -9,7 +9,17 @@ void main() {
 
     expect(repository.classes, isEmpty);
     expect(repository.history, isEmpty);
-    expect(repository.profile.name, isEmpty);
+  });
+
+  test('clears the session data on logout', () {
+    final repository = SchoolRepository()
+      ..addClass(name: 'Turma A', room: 'Sala 1', time: '08:00');
+    repository.completeAttendance(repository.classes.single.id);
+
+    repository.clear();
+
+    expect(repository.classes, isEmpty);
+    expect(repository.history, isEmpty);
   });
 
   test('maps registrations returned by Milvus to attendance statuses', () {

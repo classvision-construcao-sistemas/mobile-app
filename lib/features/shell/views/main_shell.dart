@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/auth/app_session.dart';
 import '../../../core/auth/user_role.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/viewmodels/main_shell_view_model.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
 import '../../../core/widgets/app_bottom_navigation.dart';
 import '../../../data/repositories/school_repository.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../classes/views/classes_page.dart';
 import '../../history/views/history_page.dart';
 import '../../home/view/home_page.dart';
@@ -43,6 +43,7 @@ class _MainShellContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewModel = context.watch<MainShellViewModel>();
     final repository = context.watch<SchoolRepository>();
+    final auth = context.watch<AuthRepository>();
     final firstClassId = repository.classes.firstOrNull?.id;
     void openCamera([String? id]) => Navigator.pushNamed(
       context,
@@ -54,12 +55,14 @@ class _MainShellContent extends StatelessWidget {
     void openClass(String id) =>
         Navigator.pushNamed(context, AppRoutes.classDetails, arguments: id);
     void signOut() {
-      context.read<AppSession>().signOut();
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+      auth.logout();
     }
 
     final pages = <Widget>[
       HomePage(
+        userName: auth.session?.firstName.isNotEmpty == true
+            ? auth.session!.firstName
+            : 'Lucas',
         onOpenCamera: openCamera,
         onOpenReview: firstClassId == null
             ? null

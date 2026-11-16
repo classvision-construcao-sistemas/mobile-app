@@ -39,17 +39,65 @@ $ flutter pub get
 $ flutter run
 ```
 
-## Acessos de demonstração
+## Autenticação
 
-A tela de login identifica o perfil pelo e-mail e abre automaticamente a área permitida:
+O login, os usuários e as instituições vêm do microsserviço
+[`cv-authentication-service`](https://github.com/classvision-construcao-sistemas/cv-authentication-service).
 
-- `arthur@classvision.app` — Administrador do Sistema. O painel global é exclusivo para desktop; no celular o app orienta o usuário a acessar pelo computador.
-- `marina.costa@ifgoiano.edu.br` — Administradora da Instituição. Configurações e equipe aparecem no desktop, e a gestão de coordenadores possui uma versão mobile dedicada.
-- `lucas.ferreira@ifgoiano.edu.br` — Coordenador. A área acadêmica é responsiva, com barra lateral no desktop e navegação inferior no celular.
+- Emulador Android: `flutter run` usa automaticamente `http://10.0.2.2:8080`.
+- Dispositivo físico: use o IP da máquina na mesma rede, por exemplo:
+  `flutter run --dart-define=AUTH_API_BASE_URL=http://192.168.0.10:8080`.
+- Desktop/iOS Simulator: o endereço padrão é `http://localhost:8080`.
+- API publicada (Railway): `--dart-define=AUTH_API_BASE_URL=https://<dominio-da-api>`.
 
-A senha de demonstração pode ser qualquer valor com pelo menos seis caracteres. As permissões continuam protegidas após o login: coordenadores não acessam administração institucional ou global, e administradores globais não recebem destinos acadêmicos.
+As duas APIs podem ser configuradas juntas:
 
-As telas de referência editáveis estão em `design/admin-panel/`, com pranchetas desktop de `1440 × 1024` e mobile de `390 × 844`.
+```bash
+flutter run \
+  --dart-define=AUTH_API_BASE_URL=http://192.168.0.10:8080 \
+  --dart-define=FACE_API_BASE_URL=http://192.168.0.10:5000
+```
+
+Como funciona no app:
+
+- **Login** (`POST /api/auth/login`): o token JWT devolvido é decodificado para
+  obter `id`, `nome`, `email`, `role` e `instituicaoId`, que alimentam o início,
+  o perfil e os menus. Todas as chamadas protegidas enviam
+  `Authorization: Bearer <token>`.
+- **Sessão**: o token fica só em memória e vale 1 hora. Ao expirar, ou quando a
+  API responder `401` (usuário desativado, e-mail alterado...), o app volta para
+  o login com o motivo. "Sair da conta" descarta o token.
+- **Sem autocadastro**: as contas são criadas por um administrador, como define
+  o serviço. A tela de login não oferece "Criar conta".
+- **Perfil**: mostra nome, perfil de acesso, e-mail e a instituição
+  (`GET /api/instituicoes/buscar-instituicao/{id}`).
+- **Usuários** (Perfil → Administração): `COORDENADOR` consulta;
+  `ADMIN_INSTITUICAO` e `ADMINISTRADOR` cadastram, editam, ativam, desativam e
+  excluem, sempre só com roles até o próprio nível. A edição exige informar a
+  senha, porque a API sempre a substitui ao salvar. Ao editar o próprio perfil,
+  o app entra de novo para atualizar o token.
+- **Instituições**: o `ADMINISTRADOR` cadastra, edita, ativa e desativa; o
+  `ADMIN_INSTITUICAO` edita nome e telefone da própria instituição.
+
+O app esconde o que o perfil não pode fazer, mas quem garante as permissões é
+a API: as mensagens de erro dela (`descricao`) são exibidas como vieram.
+
+> No navegador (`flutter run -d chrome`), o serviço de autenticação ainda não
+> tem CORS configurado, então as chamadas são bloqueadas. Use Android, iOS ou
+> desktop.
+
+Na primeira subida do serviço é criado o administrador geral
+`admin@classvision.com` / `admin123456` (troque a senha fora do ambiente local).
+
+## Painéis por perfil
+
+Após o login, o JWT define automaticamente a área exibida:
+
+- `ADMINISTRADOR` abre o painel global, exclusivo para desktop.
+- `ADMIN_INSTITUICAO` abre a administração da instituição; a gestão de coordenadores também possui versão mobile.
+- `COORDENADOR`, `PROFESSOR`, `SECRETARIO` e `ASSISTENTE` usam a área acadêmica responsiva.
+
+As permissões também são verificadas ao abrir rotas diretamente. As 25 telas de referência editáveis ficam em `design/admin-panel/`, com pranchetas desktop de `1440 × 1024` e mobile de `390 × 844`.
 
 ## Reconhecimento facial
 
