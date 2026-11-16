@@ -1,6 +1,7 @@
 import 'package:class_vision/app.dart';
 import 'package:class_vision/core/theme/app_theme.dart';
 import 'package:class_vision/data/repositories/school_repository.dart';
+import 'package:class_vision/data/repositories/auth_repository.dart';
 import 'package:class_vision/features/admin/data/admin_repository.dart';
 import 'package:class_vision/features/institution_admin/views/institution_admin_shell.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,9 @@ void main() {
         providers: [
           ChangeNotifierProvider(create: (_) => AdminRepository()),
           ChangeNotifierProvider(create: (_) => SchoolRepository.demo()),
+          ChangeNotifierProvider(
+            create: (_) => AuthRepository(api: roleAwareFakeAuthApi()),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,

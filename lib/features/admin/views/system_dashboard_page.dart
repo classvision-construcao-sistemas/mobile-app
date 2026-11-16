@@ -8,9 +8,14 @@ import '../domain/admin_models.dart';
 import 'widgets/admin_page_header.dart';
 
 class SystemDashboardPage extends StatelessWidget {
-  const SystemDashboardPage({super.key, required this.onCreateInstitution});
+  const SystemDashboardPage({
+    super.key,
+    required this.onCreateInstitution,
+    required this.onManageInstitutions,
+  });
 
   final VoidCallback onCreateInstitution;
+  final VoidCallback onManageInstitutions;
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +28,20 @@ class SystemDashboardPage extends StatelessWidget {
         AdminPageHeader(
           title: 'Visão geral da plataforma',
           subtitle: 'Acompanhe instituições, acessos e disponibilidade do ClassVision.',
-          action: AdminPrimaryButton(
-            label: '+ Nova instituição',
-            icon: Icons.add_rounded,
-            onPressed: onCreateInstitution,
+          action: Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: onManageInstitutions,
+                icon: const Icon(Icons.cloud_sync_outlined, size: 18),
+                label: const Text('Gestão conectada'),
+              ),
+              const SizedBox(width: 10),
+              AdminPrimaryButton(
+                label: '+ Nova instituição',
+                icon: Icons.add_rounded,
+                onPressed: onCreateInstitution,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 34),

@@ -5,7 +5,14 @@ import '../../../core/widgets/admin_cards.dart';
 import 'coordinators_page.dart';
 
 class InstitutionSettingsPage extends StatefulWidget {
-  const InstitutionSettingsPage({super.key});
+  const InstitutionSettingsPage({
+    super.key,
+    required this.onManageUsers,
+    this.onEditInstitution,
+  });
+
+  final VoidCallback onManageUsers;
+  final VoidCallback? onEditInstitution;
 
   @override
   State<InstitutionSettingsPage> createState() =>
@@ -102,18 +109,43 @@ class _InstitutionSettingsPageState extends State<InstitutionSettingsPage> {
         style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
       ),
       const SizedBox(height: 10),
-      const Text(
-        'Configurações',
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -.5,
-        ),
-      ),
-      const SizedBox(height: 6),
-      const Text(
-        'Gerencie a instituição, a equipe e as integrações do ClassVision.',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+      Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Configurações',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.5,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Gerencie a instituição, a equipe e as integrações do ClassVision.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: widget.onManageUsers,
+            icon: const Icon(Icons.manage_accounts_outlined, size: 18),
+            label: const Text('Usuários e acessos'),
+          ),
+          const SizedBox(width: 10),
+          OutlinedButton.icon(
+            onPressed: widget.onEditInstitution,
+            icon: const Icon(Icons.apartment_outlined, size: 18),
+            label: const Text('Dados na API'),
+          ),
+        ],
       ),
       const SizedBox(height: 26),
       AdminSurface(

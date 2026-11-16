@@ -149,4 +149,54 @@ void main() {
 
     expect(find.text('Acesso ao ClassVision'), findsOneWidget);
   });
+
+  testWidgets('unknown JWT role cannot open academic routes', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 1024));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ClassVisionApp(
+        authApi: fakeAuthApi(claims: professorClaims(role: 'DESCONHECIDO')),
+      ),
+    );
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'desconhecido@escola.edu.br',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'senha123');
+    await tester.tap(find.text('Acessar plataforma'));
+    await tester.pumpAndSettle();
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.pushNamed(AppRoutes.classDetails, arguments: 'class-2a');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Acesso ao ClassVision'), findsOneWidget);
+    expect(find.textContaining('Detalhes da turma'), findsNothing);
+  });
+
+  testWidgets('system administrator can reach connected institution CRUD', (
+    tester,
+  ) async {
+    await pumpApp(tester, size: const Size(1440, 1024));
+    await signIn(tester, 'arthur@classvision.app');
+
+    await tester.tap(find.text('Gestão conectada'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nova instituição'), findsOneWidget);
+  });
+
+  testWidgets('institution administrator can reach connected user CRUD', (
+    tester,
+  ) async {
+    await pumpApp(tester, size: const Size(1440, 1024));
+    await signIn(tester, 'marina.costa@ifgoiano.edu.br');
+
+    await tester.tap(find.text('Configurações'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Usuários e acessos'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Novo usuário'), findsOneWidget);
+  });
 }

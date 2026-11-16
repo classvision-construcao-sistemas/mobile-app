@@ -135,9 +135,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     if (role != null && RoutePolicy.shellAliases.contains(settings.name)) {
       return _roleHome(overview: settings.name == AppRoutes.home);
     }
-    if (role != null &&
-        RoutePolicy.academicRoutes.contains(settings.name) &&
-        !RoutePolicy.canAccess(role, settings.name)) {
+    if (RoutePolicy.academicRoutes.contains(settings.name) &&
+        (role == null || !RoutePolicy.canAccess(role, settings.name))) {
       return _roleHome();
     }
 

@@ -61,6 +61,10 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
         );
       }
       final repository = context.watch<SchoolRepository>();
+      final institutionId = context
+          .watch<AuthRepository>()
+          .session
+          ?.institutionId;
       final firstClassId = repository.classes.firstOrNull?.id;
       void openCamera([String? id]) => Navigator.pushNamed(
         context,
@@ -90,7 +94,16 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
         3 => const TeachersPage(),
         4 => HistoryPage(onOpenReview: openReview),
         5 => const ReportsPage(),
-        _ => const InstitutionSettingsPage(),
+        _ => InstitutionSettingsPage(
+          onManageUsers: () => Navigator.pushNamed(context, AppRoutes.users),
+          onEditInstitution: institutionId == null
+              ? null
+              : () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.institutionRegistration,
+                  arguments: institutionId,
+                ),
+        ),
       };
       final body = _showNotifications
           ? NotificationsPage(

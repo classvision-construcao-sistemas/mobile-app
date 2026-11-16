@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/auth/user_role.dart';
-import '../../../data/repositories/auth_repository.dart';
+import '../../../core/navigation/app_routes.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
 import 'create_institution_page.dart';
@@ -95,15 +96,25 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
         }),
       ),
       _SystemAdminMode.section => switch (_selectedIndex) {
-        0 => SystemDashboardPage(onCreateInstitution: _openCreate),
+        0 => SystemDashboardPage(
+          onCreateInstitution: _openCreate,
+          onManageInstitutions: () =>
+              Navigator.pushNamed(context, AppRoutes.institutions),
+        ),
         1 => InstitutionsPage(
           onCreateInstitution: _openCreate,
           onOpenInstitution: _openInstitution,
         ),
-        2 => const InstitutionAdminsPage(),
+        2 => InstitutionAdminsPage(
+          onManageUsers: () => Navigator.pushNamed(context, AppRoutes.users),
+        ),
         3 => const PlatformActivityPage(),
         4 => const PlatformSettingsPage(),
-        _ => SystemDashboardPage(onCreateInstitution: _openCreate),
+        _ => SystemDashboardPage(
+          onCreateInstitution: _openCreate,
+          onManageInstitutions: () =>
+              Navigator.pushNamed(context, AppRoutes.institutions),
+        ),
       },
     };
 

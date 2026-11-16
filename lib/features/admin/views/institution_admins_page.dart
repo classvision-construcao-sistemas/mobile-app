@@ -9,7 +9,9 @@ import '../domain/admin_models.dart';
 import 'widgets/admin_page_header.dart';
 
 class InstitutionAdminsPage extends StatelessWidget {
-  const InstitutionAdminsPage({super.key});
+  const InstitutionAdminsPage({super.key, required this.onManageUsers});
+
+  final VoidCallback onManageUsers;
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +20,14 @@ class InstitutionAdminsPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(40, 32, 40, 40),
       children: [
-        const AdminPageHeader(
+        AdminPageHeader(
           title: 'Administradores institucionais',
           subtitle: 'Acompanhe responsáveis e convites de acesso.',
+          action: OutlinedButton.icon(
+            onPressed: onManageUsers,
+            icon: const Icon(Icons.manage_accounts_outlined, size: 18),
+            label: const Text('Gerenciar usuários'),
+          ),
         ),
         const SizedBox(height: 30),
         AdminSurface(
