@@ -44,11 +44,18 @@ $ flutter run
 O login, os usuários e as instituições vêm do microsserviço
 [`cv-authentication-service`](https://github.com/classvision-construcao-sistemas/cv-authentication-service).
 
-- Emulador Android: `flutter run` usa automaticamente `http://10.0.2.2:8080`.
+Por padrão o app usa a API publicada no Railway:
+`https://cv-authentication-service-production.up.railway.app`
+(ex.: `GET /api/usuarios/listar-usuarios`).
+
+Para usar um backend rodando localmente, informe o endereço com `AUTH_API_BASE_URL`:
+
+- Web/Desktop/iOS Simulator:
+  `flutter run --dart-define=AUTH_API_BASE_URL=http://localhost:8080`.
+- Emulador Android:
+  `flutter run --dart-define=AUTH_API_BASE_URL=http://10.0.2.2:8080`.
 - Dispositivo físico: use o IP da máquina na mesma rede, por exemplo:
   `flutter run --dart-define=AUTH_API_BASE_URL=http://192.168.0.10:8080`.
-- Desktop/iOS Simulator: o endereço padrão é `http://localhost:8080`.
-- API publicada (Railway): `--dart-define=AUTH_API_BASE_URL=https://<dominio-da-api>`.
 
 As duas APIs podem ser configuradas juntas:
 
