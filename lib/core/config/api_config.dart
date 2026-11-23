@@ -22,10 +22,24 @@ abstract final class ApiConfig {
   ///
   /// Usa a API publicada por padrão. Para apontar para um backend local, rode
   /// com `--dart-define=AUTH_API_BASE_URL=http://localhost:8080`.
-  static String get authBaseUrl => (_configuredAuthBaseUrl.isNotEmpty
-          ? _configuredAuthBaseUrl
-          : defaultAuthBaseUrl)
-      .replaceFirst(RegExp(r'/+$'), '');
+  static String get authBaseUrl =>
+      (_configuredAuthBaseUrl.isNotEmpty
+              ? _configuredAuthBaseUrl
+              : defaultAuthBaseUrl)
+          .replaceFirst(RegExp(r'/+$'), '');
+
+  static const _configuredTurmaBaseUrl = String.fromEnvironment(
+    'TURMA_API_BASE_URL',
+  );
+
+  /// Microsserviço de cursos e turmas (`turma-service`).
+  ///
+  /// Localmente o serviço sobe na porta definida por `PORT`; como o
+  /// serviço de autenticação já usa a 8080, o padrão do app é a 8081
+  /// (`PORT=8081 ./mvnw spring-boot:run`). Para outro endereço, rode com
+  /// `--dart-define=TURMA_API_BASE_URL=https://...`.
+  static String get turmaBaseUrl =>
+      _resolve(_configuredTurmaBaseUrl, port: 8081);
 
   static String _resolve(String configured, {required int port}) {
     if (configured.isNotEmpty) {

@@ -107,6 +107,22 @@ String formatBrDate(DateTime date) =>
 String formatBrDateTime(DateTime date) =>
     '${formatBrDate(date)} ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
 
+/// Data no formato ISO `yyyy-MM-dd` (LocalDate) usado pelo turma-service.
+DateTime? parseIsoDate(String? value) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})')
+      .firstMatch(value?.trim() ?? '');
+  if (match == null) return null;
+  return DateTime(
+    int.parse(match.group(1)!),
+    int.parse(match.group(2)!),
+    int.parse(match.group(3)!),
+  );
+}
+
+String formatIsoDate(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-${_twoDigits(date.month)}-'
+    '${_twoDigits(date.day)}';
+
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
 /// Aplica uma máscara numérica enquanto o usuário digita (`#` = dígito).

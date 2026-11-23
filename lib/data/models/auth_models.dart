@@ -44,6 +44,16 @@ enum UserRole {
   /// Edita os dados da instituição (o admin da instituição, só a própria).
   bool get canEditInstitution => canManageUsers;
 
+  /// Cadastra, edita e exclui cursos e turmas no turma-service.
+  bool get canManageClasses =>
+      this == UserRole.administrador ||
+      this == UserRole.adminInstituicao ||
+      this == UserRole.coordenador;
+
+  /// Vincula, atualiza e desvincula alunos das turmas no turma-service.
+  bool get canManageEnrollments =>
+      canManageClasses || this == UserRole.secretario;
+
   /// Roles que este perfil pode conceder a outros usuários.
   List<UserRole> get assignableRoles => canManageUsers
       ? UserRole.values.where((role) => role.level <= level).toList()
