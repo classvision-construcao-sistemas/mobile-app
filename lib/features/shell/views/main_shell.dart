@@ -62,7 +62,7 @@ class _MainShellContent extends StatelessWidget {
       HomePage(
         userName: auth.session?.firstName.isNotEmpty == true
             ? auth.session!.firstName
-            : 'Lucas',
+            : '',
         onOpenCamera: openCamera,
         onOpenCameraFor: openCamera,
         onOpenReview: firstClassId == null
@@ -96,8 +96,8 @@ class _MainShellContent extends StatelessWidget {
             selectedIndex: desktopIndex,
             destinations: _desktopDestinations,
             onDestinationSelected: viewModel.select,
-            profileName: 'Lucas Ferreira',
-            profileRole: 'Coordenador',
+            profileName: auth.session?.name,
+            profileRole: auth.session?.roleLabel,
             onSignOut: signOut,
             body: viewModel.index == 7 ? pages[7] : pages[desktopIndex],
           );

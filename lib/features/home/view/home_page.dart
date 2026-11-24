@@ -215,7 +215,7 @@ class _DesktopDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Bom dia, $userName',
+                  userName.isEmpty ? 'Bom dia' : 'Bom dia, $userName',
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -355,7 +355,7 @@ class _MobileDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Olá, $userName',
+                  userName.isEmpty ? 'Olá' : 'Olá, $userName',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,

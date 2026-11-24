@@ -25,20 +25,16 @@ class ProfilePage extends StatelessWidget {
     final auth = context.watch<AuthRepository>();
     final session = auth.session;
     final institution = auth.institution;
-    final name = session?.name.isNotEmpty == true
-        ? session!.name
-        : 'Lucas Ferreira';
+    final name = session?.name.isNotEmpty == true ? session!.name : 'Usuário';
     final initials = session?.initials.isNotEmpty == true
         ? session!.initials
-        : 'LF';
+        : '?';
     final role = session?.role == UserRole.coordenador
         ? 'Coordenador'
-        : session?.roleLabel.isNotEmpty == true
-        ? session!.roleLabel
-        : 'Coordenador';
+        : session?.roleLabel ?? '';
     final institutionShort = institution?.name.contains('Goiano') == true
         ? 'IF Goiano'
-        : institution?.name ?? 'IF Goiano';
+        : institution?.name ?? '';
 
     return ListView(
       key: const PageStorageKey('more'),
@@ -75,7 +71,10 @@ class ProfilePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$role · $institutionShort',
+                      [
+                        role,
+                        institutionShort,
+                      ].where((it) => it.isNotEmpty).join(' · '),
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 11,
