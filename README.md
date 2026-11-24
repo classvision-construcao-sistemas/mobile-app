@@ -39,6 +39,28 @@ $ flutter pub get
 $ flutter run
 ```
 
+### Todos os microsserviços de uma vez (recomendado)
+
+A pasta irmã [`infra/`](../infra/README.md) sobe banco, Milvus, os 4
+microsserviços e um gateway com `docker compose up -d --build`. Depois, aponte o
+app para o gateway — todos os serviços passam a usar esse endereço:
+
+```bash
+flutter run --dart-define=API_GATEWAY_URL=http://localhost:8000
+# emulador Android: --dart-define=API_GATEWAY_URL=http://10.0.2.2:8000
+```
+
+| Variável (`--dart-define`) | Serviço | Padrão sem gateway |
+|---|---|---|
+| `API_GATEWAY_URL` | todos | — |
+| `AUTH_API_BASE_URL` | cv-authentication-service | Railway (produção) |
+| `TURMA_API_BASE_URL` | turma-service | `localhost:8081` |
+| `AUDITORIA_API_BASE_URL` | auditoria-service | `localhost:8082` |
+| `FACE_API_BASE_URL` | reconhecimento-facial-service | `localhost:5000` |
+
+No emulador Android, `localhost` vira `10.0.2.2` automaticamente. Todos os
+serviços precisam usar o mesmo `JWT_SECRET` do serviço de autenticação.
+
 ## Autenticação
 
 O login, os usuários e as instituições vêm do microsserviço
@@ -127,15 +149,29 @@ Como funciona no app:
   instituição do usuário.
 - **Alunos da turma** (`POST`/`DELETE /turmas/{id}/alunos`): ao cadastrar um
   aluno numa turma, perfis com permissão (os acima e `SECRETARIO`) também criam
-  o vínculo; a matrícula numérica é o `alunoId`. Como o turma-service guarda só
-  o vínculo, nome e responsável ficam apenas na sessão; alunos vindos da API
-  aparecem como "Aluno <matrícula>". Para os demais perfis o aluno fica só na
-  sessão, como antes.
+  o vínculo; a matrícula numérica é o `alunoId`. Nome, responsável e telefone
+  ficam com a biometria no reconhecimento-facial-service e são buscados pela
+  matrícula (`GET /api/v1/alunos/{matricula}`) ao carregar as turmas. Para os
+  demais perfis o aluno fica só na sessão, como antes.
 - Erros da API (`mensagem` e `campos`) são exibidos como vieram, e um `401`
   encerra a sessão.
 
-O histórico de chamadas continua apenas em memória: o turma-service não guarda
-presenças.
+## Chamada e histórico
+
+As chamadas de turmas do turma-service passam pelo
+[`auditoria-service`](https://github.com/classvision-construcao-sistemas/auditoria-service):
+
+1. **Prévia** (`POST /auditorias/previa`): o app envia a foto; o serviço
+   consulta os alunos ativos da turma e o reconhecimento facial e devolve quem
+   foi reconhecido. Nada é gravado nesta etapa.
+2. **Conferência**: o coordenador ajusta presenças na tela de revisão.
+3. **Confirmação** (`POST /auditorias`): grava a chamada revisada.
+4. **Histórico** (`GET /auditorias`): alimenta Chamadas, Início, Alunos
+   (frequência), Relatórios e Notificações.
+
+Só `COORDENADOR` e `ADMINISTRADOR` gravam chamadas (RN-01 do auditoria-service).
+Para os demais perfis, e para fotos sem turma, a chamada usa o reconhecimento
+facial direto e fica só na sessão (a tela de confirmação avisa).
 
 ## Painéis por perfil
 
@@ -150,7 +186,8 @@ As permissões também são verificadas ao abrir rotas diretamente. As 25 telas 
 ## Reconhecimento facial
 
 O app envia fotos em `multipart/form-data` para o microsserviço que está na
-pasta irmã `reconhecimento-facial-service`.
+pasta irmã `reconhecimento-facial-service`, sempre com o cabeçalho
+`Authorization: Bearer <token>` da sessão (o serviço exige o JWT).
 
 - Emulador Android: `flutter run` usa automaticamente `http://10.0.2.2:5000`.
 - Dispositivo físico: use o IP da máquina na mesma rede, por exemplo:
