@@ -21,6 +21,17 @@ class SystemDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final repository = context.watch<AdminRepository>();
     final metrics = repository.metrics;
+    final institutions = repository.institutions;
+    final now = DateTime.now();
+    final newThisMonth = institutions
+        .where(
+          (it) =>
+              it.createdAt.year == now.year && it.createdAt.month == now.month,
+        )
+        .length;
+    final activeShare = metrics.totalInstitutions == 0
+        ? '—'
+        : '${(metrics.activeInstitutions * 100 / metrics.totalInstitutions).toStringAsFixed(1).replaceAll('.', ',')}% da base';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(40, 32, 40, 40),
@@ -32,8 +43,8 @@ class SystemDashboardPage extends StatelessWidget {
             children: [
               OutlinedButton.icon(
                 onPressed: onManageInstitutions,
-                icon: const Icon(Icons.cloud_sync_outlined, size: 18),
-                label: const Text('Gestão conectada'),
+                icon: const Icon(Icons.apartment_outlined, size: 18),
+                label: const Text('Gerenciar instituições'),
               ),
               const SizedBox(width: 10),
               AdminPrimaryButton(
@@ -51,7 +62,7 @@ class SystemDashboardPage extends StatelessWidget {
               child: MetricCard(
                 label: 'INSTITUIÇÕES',
                 value: '${metrics.totalInstitutions}',
-                supportingText: '+4 neste mês',
+                supportingText: '+$newThisMonth neste mês',
               ),
             ),
             const SizedBox(width: 20),
@@ -60,7 +71,7 @@ class SystemDashboardPage extends StatelessWidget {
                 label: 'ATIVAS',
                 value: '${metrics.activeInstitutions}',
                 valueColor: const Color(0xFF15803D),
-                supportingText: '93,7% da base',
+                supportingText: activeShare,
               ),
             ),
             const SizedBox(width: 20),
@@ -69,7 +80,7 @@ class SystemDashboardPage extends StatelessWidget {
                 label: 'ADMINISTRADORES',
                 value: '${metrics.institutionAdmins}',
                 valueColor: AppColors.primary,
-                supportingText: '3 convites pendentes',
+                supportingText: 'administradores de instituição',
               ),
             ),
             const SizedBox(width: 20),
@@ -77,7 +88,7 @@ class SystemDashboardPage extends StatelessWidget {
               child: MetricCard(
                 label: 'USUÁRIOS DA PLATAFORMA',
                 value: _formatNumber(metrics.platformUsers),
-                supportingText: '↑ 8,2% no período',
+                supportingText: 'usuários cadastrados',
               ),
             ),
           ],
@@ -88,7 +99,7 @@ class SystemDashboardPage extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Expanded(flex: 2, child: _GrowthCard()),
+              Expanded(flex: 2, child: _GrowthCard(institutions: institutions)),
               const SizedBox(width: 24),
               Expanded(
                 child: _ServiceStatusCard(services: repository.services),
@@ -108,93 +119,116 @@ class SystemDashboardPage extends StatelessWidget {
   );
 }
 
+/// Instituições cadastradas por mês nos últimos seis meses.
 class _GrowthCard extends StatelessWidget {
-  const _GrowthCard();
+  const _GrowthCard({required this.institutions});
+  final List<Institution> institutions;
+
+  static const _months = [
+    'Jan',
+    'Fev',
+    'Mar',
+    'Abr',
+    'Mai',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Set',
+    'Out',
+    'Nov',
+    'Dez',
+  ];
 
   @override
-  Widget build(BuildContext context) => AdminSurface(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Crescimento de instituições',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 22),
-        Expanded(
-          child: CustomPaint(
-            painter: _GrowthPainter(),
-            child: const SizedBox.expand(),
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final months = [
+      for (var back = 5; back >= 0; back--)
+        DateTime(now.year, now.month - back),
+    ];
+    final counts = [
+      for (final month in months)
+        institutions
+            .where(
+              (it) =>
+                  it.createdAt.year == month.year &&
+                  it.createdAt.month == month.month,
+            )
+            .length,
+    ];
+    final highest = counts.fold<int>(0, (a, b) => a > b ? a : b);
+    return AdminSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Crescimento de instituições',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
-        ),
-        const Padding(
-          padding: EdgeInsets.only(top: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Jun', style: _axisStyle),
-              Text('Jul', style: _axisStyle),
-              Text('Ago', style: _axisStyle),
-              Text('Set', style: _axisStyle),
-              Text('Out', style: _axisStyle),
-              Text('Nov', style: _axisStyle),
-            ],
+          const SizedBox(height: 4),
+          const Text(
+            'Novas instituições por mês',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 18),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var index = 0; index < counts.length; index++)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text('${counts[index]}', style: _axisStyle),
+                          const SizedBox(height: 4),
+                          FractionallySizedBox(
+                            widthFactor: 1,
+                            child: Container(
+                              height: highest == 0
+                                  ? 4
+                                  : 4 + 150 * counts[index] / highest,
+                              decoration: BoxDecoration(
+                                color: index == counts.length - 1
+                                    ? AppColors.primary
+                                    : AppColors.primarySoft,
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(6),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                for (final month in months)
+                  Expanded(
+                    child: Text(
+                      _months[month.month - 1],
+                      textAlign: TextAlign.center,
+                      style: _axisStyle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 const _axisStyle = TextStyle(color: Color(0xFF98A2B3), fontSize: 10);
-
-class _GrowthPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final grid = Paint()..color = const Color(0xFFEEF0F3);
-    for (var index = 1; index < 4; index++) {
-      final y = size.height * index / 4;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
-    }
-    final path = Path()
-      ..moveTo(0, size.height * .78)
-      ..cubicTo(
-        size.width * .14,
-        size.height * .62,
-        size.width * .20,
-        size.height * .68,
-        size.width * .30,
-        size.height * .45,
-      )
-      ..cubicTo(
-        size.width * .45,
-        size.height * .30,
-        size.width * .48,
-        size.height * .55,
-        size.width * .62,
-        size.height * .28,
-      )
-      ..cubicTo(
-        size.width * .76,
-        size.height * .08,
-        size.width * .82,
-        size.height * .36,
-        size.width,
-        size.height * .04,
-      );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = AppColors.primary
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class _ServiceStatusCard extends StatelessWidget {
   const _ServiceStatusCard({required this.services});
@@ -217,9 +251,7 @@ class _ServiceStatusCard extends StatelessWidget {
               children: [
                 Expanded(child: Text(service.name)),
                 Text(
-                  service.health == ServiceHealth.operational
-                      ? 'Operacional'
-                      : 'Degradado',
+                  service.healthLabel,
                   style: TextStyle(
                     color: service.health == ServiceHealth.operational
                         ? const Color(0xFF15803D)

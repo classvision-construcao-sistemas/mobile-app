@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import '../../helpers/fake_admin_backend.dart';
 import '../../helpers/fake_auth_server.dart';
 import '../../helpers/fake_turma_server.dart';
 
@@ -16,19 +17,23 @@ void main() {
     WidgetTester tester,
     Size size, {
     int initialIndex = 6,
+    bool withData = true,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    final (auth, admin) = withData
+        ? (await tester.runAsync(
+            () => loadedAdmin(role: 'ADMIN_INSTITUICAO', name: 'Marina Costa'),
+          ))!
+        : (AuthRepository(api: roleAwareFakeAuthApi()), AdminRepository());
     await tester.pumpWidget(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => AdminRepository()),
+          ChangeNotifierProvider<AdminRepository>.value(value: admin),
           ChangeNotifierProvider(
             create: (_) => SchoolRepository()..seedClasses([courseClass()]),
           ),
-          ChangeNotifierProvider(
-            create: (_) => AuthRepository(api: roleAwareFakeAuthApi()),
-          ),
+          ChangeNotifierProvider<AuthRepository>.value(value: auth),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -36,9 +41,10 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
   }
 
-  testWidgets('matches the institutional settings desktop reference', (
+  testWidgets('renders the institutional settings with the real team', (
     tester,
   ) async {
     await pumpShell(tester, const Size(1440, 1024));
@@ -52,17 +58,14 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Equipe de coordenação'), findsOneWidget);
-    expect(find.text('Coordenadores'), findsOneWidget);
+    expect(find.text('Coordenadores'), findsWidgets);
     expect(find.text('Lucas Ferreira'), findsOneWidget);
-    expect(find.text('Juliana Prado'), findsOneWidget);
-    expect(find.text('Fernanda Alves'), findsOneWidget);
     expect(find.text('Permissões do coordenador'), findsOneWidget);
     expect(find.text('Marina Costa'), findsWidgets);
-    expect(find.text('Salvar alterações'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('matches the mobile coordinator management reference', (
+  testWidgets('matches the mobile coordinator management layout', (
     tester,
   ) async {
     await pumpShell(tester, const Size(390, 844));
@@ -70,7 +73,7 @@ void main() {
     expect(find.text('Coordenadores'), findsWidgets);
     expect(find.text('Administrador da instituição'), findsOneWidget);
     expect(find.text('Buscar coordenador'), findsOneWidget);
-    expect(find.text('+ Convidar coordenador'), findsOneWidget);
+    expect(find.text('Cadastrar coordenador'), findsOneWidget);
     expect(find.text('Equipe da instituição'), findsOneWidget);
     expect(find.text('Lucas Ferreira'), findsOneWidget);
     await tester.drag(find.byType(ListView).first, const Offset(0, -700));
@@ -82,25 +85,33 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('settings tabs expose integration state and save changes', (
+  testWidgets('settings tabs show institution data and service status', (
     tester,
   ) async {
     await pumpShell(tester, const Size(1440, 1024));
 
-    await tester.tap(find.text('Integração de IA'));
+    await tester.tap(find.text('Instituição').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Dados da instituição'), findsOneWidget);
+    expect(find.text('10.651.417/0005-00'), findsOneWidget);
+    expect(find.text('Ativa'), findsOneWidget);
+
+    await tester.tap(find.text('Integrações'));
     await tester.pumpAndSettle();
     expect(find.text('Reconhecimento facial'), findsOneWidget);
-    expect(find.text('Conectada'), findsOneWidget);
-
-    await tester.tap(find.text('Salvar alterações'));
-    await tester.pump();
-    expect(find.text('Alterações salvas.'), findsOneWidget);
+    expect(find.text('Operacional'), findsNWidgets(4));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('overview notification button opens the notifications page', (
     tester,
   ) async {
-    await pumpShell(tester, const Size(1440, 1024), initialIndex: 0);
+    await pumpShell(
+      tester,
+      const Size(1440, 1024),
+      initialIndex: 0,
+      withData: false,
+    );
 
     await tester.tap(find.byIcon(Icons.notifications_none_rounded));
     await tester.pumpAndSettle();

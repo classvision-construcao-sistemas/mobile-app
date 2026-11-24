@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../data/repositories/auth_repository.dart';
+import '../../admin/data/admin_repository.dart';
 import 'coordinators_page.dart';
 
 class InstitutionSettingsPage extends StatefulWidget {
@@ -20,84 +24,47 @@ class InstitutionSettingsPage extends StatefulWidget {
 }
 
 class _InstitutionSettingsPageState extends State<InstitutionSettingsPage> {
-  static const _tabs = [
-    'Instituição',
-    'Regras de presença',
-    'Integração de IA',
-    'Equipe de coordenação',
-    'Notificações',
-    'Segurança',
-  ];
+  static const _tabs = ['Instituição', 'Equipe de coordenação', 'Integrações'];
 
-  int _selected = 3;
-  bool _lateNotifications = true;
-  bool _weeklySummary = true;
+  int _selected = 1;
 
-  Widget _content() => switch (_selected) {
-    0 => const _SettingsSection(
-      title: 'Dados da instituição',
-      subtitle: 'Informações usadas nos relatórios e convites.',
-      children: [
-        _SettingLine(label: 'Instituição', value: 'IF Goiano — Câmpus Urutaí'),
-        _SettingLine(label: 'E-mail', value: 'contato.urutai@ifgoiano.edu.br'),
-        _SettingLine(label: 'Localização', value: 'Urutaí — GO'),
-      ],
-    ),
-    1 => const _SettingsSection(
-      title: 'Regras de presença',
-      subtitle: 'Critérios aplicados às chamadas da instituição.',
-      children: [
-        _SettingLine(label: 'Presença mínima', value: '75%'),
-        _SettingLine(label: 'Tolerância para atraso', value: '10 minutos'),
-        _SettingLine(
-          label: 'Revisão manual',
-          value: 'Obrigatória em divergências',
-        ),
-      ],
-    ),
-    2 => const _SettingsSection(
-      title: 'Integração de IA',
-      subtitle: 'Conexão usada na conferência automática das chamadas.',
-      children: [
-        _SettingLine(label: 'Reconhecimento facial', value: 'Conectada'),
-        _SettingLine(label: 'Última sincronização', value: 'Hoje, 09:38'),
-        _SettingLine(label: 'Qualidade mínima', value: 'Alta'),
-      ],
-    ),
-    3 => const CoordinatorsPage(),
-    4 => _SettingsSection(
-      title: 'Notificações',
-      subtitle: 'Escolha quais avisos a administração deve receber.',
-      children: [
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Alertas de chamadas atrasadas'),
-          value: _lateNotifications,
-          onChanged: (value) => setState(() => _lateNotifications = value),
-        ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Resumo semanal'),
-          value: _weeklySummary,
-          onChanged: (value) => setState(() => _weeklySummary = value),
-        ),
-      ],
-    ),
-    _ => const _SettingsSection(
-      title: 'Segurança',
-      subtitle: 'Políticas de acesso da equipe administrativa.',
-      children: [
-        _SettingLine(label: 'Autenticação em duas etapas', value: 'Ativada'),
-        _SettingLine(label: 'Tempo de sessão', value: '8 horas'),
-        _SettingLine(label: 'Última revisão', value: '14 nov. 2026'),
-      ],
-    ),
-  };
-
-  void _save() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Alterações salvas.')));
+  Widget _content(BuildContext context) {
+    final institution = context.watch<AuthRepository>().institution;
+    final admin = context.watch<AdminRepository>();
+    return switch (_selected) {
+      0 => _SettingsSection(
+        title: 'Dados da instituição',
+        subtitle: 'Cadastro no serviço de autenticação.',
+        children: institution == null
+            ? const [_SettingLine(label: 'Instituição', value: 'Carregando...')]
+            : [
+                _SettingLine(label: 'Nome', value: institution.name),
+                _SettingLine(label: 'CNPJ', value: institution.formattedCnpj),
+                _SettingLine(
+                  label: 'Telefone',
+                  value: institution.formattedPhone,
+                ),
+                _SettingLine(
+                  label: 'Situação',
+                  value: institution.active ? 'Ativa' : 'Inativa',
+                ),
+                if (institution.createdAt != null)
+                  _SettingLine(
+                    label: 'Cadastro',
+                    value: formatBrDate(institution.createdAt!),
+                  ),
+              ],
+      ),
+      2 => _SettingsSection(
+        title: 'Integrações',
+        subtitle: 'Microsserviços usados pelo ClassVision.',
+        children: [
+          for (final service in admin.services)
+            _SettingLine(label: service.name, value: service.healthLabel),
+        ],
+      ),
+      _ => const CoordinatorsPage(),
+    };
   }
 
   @override
@@ -143,7 +110,7 @@ class _InstitutionSettingsPageState extends State<InstitutionSettingsPage> {
           OutlinedButton.icon(
             onPressed: widget.onEditInstitution,
             icon: const Icon(Icons.apartment_outlined, size: 18),
-            label: const Text('Dados na API'),
+            label: const Text('Editar instituição'),
           ),
         ],
       ),
@@ -156,29 +123,18 @@ class _InstitutionSettingsPageState extends State<InstitutionSettingsPage> {
               _SettingsTab(
                 label: _tabs[index],
                 selected: _selected == index,
-                onTap: () => setState(() => _selected = index),
+                onTap: () {
+                  setState(() => _selected = index);
+                  if (index == 2) {
+                    context.read<AdminRepository>().checkServices();
+                  }
+                },
               ),
           ],
         ),
       ),
       const SizedBox(height: 22),
-      AdminSurface(child: _content()),
-      const SizedBox(height: 18),
-      Row(
-        children: [
-          const Expanded(
-            child: Text(
-              'Última atualização por Marina Costa · hoje, 09:42',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-            ),
-          ),
-          FilledButton.icon(
-            onPressed: _save,
-            icon: const Icon(Icons.check_rounded, size: 17),
-            label: const Text('Salvar alterações'),
-          ),
-        ],
-      ),
+      AdminSurface(child: _content(context)),
     ],
   );
 }

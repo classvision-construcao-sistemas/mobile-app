@@ -8,14 +8,14 @@ class InstitutionCreatedPage extends StatelessWidget {
   const InstitutionCreatedPage({
     super.key,
     required this.institution,
-    required this.adminName,
-    required this.adminEmail,
+    required this.onRegisterAdmin,
     required this.onViewInstitution,
     required this.onBackToList,
   });
   final Institution institution;
-  final String adminName;
-  final String adminEmail;
+
+  /// Abre o cadastro do administrador da instituição (um usuário).
+  final VoidCallback onRegisterAdmin;
   final VoidCallback onViewInstitution;
   final VoidCallback onBackToList;
 
@@ -65,7 +65,7 @@ class InstitutionCreatedPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'CONVITE ENVIADO PARA',
+                      'PRÓXIMO PASSO',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 10,
@@ -73,14 +73,10 @@ class InstitutionCreatedPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      adminName,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      adminEmail,
-                      style: const TextStyle(color: AppColors.primary),
+                    const Text(
+                      'Cadastre o administrador da instituição. Ele recebe '
+                      'e-mail e senha de acesso e cadastra coordenadores, '
+                      'professores e secretários.',
                     ),
                   ],
                 ),
@@ -88,7 +84,16 @@ class InstitutionCreatedPage extends StatelessWidget {
               const SizedBox(height: 26),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                child: FilledButton.icon(
+                  onPressed: onRegisterAdmin,
+                  icon: const Icon(Icons.person_add_alt_1_outlined),
+                  label: const Text('Cadastrar administrador'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
                   onPressed: onViewInstitution,
                   child: const Text('Ver instituição'),
                 ),

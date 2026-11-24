@@ -153,3 +153,50 @@ class DigitMaskInputFormatter extends TextInputFormatter {
     );
   }
 }
+
+/// Telefone com DDD enquanto o usuário digita: `(64) 3465-1900` para fixo
+/// (10 dígitos) e `(64) 99999-0000` para celular (11 dígitos).
+class PhoneInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = onlyDigits(newValue.text);
+    final limited = digits.length > 11 ? digits.substring(0, 11) : digits;
+    final mask = limited.length > 10 ? '(##) #####-####' : '(##) ####-####';
+    return DigitMaskInputFormatter(mask)
+        .formatEditUpdate(oldValue, newValue.copyWith(text: limited));
+  }
+}
+
+/// CNPJ `00.000.000/0000-00` enquanto o usuário digita. Aceita o formato
+/// alfanumérico (letras nas 12 primeiras posições, dígitos verificadores
+/// numéricos), sempre em maiúsculas.
+class CnpjInputFormatter extends TextInputFormatter {
+  static const _mask = '##.###.###/####-##';
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final chars = <String>[];
+    for (final char in normalizeCnpj(newValue.text).split('')) {
+      if (chars.length >= 14) break;
+      // Os dois últimos são dígitos verificadores: só números.
+      if (chars.length >= 12 && !RegExp(r'\d').hasMatch(char)) continue;
+      chars.add(char);
+    }
+    final buffer = StringBuffer();
+    var index = 0;
+    for (var i = 0; i < _mask.length && index < chars.length; i++) {
+      buffer.write(_mask[i] == '#' ? chars[index++] : _mask[i]);
+    }
+    final text = buffer.toString();
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}

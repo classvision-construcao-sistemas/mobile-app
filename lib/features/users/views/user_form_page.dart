@@ -13,17 +13,28 @@ final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 ///
 /// Sem [user] nem [userId], cadastra um novo usuário. Com [userId], carrega o
 /// usuário antes de editar (usado em "Editar perfil").
+/// Perfil e instituição já escolhidos ao abrir o cadastro de um usuário
+/// novo (ex.: "Cadastrar coordenador", "Cadastrar administrador").
+class UserFormPreset {
+  const UserFormPreset({this.role, this.institutionId});
+
+  final UserRole? role;
+  final int? institutionId;
+}
+
 class UserFormPage extends StatefulWidget {
   const UserFormPage({
     super.key,
     this.user,
     this.userId,
     this.editingSelf = false,
+    this.preset,
   });
 
   final AppUser? user;
   final int? userId;
   final bool editingSelf;
+  final UserFormPreset? preset;
 
   @override
   State<UserFormPage> createState() => _UserFormPageState();
@@ -64,9 +75,13 @@ class _UserFormPageState extends State<UserFormPage> {
       _loadUser();
     } else {
       final assignable = auth.role?.assignableRoles ?? const <UserRole>[];
-      _role = assignable.contains(UserRole.professor)
+      final preset = widget.preset;
+      _role = preset?.role != null && assignable.contains(preset!.role)
+          ? preset.role
+          : assignable.contains(UserRole.professor)
           ? UserRole.professor
           : (assignable.isEmpty ? null : assignable.last);
+      _institutionId = preset?.institutionId;
     }
     if (auth.role?.isGeneralAdmin ?? false) {
       _loadingInstitutions = true;

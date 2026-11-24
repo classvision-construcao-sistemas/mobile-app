@@ -7,18 +7,33 @@ import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
 import 'widgets/admin_page_header.dart';
 
-class PlatformActivityPage extends StatelessWidget {
+class PlatformActivityPage extends StatefulWidget {
   const PlatformActivityPage({super.key});
 
   @override
+  State<PlatformActivityPage> createState() => _PlatformActivityPageState();
+}
+
+class _PlatformActivityPageState extends State<PlatformActivityPage> {
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
-    final activities = context.watch<AdminRepository>().activities;
+    final query = _query.trim().toLowerCase();
+    final activities = [
+      for (final activity in context.watch<AdminRepository>().activities)
+        if (query.isEmpty ||
+            activity.action.toLowerCase().contains(query) ||
+            activity.institution.toLowerCase().contains(query) ||
+            activity.user.toLowerCase().contains(query))
+          activity,
+    ];
     return ListView(
       padding: const EdgeInsets.fromLTRB(40, 32, 40, 40),
       children: [
         const AdminPageHeader(
           title: 'Atividade da plataforma',
-          subtitle: 'Consulte ações administrativas e eventos de segurança.',
+          subtitle: 'Cadastros recentes de instituições e usuários.',
         ),
         const SizedBox(height: 30),
         AdminSurface(
@@ -29,12 +44,19 @@ class PlatformActivityPage extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Text('Buscar por ação, instituição ou usuário'),
+              Expanded(
+                child: TextField(
+                  onChanged: (value) => setState(() => _query = value),
+                  decoration: const InputDecoration(
+                    hintText: 'Buscar por ação, instituição ou usuário',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               ),
-              _FilterChip(label: 'Todos os usuários'),
-              const SizedBox(width: 10),
-              _FilterChip(label: 'Últimos 30 dias'),
             ],
           ),
         ),
@@ -51,6 +73,14 @@ class PlatformActivityPage extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
               ),
+              if (activities.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(24, 8, 24, 28),
+                  child: Text(
+                    'Nenhuma atividade encontrada.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
               for (final activity in activities)
                 _ActivityRow(activity: activity),
             ],
@@ -59,28 +89,6 @@ class PlatformActivityPage extends StatelessWidget {
       ],
     );
   }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-    decoration: BoxDecoration(
-      border: Border.all(color: AppColors.border),
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12)),
-        const SizedBox(width: 7),
-        const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
-      ],
-    ),
-  );
 }
 
 class _ActivityRow extends StatelessWidget {

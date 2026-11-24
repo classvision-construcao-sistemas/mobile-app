@@ -2,7 +2,8 @@ enum InstitutionStatus { active, pending, suspended }
 
 enum AccountStatus { active, inactive, pending }
 
-enum ServiceHealth { operational, degraded }
+/// `degraded` = o serviço não respondeu; `unknown` = ainda não verificado.
+enum ServiceHealth { operational, degraded, unknown }
 
 class PlatformMetrics {
   const PlatformMetrics({
@@ -181,6 +182,12 @@ class PlatformService {
 
   final String name;
   final ServiceHealth health;
+
+  String get healthLabel => switch (health) {
+    ServiceHealth.operational => 'Operacional',
+    ServiceHealth.degraded => 'Fora do ar',
+    ServiceHealth.unknown => 'Verificando...',
+  };
 }
 
 class CreateInstitutionInput {

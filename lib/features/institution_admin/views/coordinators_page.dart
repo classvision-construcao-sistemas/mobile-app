@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../data/models/auth_models.dart' as models;
+import '../../../data/repositories/auth_repository.dart';
+import '../../../data/services/auth_api.dart';
 import '../../admin/data/admin_repository.dart';
 import '../../admin/domain/admin_models.dart';
+import '../../users/views/user_form_page.dart';
 
 class CoordinatorsPage extends StatefulWidget {
   const CoordinatorsPage({super.key, this.mobile = false, this.onBack});
@@ -17,36 +23,43 @@ class CoordinatorsPage extends StatefulWidget {
 }
 
 class _CoordinatorsPageState extends State<CoordinatorsPage> {
-  final _inviteController = TextEditingController();
   final _searchController = TextEditingController();
-  bool _showInvite = false;
-  String? _inviteError;
 
   @override
   void dispose() {
-    _inviteController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _invite() {
-    try {
-      context.read<AdminRepository>().inviteCoordinator(_inviteController.text);
-      setState(() {
-        _inviteController.clear();
-        _inviteError = null;
-        _showInvite = false;
-      });
-      _message('Convite enviado.');
-    } on ArgumentError {
-      setState(() => _inviteError = 'Informe um e-mail válido.');
-    }
+  void _message(String text, {bool error = false}) =>
+      showAppMessage(context, text, error: error);
+
+  /// Cadastra o coordenador como usuário (nome, CPF, e-mail e senha).
+  Future<void> _register() async {
+    final repository = context.read<AdminRepository>();
+    await Navigator.pushNamed(
+      context,
+      AppRoutes.userRegistration,
+      arguments: UserFormPreset(
+        role: models.UserRole.coordenador,
+        institutionId: context.read<AuthRepository>().session?.institutionId,
+      ),
+    );
+    await repository.load();
   }
 
-  void _message(String text) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+  Future<void> _setStatus(
+    CoordinatorAccount coordinator,
+    AccountStatus status,
+  ) async {
+    try {
+      await context.read<AdminRepository>().setCoordinatorStatus(
+        coordinator.id,
+        status,
+      );
+    } on AuthApiException catch (error) {
+      if (mounted) _message(error.message, error: true);
+    }
   }
 
   Future<void> _deactivate(CoordinatorAccount coordinator) async {
@@ -55,20 +68,7 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
       message: '${coordinator.name} perderá o acesso às turmas da instituição.',
     );
     if (!mounted || !confirmed) return;
-    context.read<AdminRepository>().setCoordinatorStatus(
-      coordinator.id,
-      AccountStatus.inactive,
-    );
-  }
-
-  Future<void> _cancelInvite(CoordinatorAccount coordinator) async {
-    final confirmed = await _confirm(
-      title: 'Cancelar convite?',
-      message:
-          'O convite enviado para ${coordinator.email} deixará de funcionar.',
-    );
-    if (!mounted || !confirmed) return;
-    context.read<AdminRepository>().cancelCoordinatorInvite(coordinator.id);
+    await _setStatus(coordinator, AccountStatus.inactive);
   }
 
   Future<bool> _confirm({
@@ -140,8 +140,8 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Text(
-                  'MC',
+                child: Text(
+                  context.watch<AuthRepository>().session?.initials ?? '',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w800,
@@ -170,19 +170,11 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
           SizedBox(
             height: 46,
             child: FilledButton.icon(
-              onPressed: () => setState(() => _showInvite = !_showInvite),
+              onPressed: _register,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('+ Convidar coordenador'),
+              label: const Text('Cadastrar coordenador'),
             ),
           ),
-          if (_showInvite) ...[
-            const SizedBox(height: 12),
-            _InviteBox(
-              controller: _inviteController,
-              error: _inviteError,
-              onSubmit: _invite,
-            ),
-          ],
           const SizedBox(height: 24),
           const Text(
             'Equipe da instituição',
@@ -192,17 +184,8 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
           for (final coordinator in coordinators) ...[
             _CoordinatorCard(
               coordinator: coordinator,
-              onActivate: () => context
-                  .read<AdminRepository>()
-                  .setCoordinatorStatus(coordinator.id, AccountStatus.active),
+              onActivate: () => _setStatus(coordinator, AccountStatus.active),
               onDeactivate: () => _deactivate(coordinator),
-              onResend: () {
-                context.read<AdminRepository>().resendCoordinatorInvite(
-                  coordinator.id,
-                );
-                _message('Convite reenviado.');
-              },
-              onCancel: () => _cancelInvite(coordinator),
             ),
             const SizedBox(height: 10),
           ],
@@ -226,7 +209,7 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'convidar, ativar ou desativar coordenadores.',
+                  'cadastrar, ativar ou desativar coordenadores.',
                   style: TextStyle(color: AppColors.primary, fontSize: 12),
                 ),
               ],
@@ -252,7 +235,7 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
                 ),
                 SizedBox(height: 5),
                 Text(
-                  'Convide e gerencie quem acompanha as turmas desta instituição.',
+                  'Cadastre e gerencie quem acompanha as turmas desta instituição.',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12,
@@ -262,21 +245,13 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
             ),
           ),
           FilledButton.icon(
-            onPressed: () => setState(() => _showInvite = !_showInvite),
+            onPressed: _register,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('+ Convidar coordenador'),
+            label: const Text('Cadastrar coordenador'),
           ),
         ],
       ),
       const SizedBox(height: 20),
-      if (_showInvite || !widget.mobile) ...[
-        _InviteBox(
-          controller: _inviteController,
-          error: _inviteError,
-          onSubmit: _invite,
-        ),
-        const SizedBox(height: 20),
-      ],
       Text(
         'EQUIPE ATUAL · ${coordinators.length} COORDENADORES',
         style: const TextStyle(
@@ -290,17 +265,8 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
       for (final coordinator in coordinators)
         _CoordinatorRow(
           coordinator: coordinator,
-          onActivate: () => context
-              .read<AdminRepository>()
-              .setCoordinatorStatus(coordinator.id, AccountStatus.active),
+          onActivate: () => _setStatus(coordinator, AccountStatus.active),
           onDeactivate: () => _deactivate(coordinator),
-          onResend: () {
-            context.read<AdminRepository>().resendCoordinatorInvite(
-              coordinator.id,
-            );
-            _message('Convite reenviado.');
-          },
-          onCancel: () => _cancelInvite(coordinator),
         ),
       const SizedBox(height: 18),
       Container(
@@ -344,77 +310,15 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
   );
 }
 
-class _InviteBox extends StatelessWidget {
-  const _InviteBox({
-    required this.controller,
-    required this.error,
-    required this.onSubmit,
-  });
-  final TextEditingController controller;
-  final String? error;
-  final VoidCallback onSubmit;
-
-  @override
-  Widget build(BuildContext context) => AdminSurface(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'NOVO CONVITE',
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: 'coordenador@instituicao.edu.br',
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            FilledButton(
-              onPressed: onSubmit,
-              child: const Text('Enviar convite'),
-            ),
-          ],
-        ),
-        if (error != null) ...[
-          const SizedBox(height: 7),
-          Text(
-            error!,
-            style: const TextStyle(
-              color: AppColors.error,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ],
-    ),
-  );
-}
-
 class _CoordinatorCard extends StatelessWidget {
   const _CoordinatorCard({
     required this.coordinator,
     required this.onActivate,
     required this.onDeactivate,
-    required this.onResend,
-    required this.onCancel,
   });
   final CoordinatorAccount coordinator;
   final VoidCallback onActivate;
   final VoidCallback onDeactivate;
-  final VoidCallback onResend;
-  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) => AdminSurface(
@@ -454,8 +358,6 @@ class _CoordinatorCard extends StatelessWidget {
             coordinator: coordinator,
             onActivate: onActivate,
             onDeactivate: onDeactivate,
-            onResend: onResend,
-            onCancel: onCancel,
           ),
         ),
       ],
@@ -468,14 +370,10 @@ class _CoordinatorRow extends StatelessWidget {
     required this.coordinator,
     required this.onActivate,
     required this.onDeactivate,
-    required this.onResend,
-    required this.onCancel,
   });
   final CoordinatorAccount coordinator;
   final VoidCallback onActivate;
   final VoidCallback onDeactivate;
-  final VoidCallback onResend;
-  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -496,7 +394,7 @@ class _CoordinatorRow extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               Text(
-                '${coordinator.email} · ${coordinator.status == AccountStatus.pending ? 'convite enviado hoje' : '${coordinator.classCount} turmas'}',
+                coordinator.email,
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,
@@ -511,8 +409,6 @@ class _CoordinatorRow extends StatelessWidget {
           coordinator: coordinator,
           onActivate: onActivate,
           onDeactivate: onDeactivate,
-          onResend: onResend,
-          onCancel: onCancel,
         ),
       ],
     ),
@@ -564,14 +460,10 @@ class _Actions extends StatelessWidget {
     required this.coordinator,
     required this.onActivate,
     required this.onDeactivate,
-    required this.onResend,
-    required this.onCancel,
   });
   final CoordinatorAccount coordinator;
   final VoidCallback onActivate;
   final VoidCallback onDeactivate;
-  final VoidCallback onResend;
-  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) => switch (coordinator.status) {
@@ -583,12 +475,6 @@ class _Actions extends StatelessWidget {
       onPressed: onActivate,
       child: const Text('Ativar'),
     ),
-    AccountStatus.pending => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextButton(onPressed: onResend, child: const Text('Reenviar')),
-        TextButton(onPressed: onCancel, child: const Text('Cancelar')),
-      ],
-    ),
+    AccountStatus.pending => const SizedBox.shrink(),
   };
 }

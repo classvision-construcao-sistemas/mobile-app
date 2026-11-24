@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/utils/photo.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
@@ -64,6 +66,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   String? _validate(int index, String? value) {
     final text = value?.trim() ?? '';
     if (text.isEmpty) return 'Preencha este campo';
+    if (index == 3 && !isValidPhone(text)) return 'Informe DDD + número';
     if (index == 1 &&
         _linksToRemoteClass(context.read<SchoolRepository>()) &&
         (int.tryParse(text) ?? 0) <= 0) {
@@ -200,6 +203,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 icon: _fields[index].$2,
                 keyboardType: _fields[index].$3,
                 controller: _controllers[index],
+                inputFormatters: switch (index) {
+                  // Matrícula: só números (é o alunoId da turma, um Long).
+                  1 => [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(15),
+                  ],
+                  3 => [PhoneInputFormatter()],
+                  _ => [LengthLimitingTextInputFormatter(150)],
+                },
                 validator: (value) => _validate(index, value),
               ),
               const SizedBox(height: 14),

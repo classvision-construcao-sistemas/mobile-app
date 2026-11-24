@@ -1,141 +1,111 @@
+import 'dart:convert';
+
 import 'package:class_vision/features/admin/data/admin_repository.dart';
 import 'package:class_vision/features/admin/domain/admin_models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+import '../../../helpers/fake_admin_backend.dart';
 
 void main() {
-  group('AdminRepository', () {
-    late AdminRepository repository;
+  test('has no data without a session', () async {
+    final repository = AdminRepository();
+    await repository.load();
 
-    setUp(() => repository = AdminRepository());
+    expect(repository.institutions, isEmpty);
+    expect(repository.metrics.totalInstitutions, 0);
+    expect(
+      repository.services.every((it) => it.health == ServiceHealth.unknown),
+      isTrue,
+    );
+  });
 
-    test('starts with the platform metrics from the reference dashboard', () {
-      expect(repository.metrics.totalInstitutions, 48);
-      expect(repository.metrics.activeInstitutions, 45);
-      expect(repository.metrics.institutionAdmins, 52);
-      expect(repository.metrics.platformUsers, 1284);
-    });
-
-    test(
-      'searches institutions with normalized text and supports no results',
-      () {
-        expect(
-          repository.searchInstitutions('  GOIANO ').single.name,
-          'IF Goiano',
-        );
-        expect(
-          repository.searchInstitutions('instituição inexistente'),
-          isEmpty,
-        );
-      },
+  test('loads institutions, users and metrics from the auth service', () async {
+    final repository = AdminRepository(
+      auth: await adminSession([]),
+      healthClient: MockClient((_) async => http.Response('{}', 200)),
     );
 
-    test('creates an institution and its first administrator atomically', () {
-      final institution = repository.createInstitution(
-        const CreateInstitutionInput(
-          name: 'Escola Nova',
-          document: '98.765.432/0001-10',
-          institutionalEmail: 'contato@escolanova.edu.br',
-          phone: '(62) 3333-2211',
-          address: 'Rua das Flores, 100',
-          adminName: 'Ana Souza',
-          adminEmail: 'ana@escolanova.edu.br',
-          adminPhone: '(62) 99999-2200',
-        ),
-      );
+    await repository.load();
+    await repository.checkServices();
 
-      expect(institution.name, 'Escola Nova');
-      expect(repository.metrics.totalInstitutions, 49);
-      expect(repository.metrics.institutionAdmins, 53);
-      expect(
-        repository.institutionAdmins.any(
-          (admin) =>
-              admin.name == 'Ana Souza' &&
-              admin.institutionId == institution.id,
-        ),
-        isTrue,
-      );
-      expect(repository.activities.first.action, 'Instituição criada');
+    expect(repository.error, isNull);
+    expect(repository.metrics.totalInstitutions, 2);
+    expect(repository.metrics.activeInstitutions, 1);
+    expect(repository.metrics.institutionAdmins, 1);
+    expect(repository.metrics.platformUsers, 2);
+    final goiano = repository.findInstitution('1')!;
+    expect(goiano.adminName, 'Marina Costa');
+    expect(goiano.users, 2);
+    expect(goiano.document, 'CNPJ 10.651.417/0005-00');
+    expect(
+      repository.findInstitution('2')!.status,
+      InstitutionStatus.suspended,
+    );
+    expect(repository.searchInstitutions('  caminhos ').single.id, '2');
+    expect(repository.coordinators.single.name, 'Lucas Ferreira');
+    expect(repository.coordinatorsFor('1'), hasLength(1));
+    expect(
+      repository.activities.first.action,
+      'Coordenador de curso cadastrado',
+    );
+    expect(
+      repository.services.every((it) => it.health == ServiceHealth.operational),
+      isTrue,
+    );
+  });
+
+  test('marks services that do not answer as down', () async {
+    final repository = AdminRepository(
+      auth: await adminSession([]),
+      healthClient: MockClient((_) async => http.Response('', 502)),
+    );
+
+    await repository.checkServices();
+
+    expect(
+      repository.services.every((it) => it.health == ServiceHealth.degraded),
+      isTrue,
+    );
+  });
+
+  test('creates institutions and changes statuses through the API', () async {
+    final requests = <http.Request>[];
+    final repository = AdminRepository(
+      auth: await adminSession(requests),
+      healthClient: MockClient((_) async => http.Response('{}', 200)),
+    );
+    await repository.load();
+
+    final created = await repository.createInstitution(
+      const CreateInstitutionInput(
+        name: 'Escola Nova',
+        document: '98.765.432/0001-10',
+        institutionalEmail: '',
+        phone: '(62) 3333-2211',
+        address: '',
+        adminName: '',
+        adminEmail: '',
+        adminPhone: '',
+      ),
+    );
+    expect(created.name, 'Escola Nova');
+    final post = requests.lastWhere((it) => it.method == 'POST');
+    expect(jsonDecode(post.body), {
+      'nome': 'Escola Nova',
+      'cnpj': '98765432000110',
+      'telefone': '6233332211',
     });
+    expect(repository.metrics.totalInstitutions, 3);
 
-    test('rejects incomplete institution creation without mutating data', () {
-      final before = repository.metrics;
+    await repository.setInstitutionStatus('1', InstitutionStatus.suspended);
+    expect(
+      repository.findInstitution('1')!.status,
+      InstitutionStatus.suspended,
+    );
 
-      expect(
-        () => repository.createInstitution(
-          const CreateInstitutionInput(
-            name: '',
-            document: '',
-            institutionalEmail: 'inválido',
-            phone: '',
-            address: '',
-            adminName: '',
-            adminEmail: '',
-            adminPhone: '',
-          ),
-        ),
-        throwsArgumentError,
-      );
-      expect(repository.metrics.totalInstitutions, before.totalInstitutions);
-      expect(repository.institutionAdmins.length, 2);
-    });
-
-    test('transitions coordinators between active and inactive', () {
-      final lucas = repository.coordinators.firstWhere(
-        (coordinator) => coordinator.name == 'Lucas Ferreira',
-      );
-
-      repository.setCoordinatorStatus(lucas.id, AccountStatus.inactive);
-      expect(
-        repository.coordinators
-            .firstWhere((item) => item.id == lucas.id)
-            .status,
-        AccountStatus.inactive,
-      );
-
-      repository.setCoordinatorStatus(lucas.id, AccountStatus.active);
-      expect(
-        repository.coordinators
-            .firstWhere((item) => item.id == lucas.id)
-            .status,
-        AccountStatus.active,
-      );
-    });
-
-    test('invites, resends and cancels a coordinator invitation', () {
-      final invited = repository.inviteCoordinator('novo@ifgoiano.edu.br');
-      expect(invited.status, AccountStatus.pending);
-      expect(invited.inviteSendCount, 1);
-
-      repository.resendCoordinatorInvite(invited.id);
-      expect(
-        repository.coordinators
-            .firstWhere((item) => item.id == invited.id)
-            .inviteSendCount,
-        2,
-      );
-
-      repository.cancelCoordinatorInvite(invited.id);
-      expect(
-        repository.coordinators.any((item) => item.id == invited.id),
-        isFalse,
-      );
-    });
-
-    test('rejects an invalid coordinator invitation email', () {
-      expect(
-        () => repository.inviteCoordinator('email-inválido'),
-        throwsArgumentError,
-      );
-    });
-
-    test('toggles platform invitation and notification settings', () {
-      repository.setAutomaticInviteReminder(false);
-      repository.setOutageAlerts(false);
-      repository.setWeeklySummary(false);
-
-      expect(repository.settings.automaticInviteReminder, isFalse);
-      expect(repository.settings.outageAlerts, isFalse);
-      expect(repository.settings.weeklySummary, isFalse);
-    });
+    await repository.setCoordinatorStatus('11', AccountStatus.inactive);
+    expect(repository.coordinators.single.status, AccountStatus.inactive);
   });
 }

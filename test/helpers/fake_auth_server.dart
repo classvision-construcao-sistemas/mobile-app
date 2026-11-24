@@ -122,6 +122,41 @@ AuthApi roleAwareFakeAuthApi() => AuthApi(
     if (request.url.path == '/api/instituicoes/buscar-instituicao/1') {
       return jsonResponse(institutionJson, 200);
     }
+    switch ((request.method, request.url.path)) {
+      case ('GET', '/api/instituicoes/listar-instituicoes'):
+        return jsonResponse([institutionJson], 200);
+      case ('GET', '/api/usuarios/listar-usuarios'):
+        return jsonResponse(teamJson, 200);
+      case ('POST', '/api/instituicoes/cadastrar-instituicao'):
+        return jsonResponse({
+          ...(jsonDecode(request.body) as Map<String, dynamic>),
+          'id': 2,
+          'situacao': 'ATIVA',
+          'criadoEm': '24/11/2026 18:00:00',
+        }, 201);
+    }
     return apiError(404, 'Recurso nao encontrado.');
   }),
 );
+
+/// Equipe da instituição 1 usada por [roleAwareFakeAuthApi].
+const teamJson = [
+  {
+    'id': 10,
+    'nome': 'Marina Costa',
+    'email': 'marina.costa@ifgoiano.edu.br',
+    'role': 'ADMIN_INSTITUICAO',
+    'instituicaoId': 1,
+    'ativo': true,
+    'criadoEm': '12/11/2026 10:00:00',
+  },
+  {
+    'id': 11,
+    'nome': 'Lucas Ferreira',
+    'email': 'lucas.ferreira@ifgoiano.edu.br',
+    'role': 'COORDENADOR',
+    'instituicaoId': 1,
+    'ativo': true,
+    'criadoEm': '12/11/2026 11:00:00',
+  },
+];

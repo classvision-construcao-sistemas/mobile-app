@@ -119,8 +119,8 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
           _showNotifications = false;
           _selectedIndex = index;
         }),
-        profileName: 'Marina Costa',
-        profileRole: 'Administrador da instituição',
+        profileName: session?.name,
+        profileRole: session?.roleLabel,
         onSignOut: () {
           context.read<AuthRepository>().logout();
         },

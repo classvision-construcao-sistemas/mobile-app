@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../data/services/auth_api.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
 import 'widgets/admin_page_header.dart';
 
-typedef InstitutionCreatedCallback = void Function(
-  Institution institution,
-  String adminName,
-  String adminEmail,
-);
+typedef InstitutionCreatedCallback = void Function(Institution institution);
 
+/// Cadastro de instituição no cv-authentication-service (nome, CNPJ e
+/// telefone). O administrador da instituição é cadastrado em seguida, como
+/// usuário com o perfil "Administrador da instituição".
 class CreateInstitutionPage extends StatefulWidget {
   const CreateInstitutionPage({
     super.key,
@@ -27,172 +29,182 @@ class CreateInstitutionPage extends StatefulWidget {
 }
 
 class _CreateInstitutionPageState extends State<CreateInstitutionPage> {
-  final _controllers = <TextEditingController>[
-    TextEditingController(text: 'Colégio Horizonte'),
-    TextEditingController(text: 'CNPJ 12.345.678/0001-90'),
-    TextEditingController(text: 'contato@horizonte.edu.br'),
-    TextEditingController(text: '(62) 3251-4200'),
-    TextEditingController(text: 'Goiânia — GO'),
-    TextEditingController(text: 'Paulo Nunes'),
-    TextEditingController(text: 'paulo@horizonte.edu.br'),
-    TextEditingController(text: '(62) 99814-2330'),
-  ];
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _cnpj = TextEditingController();
+  final _phone = TextEditingController();
+  bool _saving = false;
   String? _error;
 
   @override
   void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
+    _name.dispose();
+    _cnpj.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      final input = CreateInstitutionInput(
-        name: _controllers[0].text,
-        document: _controllers[1].text,
-        institutionalEmail: _controllers[2].text,
-        phone: _controllers[3].text,
-        address: _controllers[4].text,
-        adminName: _controllers[5].text,
-        adminEmail: _controllers[6].text,
-        adminPhone: _controllers[7].text,
-      );
-      final institution = context.read<AdminRepository>().createInstitution(
-        input,
-      );
-      widget.onCreated(
-        institution,
-        input.adminName.trim(),
-        input.adminEmail.trim(),
-      );
-    } on ArgumentError {
-      setState(() => _error = 'Preencha todos os campos obrigatórios.');
+      final institution = await context
+          .read<AdminRepository>()
+          .createInstitution(
+            CreateInstitutionInput(
+              name: _name.text.trim(),
+              document: _cnpj.text,
+              institutionalEmail: '',
+              phone: _phone.text,
+              address: '',
+              adminName: '',
+              adminEmail: '',
+              adminPhone: '',
+            ),
+          );
+      if (mounted) widget.onCreated(institution);
+    } on AuthApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(40, 28, 40, 40),
-    children: [
-      AdminPageHeader(
-        title: 'Cadastrar instituição',
-        subtitle: 'Crie a conta institucional e envie o primeiro acesso administrativo.',
-        breadcrumb: 'Instituições  /  Nova instituição',
-        action: TextButton(
-          onPressed: widget.onCancel,
-          child: const Text('Fechar'),
+  Widget build(BuildContext context) => Form(
+    key: _formKey,
+    child: ListView(
+      padding: const EdgeInsets.fromLTRB(40, 28, 40, 40),
+      children: [
+        AdminPageHeader(
+          title: 'Cadastrar instituição',
+          subtitle: 'Crie a instituição e, em seguida, cadastre o administrador dela.',
+          breadcrumb: 'Instituições  /  Nova instituição',
+          action: TextButton(
+            onPressed: widget.onCancel,
+            child: const Text('Fechar'),
+          ),
         ),
-      ),
-      const SizedBox(height: 28),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: AdminSurface(
-              child: _FormSection(
-                title: 'Dados da instituição',
-                subtitle: 'Informações oficiais usadas para identificar a instituição.',
-                children: [
-                  _Field(
-                    label: 'Nome da instituição',
-                    controller: _controllers[0],
-                  ),
-                  _Field(
-                    label: 'CNPJ ou código INEP',
-                    controller: _controllers[1],
-                  ),
-                  _Field(
-                    label: 'E-mail institucional',
-                    controller: _controllers[2],
-                  ),
-                  _Field(label: 'Telefone', controller: _controllers[3]),
-                  _Field(label: 'Cidade e estado', controller: _controllers[4]),
-                ],
+        const SizedBox(height: 28),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AdminSurface(
+                child: _FormSection(
+                  title: 'Dados da instituição',
+                  subtitle: 'Informações oficiais usadas para identificar a instituição.',
+                  children: [
+                    _Field(
+                      label: 'Nome da instituição',
+                      controller: _name,
+                      hint: 'Instituto Federal Goiano — Câmpus Urutaí',
+                      validator: (value) => (value?.trim().isEmpty ?? true)
+                          ? 'Informe o nome'
+                          : null,
+                    ),
+                    _Field(
+                      label: 'CNPJ',
+                      controller: _cnpj,
+                      hint: '00.000.000/0000-00',
+                      inputFormatters: [CnpjInputFormatter()],
+                      validator: (value) => isValidCnpjFormat(value ?? '')
+                          ? null
+                          : 'Informe um CNPJ com 14 caracteres',
+                    ),
+                    _Field(
+                      label: 'Telefone',
+                      controller: _phone,
+                      hint: '(64) 3465-1900',
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [PhoneInputFormatter()],
+                      validator: (value) => isValidPhone(value ?? '')
+                          ? null
+                          : 'Informe DDD + número',
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: AdminSurface(
-              child: _FormSection(
-                title: 'Primeiro administrador',
-                subtitle:
-                    'Este responsável receberá o convite inicial por e-mail.',
-                children: [
-                  _Field(
-                    label: 'Nome do administrador',
-                    controller: _controllers[5],
-                  ),
-                  _Field(
-                    label: 'E-mail do administrador',
-                    controller: _controllers[6],
-                  ),
-                  _Field(
-                    label: 'Telefone do administrador',
-                    controller: _controllers[7],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: AppColors.primary,
-                          size: 19,
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'O convite ficará disponível por 7 dias e poderá ser reenviado.',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 12,
+            const SizedBox(width: 24),
+            Expanded(
+              child: AdminSurface(
+                child: _FormSection(
+                  title: 'Administrador da instituição',
+                  subtitle: 'Cadastrado logo depois, na próxima tela.',
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.primary,
+                            size: 19,
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Depois de criar a instituição você cadastra o '
+                              'administrador dela com nome, CPF, e-mail e '
+                              'senha. Ele entra no app e cadastra '
+                              'coordenadores, professores e secretários.',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ),
+          ],
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            _error!,
+            style: const TextStyle(
+              color: AppColors.error,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
-      ),
-      if (_error != null) ...[
-        const SizedBox(height: 16),
-        Text(
-          _error!,
-          style: const TextStyle(
-            color: AppColors.error,
-            fontWeight: FontWeight.w600,
-          ),
+        const SizedBox(height: 22),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            OutlinedButton(
+              onPressed: _saving ? null : widget.onCancel,
+              child: const Text('Cancelar'),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              onPressed: _saving ? null : _submit,
+              icon: _saving
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.check_rounded, size: 18),
+              label: const Text('Criar instituição'),
+            ),
+          ],
         ),
       ],
-      const SizedBox(height: 22),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          OutlinedButton(
-            onPressed: widget.onCancel,
-            child: const Text('Cancelar'),
-          ),
-          const SizedBox(width: 12),
-          FilledButton.icon(
-            onPressed: _submit,
-            icon: const Icon(Icons.send_outlined, size: 18),
-            label: const Text('Criar instituição e enviar convite'),
-          ),
-        ],
-      ),
-    ],
+    ),
   );
 }
 
@@ -229,9 +241,20 @@ class _FormSection extends StatelessWidget {
 }
 
 class _Field extends StatelessWidget {
-  const _Field({required this.label, required this.controller});
+  const _Field({
+    required this.label,
+    required this.controller,
+    this.hint,
+    this.validator,
+    this.keyboardType,
+    this.inputFormatters,
+  });
   final String label;
   final TextEditingController controller;
+  final String? hint;
+  final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -242,7 +265,13 @@ class _Field extends StatelessWidget {
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
       ),
       const SizedBox(height: 8),
-      TextFormField(controller: controller),
+      TextFormField(
+        controller: controller,
+        validator: validator,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        decoration: InputDecoration(hintText: hint),
+      ),
     ],
   );
 }

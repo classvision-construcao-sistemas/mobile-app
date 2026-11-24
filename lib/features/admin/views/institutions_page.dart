@@ -24,6 +24,7 @@ class InstitutionsPage extends StatefulWidget {
 
 class _InstitutionsPageState extends State<InstitutionsPage> {
   final _search = TextEditingController();
+  InstitutionStatus? _status;
 
   @override
   void dispose() {
@@ -34,7 +35,10 @@ class _InstitutionsPageState extends State<InstitutionsPage> {
   @override
   Widget build(BuildContext context) {
     final repository = context.watch<AdminRepository>();
-    final institutions = repository.searchInstitutions(_search.text);
+    final institutions = [
+      for (final institution in repository.searchInstitutions(_search.text))
+        if (_status == null || institution.status == _status) institution,
+    ];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(40, 32, 40, 40),
@@ -70,9 +74,21 @@ class _InstitutionsPageState extends State<InstitutionsPage> {
                 ),
               ),
               const SizedBox(width: 18),
-              const Text(
-                'Todos os status  ⌄',
-                style: TextStyle(color: AppColors.textSecondary),
+              DropdownButton<InstitutionStatus?>(
+                value: _status,
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Todos os status')),
+                  DropdownMenuItem(
+                    value: InstitutionStatus.active,
+                    child: Text('Ativas'),
+                  ),
+                  DropdownMenuItem(
+                    value: InstitutionStatus.suspended,
+                    child: Text('Suspensas'),
+                  ),
+                ],
+                onChanged: (value) => setState(() => _status = value),
               ),
             ],
           ),

@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../../core/auth/user_role.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
+import '../../../data/models/auth_models.dart' as models;
 import '../../../data/repositories/auth_repository.dart';
+import '../../users/views/user_form_page.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
 import 'create_institution_page.dart';
@@ -38,8 +40,15 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
   _SystemAdminMode _mode = _SystemAdminMode.section;
   String? _institutionId;
   Institution? _createdInstitution;
-  String? _createdAdminName;
-  String? _createdAdminEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    final repository = context.read<AdminRepository>();
+    if (!repository.loaded && !repository.loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => repository.load());
+    }
+  }
 
   void _selectDestination(int index) {
     setState(() {
@@ -56,16 +65,27 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
     _mode = _SystemAdminMode.institutionDetail;
   });
 
-  void _showCreated(
-    Institution institution,
-    String adminName,
-    String adminEmail,
-  ) => setState(() {
+  void _showCreated(Institution institution) => setState(() {
     _createdInstitution = institution;
-    _createdAdminName = adminName;
-    _createdAdminEmail = adminEmail;
     _mode = _SystemAdminMode.created;
   });
+
+  /// Cadastro de usuários (tela real) e recarga dos dados ao voltar.
+  Future<void> _openUserForm([UserFormPreset? preset]) async {
+    final repository = context.read<AdminRepository>();
+    await Navigator.pushNamed(
+      context,
+      AppRoutes.userRegistration,
+      arguments: preset,
+    );
+    await repository.load();
+  }
+
+  Future<void> _openRoute(String route) async {
+    final repository = context.read<AdminRepository>();
+    await Navigator.pushNamed(context, route);
+    await repository.load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +107,12 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
       ),
       _SystemAdminMode.created => InstitutionCreatedPage(
         institution: _createdInstitution!,
-        adminName: _createdAdminName!,
-        adminEmail: _createdAdminEmail!,
+        onRegisterAdmin: () => _openUserForm(
+          UserFormPreset(
+            role: models.UserRole.adminInstituicao,
+            institutionId: int.tryParse(_createdInstitution!.id),
+          ),
+        ),
         onViewInstitution: () => _openInstitution(_createdInstitution!.id),
         onBackToList: () => setState(() {
           _selectedIndex = 1;
@@ -98,22 +122,20 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
       _SystemAdminMode.section => switch (_selectedIndex) {
         0 => SystemDashboardPage(
           onCreateInstitution: _openCreate,
-          onManageInstitutions: () =>
-              Navigator.pushNamed(context, AppRoutes.institutions),
+          onManageInstitutions: () => _openRoute(AppRoutes.institutions),
         ),
         1 => InstitutionsPage(
           onCreateInstitution: _openCreate,
           onOpenInstitution: _openInstitution,
         ),
         2 => InstitutionAdminsPage(
-          onManageUsers: () => Navigator.pushNamed(context, AppRoutes.users),
+          onManageUsers: () => _openRoute(AppRoutes.users),
         ),
         3 => const PlatformActivityPage(),
         4 => const PlatformSettingsPage(),
         _ => SystemDashboardPage(
           onCreateInstitution: _openCreate,
-          onManageInstitutions: () =>
-              Navigator.pushNamed(context, AppRoutes.institutions),
+          onManageInstitutions: () => _openRoute(AppRoutes.institutions),
         ),
       },
     };

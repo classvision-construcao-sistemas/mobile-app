@@ -184,7 +184,7 @@ void main() {
     await pumpApp(tester, size: const Size(1440, 1024));
     await signIn(tester, 'arthur@classvision.app');
 
-    await tester.tap(find.text('Gestão conectada'));
+    await tester.tap(find.text('Gerenciar instituições'));
     await tester.pumpAndSettle();
 
     expect(find.text('Nova instituição'), findsOneWidget);

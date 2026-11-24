@@ -8,23 +8,40 @@ import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
 import 'widgets/admin_page_header.dart';
 
-class InstitutionAdminsPage extends StatelessWidget {
+class InstitutionAdminsPage extends StatefulWidget {
   const InstitutionAdminsPage({super.key, required this.onManageUsers});
 
   final VoidCallback onManageUsers;
 
   @override
+  State<InstitutionAdminsPage> createState() => _InstitutionAdminsPageState();
+}
+
+class _InstitutionAdminsPageState extends State<InstitutionAdminsPage> {
+  String _query = '';
+  AccountStatus? _status;
+
+  @override
   Widget build(BuildContext context) {
-    final admins = context.watch<AdminRepository>().institutionAdmins;
+    final query = _query.trim().toLowerCase();
+    final admins = [
+      for (final admin in context.watch<AdminRepository>().institutionAdmins)
+        if ((_status == null || admin.status == _status) &&
+            (query.isEmpty ||
+                admin.name.toLowerCase().contains(query) ||
+                admin.email.toLowerCase().contains(query) ||
+                admin.institutionName.toLowerCase().contains(query)))
+          admin,
+    ];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(40, 32, 40, 40),
       children: [
         AdminPageHeader(
           title: 'Administradores institucionais',
-          subtitle: 'Acompanhe responsáveis e convites de acesso.',
+          subtitle: 'Responsáveis pelas instituições da plataforma.',
           action: OutlinedButton.icon(
-            onPressed: onManageUsers,
+            onPressed: widget.onManageUsers,
             icon: const Icon(Icons.manage_accounts_outlined, size: 18),
             label: const Text('Gerenciar usuários'),
           ),
@@ -36,22 +53,34 @@ class InstitutionAdminsPage extends StatelessWidget {
             children: [
               const Icon(Icons.search_rounded, color: AppColors.textSecondary),
               const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'Buscar administrador ou instituição',
-                  style: TextStyle(color: Color(0xFF98A2B3)),
+              Expanded(
+                child: TextField(
+                  onChanged: (value) => setState(() => _query = value),
+                  decoration: const InputDecoration(
+                    hintText: 'Buscar administrador ou instituição',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text('Todos os status  ⌄'),
+              DropdownButton<AccountStatus?>(
+                value: _status,
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Todos os status')),
+                  DropdownMenuItem(
+                    value: AccountStatus.active,
+                    child: Text('Ativos'),
+                  ),
+                  DropdownMenuItem(
+                    value: AccountStatus.inactive,
+                    child: Text('Inativos'),
+                  ),
+                ],
+                onChanged: (value) => setState(() => _status = value),
               ),
             ],
           ),
@@ -62,6 +91,14 @@ class InstitutionAdminsPage extends StatelessWidget {
           child: Column(
             children: [
               const _AdminsHeader(),
+              if (admins.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(28),
+                  child: Text(
+                    'Nenhum administrador encontrado.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
               for (final admin in admins) _AdminRow(admin: admin),
             ],
           ),
@@ -83,7 +120,7 @@ class _AdminsHeader extends StatelessWidget {
         children: [
           Expanded(flex: 3, child: _Header('ADMINISTRADOR')),
           Expanded(flex: 3, child: _Header('INSTITUIÇÃO')),
-          Expanded(flex: 2, child: _Header('ÚLTIMO ACESSO')),
+          Expanded(flex: 2, child: _Header('CADASTRO')),
           Expanded(child: _Header('STATUS')),
         ],
       ),
@@ -170,9 +207,9 @@ class _AdminRow extends StatelessWidget {
                   background: Color(0xFFDCFCE7),
                 )
               : const StatusBadge(
-                  label: 'Pendente',
-                  foreground: Color(0xFFB45309),
-                  background: Color(0xFFFEF3C7),
+                  label: 'Inativo',
+                  foreground: Color(0xFFB42318),
+                  background: Color(0xFFFEE4E2),
                 ),
         ),
       ],

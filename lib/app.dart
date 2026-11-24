@@ -57,6 +57,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
   late final AuditoriaApi _auditoriaApi;
   late final FacialRecognitionApi _facialApi;
   late final SchoolRepository _school;
+  late final AdminRepository _admin;
   bool _wasAuthenticated = false;
 
   @override
@@ -78,6 +79,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       auditoriaApi: _auditoriaApi,
       facialApi: _facialApi,
     );
+    _admin = AdminRepository(auth: _auth);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -88,6 +90,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       ..removeListener(_onAuthChanged)
       ..dispose();
     _school.dispose();
+    _admin.dispose();
     if (widget.authApi == null) _authApi.close();
     if (widget.turmaApi == null) _turmaApi.close();
     if (widget.auditoriaApi == null) _auditoriaApi.close();
@@ -105,9 +108,12 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     if (!_wasAuthenticated && authenticated) {
       // As turmas vêm do turma-service com o token recém-emitido.
       _school.loadClasses();
+      // Painéis de administração: instituições, usuários e serviços reais.
+      if (_auth.role?.canManageUsers ?? false) _admin.load();
     }
     if (_wasAuthenticated && !authenticated) {
       _school.clear();
+      _admin.clear();
       _navigatorKey.currentState?.pushNamedAndRemoveUntil(
         AppRoutes.login,
         (_) => false,
@@ -127,7 +133,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     providers: [
       ChangeNotifierProvider.value(value: _auth),
       ChangeNotifierProvider.value(value: _school),
-      ChangeNotifierProvider(create: (_) => AdminRepository()),
+      ChangeNotifierProvider.value(value: _admin),
       Provider.value(value: _facialApi),
     ],
     child: MaterialApp(
@@ -234,6 +240,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     if (role == null || !role.canManageUsers) return const _ForbiddenPage();
     return switch (arguments) {
       final AppUser user => UserFormPage(user: user, editingSelf: editingSelf),
+      final UserFormPreset preset => UserFormPage(preset: preset),
       final int id => UserFormPage(userId: id, editingSelf: editingSelf),
       _ => const UserFormPage(),
     };

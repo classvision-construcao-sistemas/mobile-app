@@ -1,81 +1,101 @@
+import 'package:class_vision/core/navigation/app_routes.dart';
 import 'package:class_vision/core/theme/app_theme.dart';
+import 'package:class_vision/data/models/auth_models.dart';
+import 'package:class_vision/data/repositories/auth_repository.dart';
+import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:class_vision/features/admin/data/admin_repository.dart';
 import 'package:class_vision/features/institution_admin/views/institution_admin_shell.dart';
+import 'package:class_vision/features/users/views/user_form_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
+import '../../helpers/fake_admin_backend.dart';
+import '../../helpers/fake_turma_server.dart';
+
 void main() {
-  Future<void> pumpMobile(WidgetTester tester) async {
+  Future<List<RouteSettings>> pumpMobile(
+    WidgetTester tester, {
+    List<http.Request>? requests,
+  }) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    final (auth, admin) = (await tester.runAsync(
+      () => loadedAdmin(
+        role: 'ADMIN_INSTITUICAO',
+        name: 'Marina Costa',
+        requests: requests,
+      ),
+    ))!;
+    final routes = <RouteSettings>[];
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => AdminRepository(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthRepository>.value(value: auth),
+          ChangeNotifierProvider<AdminRepository>.value(value: admin),
+          ChangeNotifierProvider(
+            create: (_) => SchoolRepository()..seedClasses([courseClass()]),
+          ),
+        ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
           home: const InstitutionAdminShell(),
+          onGenerateRoute: (settings) {
+            routes.add(settings);
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => const Scaffold(body: Text('Formulário aberto')),
+            );
+          },
         ),
       ),
     );
-  }
-
-  Future<void> openInvite(WidgetTester tester) async {
-    await tester.tap(find.text('+ Convidar coordenador'));
     await tester.pumpAndSettle();
+    return routes;
   }
 
-  testWidgets('rejects invalid email and invites a valid coordinator', (
-    tester,
-  ) async {
+  testWidgets('lists the real coordinators of the institution', (tester) async {
     await pumpMobile(tester);
-    await openInvite(tester);
 
-    await tester.enterText(find.byType(TextField).last, 'email-invalido');
-    await tester.tap(find.text('Enviar convite'));
-    await tester.pumpAndSettle();
-    expect(find.text('Informe um e-mail válido.'), findsOneWidget);
-
-    await tester.enterText(
-      find.byType(TextField).last,
-      'ana.souza@ifgoiano.edu.br',
-    );
-    await tester.tap(find.text('Enviar convite'));
-    await tester.pumpAndSettle();
-    expect(find.text('Ana Souza'), findsOneWidget);
-    expect(find.text('Pendente'), findsWidgets);
+    expect(find.text('Coordenadores'), findsWidgets);
+    expect(find.text('Lucas Ferreira'), findsOneWidget);
+    expect(find.text('lucas@ifgoiano.edu.br'), findsOneWidget);
+    expect(find.text('Ativo'), findsOneWidget);
+    expect(find.text('MC'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('activates and deactivates coordinators with confirmation', (
+  testWidgets('opens the user form preset as coordinator', (tester) async {
+    final routes = await pumpMobile(tester);
+
+    await tester.tap(find.text('Cadastrar coordenador').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Formulário aberto'), findsOneWidget);
+    expect(routes.single.name, AppRoutes.userRegistration);
+    final preset = routes.single.arguments! as UserFormPreset;
+    expect(preset.role, UserRole.coordenador);
+    expect(preset.institutionId, 1);
+  });
+
+  testWidgets('deactivates and reactivates a coordinator through the API', (
     tester,
   ) async {
-    await pumpMobile(tester);
+    final requests = <http.Request>[];
+    await pumpMobile(tester, requests: requests);
 
-    await tester.tap(find.text('Ativar'));
-    await tester.pumpAndSettle();
-    expect(find.text('Juliana Prado'), findsOneWidget);
-    expect(find.text('Ativo'), findsNWidgets(2));
-
-    await tester.tap(find.text('Desativar').first);
+    await tester.tap(find.text('Desativar'));
     await tester.pumpAndSettle();
     expect(find.text('Desativar coordenador?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
     await tester.pumpAndSettle();
-    expect(find.text('Inativo'), findsWidgets);
-  });
+    expect(find.text('Inativo'), findsOneWidget);
+    expect(requests.last.url.path, '/api/usuarios/desativar-usuario/11');
 
-  testWidgets('resends and cancels a pending invitation', (tester) async {
-    await pumpMobile(tester);
-
-    await tester.tap(find.text('Reenviar'));
+    await tester.tap(find.text('Ativar'));
     await tester.pumpAndSettle();
-    expect(find.text('Convite reenviado.'), findsOneWidget);
-
-    await tester.tap(find.text('Cancelar'));
-    await tester.pumpAndSettle();
-    expect(find.text('Cancelar convite?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
-    await tester.pumpAndSettle();
-    expect(find.text('Fernanda Alves'), findsNothing);
+    expect(find.text('Ativo'), findsOneWidget);
+    expect(requests.last.url.path, '/api/usuarios/ativar-usuario/11');
   });
 }

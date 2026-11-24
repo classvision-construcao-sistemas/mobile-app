@@ -138,23 +138,31 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Cancelar'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('IF Goiano'));
+    await tester.tap(find.text('Instituto Federal Goiano - Campus Urutaí'));
     await tester.pumpAndSettle();
     expect(find.text('Detalhes da instituição'), findsOneWidget); // 20
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Administradores'));
     await tester.pumpAndSettle();
     expect(find.text('Administradores institucionais'), findsOneWidget); // 21
-    await openDestination(tester, 'Atividade', 'Auditoria'); // 22
+    await openDestination(
+      tester,
+      'Atividade',
+      'Coordenador de curso cadastrado',
+    ); // 22
     await openDestination(
       tester,
       'Configurações',
-      'Política de convites',
+      'Endereços dos serviços',
     ); // 23
     await openDestination(tester, 'Instituições', 'Gestão de instituições');
     await tester.tap(find.text('+ Nova instituição'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Criar instituição e enviar convite'));
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'Colégio Horizonte');
+    await tester.enterText(fields.at(1), '12345678000190');
+    await tester.enterText(fields.at(2), '6233334444');
+    await tester.tap(find.text('Criar instituição'));
     await tester.pumpAndSettle();
     expect(find.text('Instituição cadastrada!'), findsOneWidget); // 24
     expect(tester.takeException(), isNull);

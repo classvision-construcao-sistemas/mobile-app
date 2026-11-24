@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../data/services/auth_api.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
 import 'widgets/admin_page_header.dart';
@@ -17,65 +21,15 @@ class InstitutionDetailPage extends StatelessWidget {
   final String institutionId;
   final VoidCallback onBack;
 
+  /// Edita nome, CNPJ e telefone no formulário real de instituição.
   Future<void> _edit(BuildContext context, Institution institution) async {
-    final name = TextEditingController(text: institution.name);
-    final email = TextEditingController(text: institution.institutionalEmail);
-    final phone = TextEditingController(text: institution.phone);
-    final address = TextEditingController(text: institution.address);
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Editar instituição'),
-        content: SizedBox(
-          width: 480,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: name,
-                  decoration: const InputDecoration(labelText: 'Nome'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: email,
-                  decoration: const InputDecoration(labelText: 'E-mail'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: phone,
-                  decoration: const InputDecoration(labelText: 'Telefone'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: address,
-                  decoration: const InputDecoration(labelText: 'Localização'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
+    final repository = context.read<AdminRepository>();
+    await Navigator.pushNamed(
+      context,
+      AppRoutes.institutionRegistration,
+      arguments: int.tryParse(institution.id),
     );
-    if (saved != true || !context.mounted) return;
-    context.read<AdminRepository>().updateInstitution(
-      institution.copyWith(
-        name: name.text.trim(),
-        institutionalEmail: email.text.trim(),
-        phone: phone.text.trim(),
-        address: address.text.trim(),
-      ),
-    );
+    await repository.load();
   }
 
   Future<void> _toggleStatus(
@@ -105,10 +59,14 @@ class InstitutionDetailPage extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    context.read<AdminRepository>().setInstitutionStatus(
-      institution.id,
-      suspending ? InstitutionStatus.suspended : InstitutionStatus.active,
-    );
+    try {
+      await context.read<AdminRepository>().setInstitutionStatus(
+        institution.id,
+        suspending ? InstitutionStatus.suspended : InstitutionStatus.active,
+      );
+    } on AuthApiException catch (error) {
+      if (context.mounted) showAppMessage(context, error.message, error: true);
+    }
   }
 
   @override
@@ -124,13 +82,11 @@ class InstitutionDetailPage extends StatelessWidget {
       );
     }
     final coordinators = repository.coordinatorsFor(institution.id);
-    final activities = repository.activitiesFor(institution);
+    final activities = repository.activitiesFor(institution.id);
     final activeCoordinators = coordinators
         .where((item) => item.status == AccountStatus.active)
         .length;
-    final pendingCoordinators = coordinators
-        .where((item) => item.status == AccountStatus.pending)
-        .length;
+    final inactiveCoordinators = coordinators.length - activeCoordinators;
     return ListView(
       padding: const EdgeInsets.fromLTRB(40, 28, 40, 40),
       children: [
@@ -188,7 +144,7 @@ class InstitutionDetailPage extends StatelessWidget {
                 label: 'Coordenadores',
                 value: '${coordinators.length}',
                 supportingText:
-                    '$activeCoordinators ativos e $pendingCoordinators convite pendente',
+                    '$activeCoordinators ativo(s) e $inactiveCoordinators inativo(s)',
               ),
             ),
             const SizedBox(width: 20),
@@ -265,18 +221,18 @@ class _InstitutionData extends StatelessWidget {
       Row(
         children: [
           Expanded(
-            child: _Info(
-              label: 'E-mail',
-              value: institution.institutionalEmail,
-            ),
+            child: _Info(label: 'Telefone', value: institution.phone),
           ),
           Expanded(
-            child: _Info(label: 'Telefone', value: institution.phone),
+            child: _Info(
+              label: 'Cadastro',
+              value: formatBrDate(institution.createdAt),
+            ),
           ),
         ],
       ),
       const SizedBox(height: 18),
-      _Info(label: 'Localização', value: institution.address),
+      _Info(label: 'Administrador', value: institution.adminName),
     ],
   );
 }

@@ -174,6 +174,7 @@ class _InstitutionFormPageState extends State<InstitutionFormPage> {
                       hint: '00.000.000/0000-00',
                       icon: Icons.badge_outlined,
                       controller: _cnpj,
+                      inputFormatters: [CnpjInputFormatter()],
                       enabled: canChangeCnpj || !_editing,
                       helperText: canChangeCnpj || !_editing
                           ? 'Aceita o CNPJ numérico ou alfanumérico.'
@@ -189,6 +190,7 @@ class _InstitutionFormPageState extends State<InstitutionFormPage> {
                       icon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
                       controller: _phone,
+                      inputFormatters: [PhoneInputFormatter()],
                       onFieldSubmitted: (_) => _save(),
                       validator: (value) => isValidPhone(value ?? '')
                           ? null
