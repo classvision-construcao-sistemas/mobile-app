@@ -4,11 +4,14 @@ import 'package:flutter/foundation.dart';
 
 /// Endereços dos microsserviços do ClassVision.
 ///
-/// Com `--dart-define=API_GATEWAY_URL=http://localhost:8000` todos os serviços
-/// passam pelo gateway do `docker compose` (pasta `infra/`), que roteia cada
-/// caminho para o serviço certo. Sem o gateway, cada serviço usa a própria
-/// variável (`AUTH_API_BASE_URL`, `TURMA_API_BASE_URL`,
-/// `AUDITORIA_API_BASE_URL`, `FACE_API_BASE_URL`) ou o padrão abaixo.
+/// Sem nenhum `--dart-define`, o app usa os serviços publicados no Railway
+/// (produção). Para desenvolver com tudo local, suba o `docker compose` da
+/// pasta `infra/` e rode com
+/// `--dart-define=API_GATEWAY_URL=http://localhost:8000` (emulador Android:
+/// `http://10.0.2.2:8000`): o gateway roteia cada caminho para o serviço
+/// certo. Cada serviço também pode ser trocado individualmente com
+/// `AUTH_API_BASE_URL`, `TURMA_API_BASE_URL`, `AUDITORIA_API_BASE_URL` e
+/// `FACE_API_BASE_URL`.
 ///
 /// Todos precisam compartilhar o mesmo `JWT_SECRET`: o token emitido pelo
 /// serviço de autenticação é validado por todos os outros.
@@ -29,55 +32,54 @@ abstract final class ApiConfig {
     'AUDITORIA_API_BASE_URL',
   );
 
+  // Serviços publicados no Railway (projeto ClassVision, ambiente production).
+  static const defaultAuthBaseUrl =
+      'https://cv-authentication-service-production.up.railway.app';
+  static const defaultTurmaBaseUrl =
+      'https://ingenious-presence-production-e4d3f7af.up.railway.app';
+  static const defaultAuditoriaBaseUrl =
+      'https://auditoria-service-production.up.railway.app';
+  static const defaultFacialBaseUrl =
+      'https://reconhecimento-facial-service-production.up.railway.app';
+
   /// Gateway único (`infra/`), quando configurado.
-  static String? get gatewayUrl => _configuredGatewayUrl.isEmpty
-      ? null
-      : _resolve(_configuredGatewayUrl, port: 8000);
+  static String? get gatewayUrl =>
+      _configuredGatewayUrl.isEmpty ? null : _local(_configuredGatewayUrl);
+
+  /// Microsserviço de autenticação (`cv-authentication-service`).
+  static String get authBaseUrl =>
+      _serviceUrl(_configuredAuthBaseUrl, defaultAuthBaseUrl);
+
+  /// Microsserviço de cursos e turmas (`turma-service`).
+  static String get turmaBaseUrl =>
+      _serviceUrl(_configuredTurmaBaseUrl, defaultTurmaBaseUrl);
+
+  /// Microsserviço de auditoria de presença (`auditoria-service`): prévia da
+  /// chamada pela foto, confirmação e histórico.
+  static String get auditoriaBaseUrl =>
+      _serviceUrl(_configuredAuditoriaBaseUrl, defaultAuditoriaBaseUrl);
 
   /// Serviço de reconhecimento facial (`reconhecimento-facial-service`).
   static String get facialRecognitionBaseUrl =>
-      _serviceUrl(_configuredFacialBaseUrl, port: 5000);
+      _serviceUrl(_configuredFacialBaseUrl, defaultFacialBaseUrl);
 
-  /// Endereço publicado do `cv-authentication-service` no Railway.
-  static const defaultAuthBaseUrl =
-      'https://cv-authentication-service-production.up.railway.app';
-
-  /// Microsserviço de autenticação (`cv-authentication-service`).
-  ///
-  /// Sem gateway, usa a API publicada por padrão. Para um backend local, rode
-  /// com `--dart-define=API_GATEWAY_URL=http://localhost:8000` (todos os
-  /// serviços) ou `--dart-define=AUTH_API_BASE_URL=http://localhost:8080`.
-  static String get authBaseUrl {
-    if (_configuredAuthBaseUrl.isNotEmpty) return _trim(_configuredAuthBaseUrl);
-    return gatewayUrl ?? defaultAuthBaseUrl;
-  }
-
-  /// Microsserviço de cursos e turmas (`turma-service`).
-  ///
-  /// Localmente o serviço sobe na porta definida por `PORT`; como o
-  /// serviço de autenticação já usa a 8080, o padrão do app é a 8081
-  /// (`PORT=8081 ./mvnw spring-boot:run`).
-  static String get turmaBaseUrl =>
-      _serviceUrl(_configuredTurmaBaseUrl, port: 8081);
-
-  /// Microsserviço de auditoria de presença (`auditoria-service`): prévia da
-  /// chamada pela foto, confirmação e histórico. Padrão local na porta 8082.
-  static String get auditoriaBaseUrl =>
-      _serviceUrl(_configuredAuditoriaBaseUrl, port: 8082);
-
-  static String _serviceUrl(String configured, {required int port}) {
-    if (configured.isNotEmpty) return _trim(configured);
-    return gatewayUrl ?? _resolve('', port: port);
+  static String _serviceUrl(String configured, String published) {
+    if (configured.isNotEmpty) return _local(configured);
+    return gatewayUrl ?? published;
   }
 
   static String _trim(String url) => url.replaceFirst(RegExp(r'/+$'), '');
 
-  static String _resolve(String configured, {required int port}) {
-    if (configured.isNotEmpty) return _trim(configured);
-
-    // O emulador Android acessa a máquina host por 10.0.2.2. Nos demais
-    // ambientes de desenvolvimento, localhost é o comportamento esperado.
-    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:$port';
-    return 'http://localhost:$port';
+  /// No emulador Android, `localhost` é o próprio emulador: a máquina host
+  /// fica em 10.0.2.2.
+  static String _local(String url) {
+    final trimmed = _trim(url);
+    if (!kIsWeb && Platform.isAndroid) {
+      return trimmed.replaceFirstMapped(
+        RegExp(r'^(https?://)(localhost|127\.0\.0\.1)(?=[:/]|$)'),
+        (match) => '${match[1]}10.0.2.2',
+      );
+    }
+    return trimmed;
   }
 }
