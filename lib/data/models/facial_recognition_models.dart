@@ -69,3 +69,25 @@ class StudentEnrollmentResult {
   final String message;
   final String studentId;
 }
+
+/// Dados do aluno guardados junto com a biometria no serviço facial.
+class StudentProfile {
+  const StudentProfile({
+    required this.registration,
+    this.name = '',
+    this.guardian = '',
+    this.phone = '',
+  });
+
+  factory StudentProfile.fromJson(Map<String, dynamic> json) => StudentProfile(
+    registration: json['matricula']?.toString() ?? '',
+    name: json['nome']?.toString() ?? '',
+    guardian: json['responsavel']?.toString() ?? '',
+    phone: json['telefone']?.toString() ?? '',
+  );
+
+  final String registration;
+  final String name;
+  final String guardian;
+  final String phone;
+}

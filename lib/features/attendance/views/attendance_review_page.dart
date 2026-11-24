@@ -1,12 +1,50 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/facial_recognition_models.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
+import '../../../data/services/auditoria_api.dart';
+
+/// Confirma a chamada. Em turmas registradas no auditoria-service a gravação
+/// é remota: mostra um indicador e mantém a tela aberta se falhar.
+Future<void> confirmAttendance(
+  BuildContext context,
+  SchoolRepository repository,
+  String classId,
+) async {
+  final navigator = Navigator.of(context);
+  final remote = repository.recordsAuditFor(classId);
+  if (remote) {
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+  try {
+    await repository.completeAttendance(classId);
+    if (remote) navigator.pop();
+    navigator.pushReplacementNamed(AppRoutes.saved, arguments: classId);
+  } on AuditoriaApiException catch (error) {
+    if (remote) navigator.pop();
+    if (context.mounted) {
+      showAppMessage(
+        context,
+        'A chamada não foi salva: ${error.message}',
+        error: true,
+      );
+    }
+  }
+}
 
 class AttendanceReviewArgs {
   const AttendanceReviewArgs({required this.classId, this.auditResult});
@@ -151,14 +189,11 @@ class AttendanceReviewPage extends StatelessWidget {
                     children: [
                       PrimaryButton(
                         label: 'Confirmar chamada',
-                        onPressed: () {
-                          repository.completeAttendance(classroom.id);
-                          Navigator.pushReplacementNamed(
-                            context,
-                            AppRoutes.saved,
-                            arguments: classroom.id,
-                          );
-                        },
+                        onPressed: () => confirmAttendance(
+                          context,
+                          repository,
+                          classroom.id,
+                        ),
                       ),
                       const SizedBox(height: 9),
                       PrimaryButton(
@@ -195,221 +230,256 @@ class _DesktopAttendanceReview extends StatelessWidget {
   final int review;
   final SchoolRepository repository;
 
-  void _confirm(BuildContext context) {
-    repository.completeAttendance(classroom.id);
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.saved,
-      arguments: classroom.id,
-    );
+  void _confirm(BuildContext context) =>
+      confirmAttendance(context, repository, classroom.id);
+
+  String get _initials {
+    final initials = classroom.name
+        .replaceAll(RegExp(r'[^A-Za-z0-9À-ÿ ]'), ' ')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part[0].toUpperCase())
+        .join();
+    return initials.isEmpty ? 'T' : initials;
+  }
+
+  /// Confiança média dos alunos reconhecidos pela IA.
+  String get _averageConfidence {
+    final scores = [
+      for (final student in classroom.students)
+        if (student.confidence > 0) student.confidence,
+    ];
+    if (scores.isEmpty) return '—';
+    final average = scores.reduce((a, b) => a + b) / scores.length;
+    return '${(average * 100).round()}%';
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(40, 28, 40, 40),
-      children: [
-        const Text(
-          'Chamadas / 2º Ano A / 14 nov. 2026',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Revisar chamada',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    'Ajuste presenças individuais antes de confirmar em nome do professor.',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final subtitle = [
+      formatBrDateTime(now),
+      if (classroom.room.isNotEmpty) classroom.room,
+    ].join(' · ');
+    return Scaffold(
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(40, 28, 40, 40),
+        children: [
+          Text(
+            'Chamadas / ${classroom.name} / ${formatBrDate(now)}',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 11,
             ),
-            FilledButton.icon(
-              onPressed: () => _confirm(context),
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Confirmar chamada'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 22),
-        AppCard(
-          child: Row(
+          ),
+          const SizedBox(height: 10),
+          Row(
             children: [
-              const CircleAvatar(
-                radius: 27,
-                backgroundColor: AppColors.primarySoft,
-                foregroundColor: AppColors.primary,
-                child: Text(
-                  '2A',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${classroom.name} · Matemática',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '14 de novembro, 08:05 · ${classroom.room}',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                      ),
-                    ),
-                    const Text(
-                      'Capturada por Rafael Mendes · IA v2.4',
+                      'Revisar chamada',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
                       ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      'Ajuste presenças individuais antes de confirmar em nome do professor.',
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
-              _DesktopSummary(
-                label: 'PRESENÇA DETECTADA',
-                value: '$present / ${classroom.students.length}',
+              FilledButton.icon(
+                onPressed: () => _confirm(context),
+                icon: const Icon(Icons.check_rounded),
+                label: const Text('Confirmar chamada'),
               ),
-              const SizedBox(width: 34),
-              const _DesktopSummary(label: 'CONFIANÇA MÉDIA', value: '91%'),
             ],
           ),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Lista de presença',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+          const SizedBox(height: 22),
+          AppCard(
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 27,
+                  backgroundColor: AppColors.primarySoft,
+                  foregroundColor: AppColors.primary,
+                  child: Text(
+                    _initials,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        classroom.courseName.isEmpty
+                            ? classroom.name
+                            : '${classroom.name} · ${classroom.courseName}',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Edite os estados divergentes. As alterações serão registradas no histórico.',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                      ),
-                    ),
-                    if (review > 0) ...[
-                      const SizedBox(height: 14),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.warningLight,
-                          borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
                         ),
-                        child: Text(
-                          '$review alunos precisam de revisão manual por baixa confiança.',
-                          style: const TextStyle(
-                            color: Color(0xFFB45309),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                      ),
+                      const Text(
+                        'Reconhecimento facial SCRFD + TopoFR',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _DesktopSummary(
+                  label: 'PRESENÇA DETECTADA',
+                  value: '$present / ${classroom.students.length}',
+                ),
+                const SizedBox(width: 34),
+                _DesktopSummary(
+                  label: 'CONFIANÇA MÉDIA',
+                  value: _averageConfidence,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Lista de presença',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      const Text(
+                        'Edite os estados divergentes. As alterações serão registradas no histórico.',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                      if (review > 0) ...[
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.warningLight,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$review alunos precisam de revisão manual por baixa confiança.',
+                            style: const TextStyle(
+                              color: Color(0xFFB45309),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
+                      const SizedBox(height: 14),
+                      for (final student in classroom.students) ...[
+                        _StudentReview(
+                          student: student,
+                          onStatusChanged: (status) =>
+                              repository.updateStudentStatus(
+                                classroom.id,
+                                student.id,
+                                status,
+                              ),
+                        ),
+                        const SizedBox(height: 9),
+                      ],
                     ],
-                    const SizedBox(height: 14),
-                    for (final student in classroom.students) ...[
-                      _StudentReview(
-                        student: student,
-                        onStatusChanged: (status) =>
-                            repository.updateStudentStatus(
-                              classroom.id,
-                              student.id,
-                              status,
-                            ),
-                      ),
-                      const SizedBox(height: 9),
-                    ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Auditoria',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+              const SizedBox(width: 20),
+              Expanded(
+                child: AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Auditoria',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'CAPTURA',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(height: 18),
+                      const Text(
+                        'CAPTURA',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text('08:05:42 · Câmera 02'),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'ANOTAÇÃO DO COORDENADOR',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(height: 5),
+                      Text(formatBrDateTime(now)),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'ANOTAÇÃO DO COORDENADOR',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const TextField(
-                      minLines: 3,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Adicionar justificativa',
+                      const SizedBox(height: 8),
+                      const TextField(
+                        minLines: 3,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'Adicionar justificativa',
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () => _confirm(context),
-                        child: const Text('Confirmar chamada'),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () => _confirm(context),
+                          child: const Text('Confirmar chamada'),
+                        ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Devolver ao professor'),
-                    ),
-                  ],
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Devolver ao professor'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DesktopSummary extends StatelessWidget {

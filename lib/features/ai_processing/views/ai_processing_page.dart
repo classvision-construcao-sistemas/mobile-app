@@ -33,14 +33,24 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
   void initState() {
     super.initState();
     _ownsViewModel = widget.viewModel == null;
-    _viewModel =
-        widget.viewModel ??
-        AiProcessingViewModel(
-          imagePath: widget.result.imagePath,
-          auditor: context.read<FacialRecognitionApi>().auditRoom,
-        );
+    _viewModel = widget.viewModel ?? _defaultViewModel();
     _viewModel.addListener(_onChanged);
     _viewModel.start();
+  }
+
+  /// Turmas do turma-service, com perfil autorizado, passam pelo
+  /// auditoria-service (que só considera os alunos ativos da turma). As demais
+  /// usam o reconhecimento facial direto.
+  AiProcessingViewModel _defaultViewModel() {
+    final repository = context.read<SchoolRepository>();
+    final classId = widget.result.classId;
+    final RoomAuditor auditor = repository.recordsAuditFor(classId)
+        ? (path) => repository.previewAttendance(classId!, path)
+        : context.read<FacialRecognitionApi>().auditRoom;
+    return AiProcessingViewModel(
+      imagePath: widget.result.imagePath,
+      auditor: auditor,
+    );
   }
 
   void _onChanged() {

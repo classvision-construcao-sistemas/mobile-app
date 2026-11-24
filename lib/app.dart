@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'data/models/auth_models.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/school_repository.dart';
+import 'data/services/auditoria_api.dart';
 import 'data/services/auth_api.dart';
 import 'data/services/facial_recognition_api.dart';
 import 'data/services/turma_api.dart';
@@ -28,10 +29,18 @@ import 'features/users/views/user_form_page.dart';
 import 'features/users/views/users_page.dart';
 
 class ClassVisionApp extends StatefulWidget {
-  const ClassVisionApp({super.key, this.authApi, this.turmaApi});
+  const ClassVisionApp({
+    super.key,
+    this.authApi,
+    this.turmaApi,
+    this.auditoriaApi,
+    this.facialApi,
+  });
 
   final AuthApi? authApi;
   final TurmaApi? turmaApi;
+  final AuditoriaApi? auditoriaApi;
+  final FacialRecognitionApi? facialApi;
 
   @override
   State<ClassVisionApp> createState() => _ClassVisionAppState();
@@ -45,6 +54,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
   late final AuthApi _authApi;
   late final AuthRepository _auth;
   late final TurmaApi _turmaApi;
+  late final AuditoriaApi _auditoriaApi;
+  late final FacialRecognitionApi _facialApi;
   late final SchoolRepository _school;
   bool _wasAuthenticated = false;
 
@@ -54,7 +65,19 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     _authApi = widget.authApi ?? AuthApi();
     _auth = AuthRepository(api: _authApi)..addListener(_onAuthChanged);
     _turmaApi = widget.turmaApi ?? TurmaApi();
-    _school = SchoolRepository(api: _turmaApi, auth: _auth);
+    _auditoriaApi = widget.auditoriaApi ?? AuditoriaApi();
+    // O serviço facial também valida o JWT da sessão.
+    _facialApi =
+        widget.facialApi ??
+        FacialRecognitionApi(
+          authorization: () => _auth.session?.authorizationHeader,
+        );
+    _school = SchoolRepository(
+      api: _turmaApi,
+      auth: _auth,
+      auditoriaApi: _auditoriaApi,
+      facialApi: _facialApi,
+    );
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -67,6 +90,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     _school.dispose();
     if (widget.authApi == null) _authApi.close();
     if (widget.turmaApi == null) _turmaApi.close();
+    if (widget.auditoriaApi == null) _auditoriaApi.close();
+    if (widget.facialApi == null) _facialApi.close();
     super.dispose();
   }
 
@@ -103,10 +128,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       ChangeNotifierProvider.value(value: _auth),
       ChangeNotifierProvider.value(value: _school),
       ChangeNotifierProvider(create: (_) => AdminRepository()),
-      Provider(
-        create: (_) => FacialRecognitionApi(),
-        dispose: (_, api) => api.close(),
-      ),
+      Provider.value(value: _facialApi),
     ],
     child: MaterialApp(
       title: 'ClassVision',

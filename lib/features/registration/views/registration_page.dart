@@ -88,10 +88,21 @@ class _RegistrationPageState extends State<RegistrationPage> {
     final repository = context.read<SchoolRepository>();
     try {
       final registration = _controllers[1].text.trim();
-      await context.read<FacialRecognitionApi>().enrollStudent(
-        studentId: registration,
-        imagePath: _faceImagePath!,
-      );
+      var alreadyEnrolled = false;
+      try {
+        await context.read<FacialRecognitionApi>().enrollStudent(
+          studentId: registration,
+          imagePath: _faceImagePath!,
+          name: _controllers[0].text,
+          guardian: _controllers[2].text,
+          phone: _controllers[3].text,
+        );
+      } on FacialRecognitionException catch (error) {
+        // A matrícula já tem biometria (ex.: aluno de outra turma): basta
+        // vinculá-lo a esta turma.
+        if (error.statusCode != 409 || widget.classId == null) rethrow;
+        alreadyEnrolled = true;
+      }
       if (!mounted) return;
       final classId = widget.classId;
       if (classId != null && repository.findClassById(classId) != null) {
@@ -106,7 +117,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
           ),
         );
       }
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      if (alreadyEnrolled) {
+        showAppMessage(
+          context,
+          'A matrícula $registration já tinha biometria cadastrada; '
+          'o aluno foi vinculado à turma.',
+        );
+      }
+      Navigator.pop(context);
     } on TurmaApiException catch (error) {
       // A biometria já foi salva; só o vínculo com a turma falhou.
       if (!mounted) return;

@@ -122,10 +122,31 @@ class AttendanceRecord {
     required this.date,
     required this.present,
     required this.absent,
+    this.auditId,
+    this.classId,
+    this.status = AttendanceRecord.confirmed,
   });
+
+  static const confirmed = 'CONFIRMADA';
+  static const corrected = 'CORRIGIDA';
+
+  /// Chamada registrada só neste aparelho (sem auditoria no servidor).
+  static const local = 'LOCAL';
 
   final String className;
   final DateTime date;
   final int present;
   final int absent;
+
+  /// Identificador da auditoria no auditoria-service (nulo se for local).
+  final int? auditId;
+
+  /// Turma da chamada (id usado nas telas).
+  final String? classId;
+
+  /// `CONFIRMADA`, `CORRIGIDA` ou `LOCAL`.
+  final String status;
+
+  bool get isRemote => auditId != null;
+  int get total => present + absent;
 }

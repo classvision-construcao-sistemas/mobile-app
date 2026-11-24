@@ -54,6 +54,11 @@ enum UserRole {
   bool get canManageEnrollments =>
       canManageClasses || this == UserRole.secretario;
 
+  /// Registra e corrige chamadas no auditoria-service (RN-01: coordenador e
+  /// administrador geral). Os demais perfis só consultam o histórico.
+  bool get canRecordAttendance =>
+      this == UserRole.administrador || this == UserRole.coordenador;
+
   /// Roles que este perfil pode conceder a outros usuários.
   List<UserRole> get assignableRoles => canManageUsers
       ? UserRole.values.where((role) => role.level <= level).toList()

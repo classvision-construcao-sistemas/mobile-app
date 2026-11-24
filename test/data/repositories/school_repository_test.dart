@@ -1,12 +1,16 @@
+import 'dart:io';
+
 import 'package:class_vision/data/models/facial_recognition_models.dart';
 import 'package:class_vision/data/models/school_models.dart';
 import 'package:class_vision/data/models/turma_models.dart';
 import 'package:class_vision/data/repositories/auth_repository.dart';
 import 'package:class_vision/data/repositories/school_repository.dart';
+import 'package:class_vision/data/services/auditoria_api.dart';
 import 'package:class_vision/data/services/turma_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
+import '../../helpers/fake_auditoria_server.dart';
 import '../../helpers/fake_auth_server.dart';
 import '../../helpers/fake_turma_server.dart';
 
@@ -231,5 +235,139 @@ void main() {
     expect(students[0].confidence, .92);
     expect(students[1].status, AttendanceStatus.review);
     expect(students[1].confidence, .63);
+  });
+
+  group('auditoria-service', () {
+    late File photo;
+
+    setUp(() async {
+      photo = File(
+        '${Directory.systemTemp.path}${Platform.pathSeparator}'
+        'classvision-sala-${DateTime.now().microsecondsSinceEpoch}.jpg',
+      );
+      await photo.writeAsBytes([0xFF, 0xD8, 0xFF, 0xD9]);
+    });
+
+    tearDown(() async {
+      if (await photo.exists()) await photo.delete();
+    });
+
+    test('only coordinators record remote classes in the audit', () async {
+      final coordinator = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(),
+        auditoriaApi: fakeAuditoriaApi(),
+      );
+      final professor = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(role: 'PROFESSOR'),
+        auditoriaApi: fakeAuditoriaApi(),
+      );
+      await coordinator.loadClasses();
+      await professor.loadClasses();
+
+      expect(coordinator.recordsAuditFor('1'), isTrue);
+      expect(
+        coordinator.recordsAuditFor(coordinator.prepareAuditClass(null)),
+        isFalse,
+      );
+      expect(professor.recordsAuditFor('1'), isFalse);
+    });
+
+    test('previews, confirms and lists the attendance', () async {
+      final saved = <Map<String, dynamic>>[];
+      final repository = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(),
+        auditoriaApi: fakeAuditoriaApi(saved: saved),
+      );
+      await repository.loadClasses();
+
+      final audit = await repository.previewAttendance('1', photo.path);
+      expect(audit.recognizedStudents.map((it) => it.studentId), ['20260001']);
+      expect(audit.totalFacesDetected, 3);
+      repository.applyFacialRecognition('1', audit);
+
+      await repository.completeAttendance('1');
+
+      expect(saved.single['turmaId'], 1);
+      expect(saved.single['resultados'], [
+        {
+          'alunoId': 20260001,
+          'situacaoPresenca': 'PRESENTE',
+          'situacaoFace': 'RECONHECIDA',
+        },
+        {
+          'alunoId': 20260002,
+          'situacaoPresenca': 'POSSIVEL_FALTA',
+          'situacaoFace': 'NAO_RECONHECIDA',
+        },
+      ]);
+      final record = repository.history.single;
+      expect(record.isRemote, isTrue);
+      expect(record.className, '2º Ano A');
+      expect(record.present, 1);
+      expect(record.absent, 1);
+      expect(repository.classById('1').attendanceCompleted, isTrue);
+
+      await repository.loadHistory();
+      expect(repository.history.single.auditId, record.auditId);
+    });
+
+    test('keeps the class open when the audit cannot be saved', () async {
+      final repository = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(),
+        auditoriaApi: fakeAuditoriaApi(failWith: 502),
+      );
+      await repository.loadClasses();
+
+      await expectLater(
+        repository.completeAttendance('1'),
+        throwsA(isA<AuditoriaApiException>()),
+      );
+      expect(repository.history, isEmpty);
+      expect(repository.classById('1').attendanceCompleted, isFalse);
+      expect(repository.historyError, 'Falha simulada');
+    });
+
+    test('professors still save the attendance in the session', () async {
+      final repository = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(role: 'PROFESSOR'),
+        auditoriaApi: fakeAuditoriaApi(),
+      );
+      await repository.loadClasses();
+
+      await repository.completeAttendance('1');
+
+      expect(repository.history.single.status, AttendanceRecord.local);
+    });
+  });
+
+  test('fills student names from the facial service', () async {
+    final requests = <http.BaseRequest>[];
+    final repository = SchoolRepository(
+      api: fakeTurmaApi(),
+      auth: await signedIn(),
+      facialApi: fakeFacialApi(
+        names: {'20260001': 'Ana Clara'},
+        requests: requests,
+      ),
+    );
+
+    await repository.loadClasses();
+    await pumpEventQueue();
+
+    final students = repository.classById('1').students;
+    expect(students.first.name, 'Ana Clara');
+    expect(students.first.guardian, 'Responsável de Ana Clara');
+    expect(students.last.name, 'Aluno 20260002');
+    expect(
+      requests.every(
+        (it) => it.headers['Authorization'] == 'Bearer token-de-teste',
+      ),
+      isTrue,
+    );
   });
 }

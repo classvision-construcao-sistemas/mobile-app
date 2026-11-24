@@ -94,7 +94,7 @@ void main() {
     await openDestination(
       tester,
       'Chamadas',
-      'Histórico de presença e pendências',
+      'Histórico de presença das turmas',
     ); // 12
     await openDestination(
       tester,

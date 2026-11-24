@@ -103,4 +103,82 @@ void main() {
       ),
     );
   });
+
+  test('sends the session token and the student data when enrolling', () async {
+    final client = MockClient((request) async {
+      expect(request.headers['Authorization'], 'Bearer abc.def.ghi');
+      final body = utf8.decode(request.bodyBytes, allowMalformed: true);
+      expect(body, contains('name="nome"'));
+      expect(body, contains('Ana Clara'));
+      expect(body, contains('name="responsavel"'));
+      expect(body, contains('name="telefone"'));
+      return http.Response(
+        jsonEncode({'message': 'ok', 'student_id': '2026001'}),
+        201,
+      );
+    });
+    final api = FacialRecognitionApi(
+      client: client,
+      baseUrl: 'http://api.test',
+      authorization: () => 'Bearer abc.def.ghi',
+    );
+
+    await api.enrollStudent(
+      studentId: '2026001',
+      imagePath: image.path,
+      name: ' Ana Clara ',
+      guardian: 'Rita',
+      phone: '64999990000',
+    );
+  });
+
+  test('keeps the conflict status when the student already exists', () async {
+    final api = FacialRecognitionApi(
+      client: MockClient(
+        (_) async => http.Response(
+          jsonEncode({'error': 'Aluno 2026001 já cadastrado.'}),
+          409,
+        ),
+      ),
+      baseUrl: 'http://api.test',
+    );
+
+    await expectLater(
+      api.enrollStudent(studentId: '2026001', imagePath: image.path),
+      throwsA(
+        isA<FacialRecognitionException>().having(
+          (error) => error.statusCode,
+          'statusCode',
+          409,
+        ),
+      ),
+    );
+  });
+
+  test('looks up the student profile and returns null when missing', () async {
+    final api = FacialRecognitionApi(
+      client: MockClient((request) async {
+        expect(request.headers['Authorization'], 'Bearer t');
+        return request.url.path.endsWith('/2026001')
+            ? http.Response(
+                jsonEncode({
+                  'matricula': '2026001',
+                  'nome': 'Ana Clara',
+                  'responsavel': 'Rita',
+                  'telefone': '64999990000',
+                }),
+                200,
+                headers: {'content-type': 'application/json; charset=utf-8'},
+              )
+            : http.Response(jsonEncode({'error': 'não encontrado'}), 404);
+      }),
+      baseUrl: 'http://api.test',
+      authorization: () => 'Bearer t',
+    );
+
+    final found = await api.getStudent('2026001');
+    expect(found?.name, 'Ana Clara');
+    expect(found?.guardian, 'Rita');
+    expect(await api.getStudent('9999'), isNull);
+  });
 }

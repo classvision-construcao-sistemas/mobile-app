@@ -1,27 +1,47 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
+import '../models/auditoria_models.dart';
 import '../models/auth_models.dart';
 import '../models/facial_recognition_models.dart';
 import '../models/school_models.dart';
 import '../models/turma_models.dart';
+import '../services/auditoria_api.dart';
+import '../services/facial_recognition_api.dart';
 import '../services/turma_api.dart';
 import 'auth_repository.dart';
 
-/// Turmas, cursos e estado das chamadas da sessão.
+/// Turmas, cursos, alunos e chamadas, integrando os microsserviços.
 ///
-/// Cursos, turmas e vínculos de alunos vêm do `turma-service`, sempre com o
-/// token da sessão de [auth]. A biometria continua exclusivamente no serviço
-/// Milvus; nome, responsável e status de presença dos alunos ficam só em
-/// memória durante a sessão, pois o turma-service guarda apenas o vínculo
-/// (`alunoId` + situação). Nenhum dado fictício é pré-carregado.
+/// - Cursos, turmas e vínculos de alunos vêm do `turma-service`.
+/// - Nome, responsável e telefone do aluno ficam com a biometria no
+///   `reconhecimento-facial-service` ([facialApi]) e são buscados pela
+///   matrícula, que é o `alunoId` do vínculo na turma.
+/// - A chamada de turmas do turma-service é feita pelo `auditoria-service`
+///   ([auditoriaApi]): prévia pela foto, confirmação e histórico.
 ///
-/// Sem [api] ou [auth] (ex.: em testes) o repositório funciona só com o
-/// estado local e as chamadas ao turma-service falham como sessão expirada.
+/// Todas as chamadas usam o token da sessão de [auth]; um `401` encerra a
+/// sessão. Sem [api] ou [auth] (ex.: em testes) o repositório funciona só com
+/// o estado local. Nenhum dado fictício é pré-carregado.
 class SchoolRepository extends ChangeNotifier {
-  SchoolRepository({this.api, this.auth});
+  SchoolRepository({this.api, this.auth, this.auditoriaApi, this.facialApi});
 
   final TurmaApi? api;
   final AuthRepository? auth;
+  final AuditoriaApi? auditoriaApi;
+  final FacialRecognitionApi? facialApi;
+
+  /// Matrículas já consultadas no serviço facial nesta sessão.
+  final Set<String> _profileLookups = {};
+
+  /// Última prévia do auditoria-service por turma (situação de cada face).
+  final Map<String, AuditPreview> _previews = {};
+
+  String? _historyError;
+
+  /// Mensagem do último erro ao carregar o histórico de chamadas.
+  String? get historyError => _historyError;
 
   List<SchoolClass> _classes = [];
   List<Course> _courses = [];
@@ -50,6 +70,14 @@ class SchoolRepository extends ChangeNotifier {
 
   bool get canManageClasses => auth?.role?.canManageClasses ?? false;
   bool get canManageEnrollments => auth?.role?.canManageEnrollments ?? false;
+
+  /// Se a chamada desta turma é registrada no auditoria-service: turma do
+  /// turma-service e perfil autorizado (RN-01). Caso contrário a chamada usa
+  /// o reconhecimento facial direto e fica só nesta sessão.
+  bool recordsAuditFor(String? classId) =>
+      auditoriaApi != null &&
+      (auth?.role?.canRecordAttendance ?? false) &&
+      (findClassById(classId)?.isRemote ?? false);
 
   Course? courseById(int? id) {
     if (id == null) return null;
@@ -100,6 +128,8 @@ class SchoolRepository extends ChangeNotifier {
       final local = _classes.where((item) => !item.isRemote).toList();
       _classes = [for (final remote in remoteClasses) _merge(remote), ...local];
       _loaded = true;
+      unawaited(_loadStudentProfiles());
+      unawaited(loadHistory());
     } on TurmaApiException catch (error) {
       if (generation != _generation) return;
       _error = error.message;
@@ -161,6 +191,7 @@ class SchoolRepository extends ChangeNotifier {
   /// permissão também criam o vínculo na API (a matrícula é o `alunoId`).
   Future<void> enrollStudent(String classId, Student student) async {
     _knownStudents[student.registration] = student;
+    _profileLookups.add(student.registration);
     final classroom = findClassById(classId);
     if (classroom == null) return;
     final remoteId = classroom.remoteId;
@@ -296,7 +327,107 @@ class SchoolRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  void completeAttendance(String classId) {
+  // -------------------------------------------- Chamada (auditoria-service)
+
+  /// Prévia da chamada (`POST /auditorias/previa`), no formato usado pelas
+  /// telas de revisão: os alunos reconhecidos entre os ativos da turma.
+  Future<RoomAuditResult> previewAttendance(
+    String classId,
+    String imagePath,
+  ) async {
+    final remoteId = _requireRemoteId(classId);
+    final preview = await _authorizedAudit(
+      (api, session) =>
+          api.preview(session, classId: remoteId, imagePath: imagePath),
+    );
+    _previews[classId] = preview;
+    final recognized = [
+      for (final student in preview.students)
+        if (student.present)
+          RecognizedStudent(
+            studentId: '${student.studentId}',
+            confidenceScore: student.confidence ?? 1,
+            facialArea: const {},
+          ),
+    ];
+    return RoomAuditResult(
+      message: 'Prévia gerada pelo serviço de auditoria.',
+      recognizedStudents: recognized,
+      unrecognizedCount: preview.unidentifiedFaces + preview.facesOutsideClass,
+      totalFacesDetected: preview.totalFaces,
+    );
+  }
+
+  /// Histórico de chamadas do auditoria-service (`GET /auditorias`). As
+  /// chamadas feitas só nesta sessão (sem auditoria) continuam na lista.
+  Future<void> loadHistory() async {
+    if (auditoriaApi == null || auth?.session == null) return;
+    final generation = _generation;
+    try {
+      final records = await _authorizedAudit(
+        (api, session) => api.list(session),
+      );
+      if (generation != _generation) return;
+      final local = _history.where((record) => !record.isRemote).toList();
+      _history
+        ..clear()
+        ..addAll(
+          [...local, ...records.map(_recordFor)]
+            ..sort((a, b) => b.date.compareTo(a.date)),
+        );
+      _historyError = null;
+    } on AuditoriaApiException catch (error) {
+      if (generation != _generation) return;
+      _historyError = error.message;
+    }
+    notifyListeners();
+  }
+
+  /// Confirma a chamada revisada. Em turmas do turma-service, com perfil
+  /// autorizado, grava a auditoria (`POST /auditorias`); senão, registra só
+  /// nesta sessão.
+  Future<void> completeAttendance(String classId) async {
+    final classroom = findClassById(classId);
+    if (classroom != null && recordsAuditFor(classId)) {
+      final remoteId = classroom.remoteId!;
+      final results = [
+        for (final student in classroom.students)
+          if (_countsForAudit(student))
+            AuditResultItem(
+              studentId: int.parse(student.registration),
+              presence: student.status == AttendanceStatus.present
+                  ? AuditPresence.present
+                  : AuditPresence.possibleAbsence,
+              face: student.confidence > 0
+                  ? AuditFace.recognized
+                  : AuditFace.notRecognized,
+            ),
+      ];
+      if (results.isEmpty) {
+        throw const AuditoriaApiException(
+          'A turma não tem alunos ativos para registrar a chamada.',
+        );
+      }
+      final record = await _authorizedAudit(
+        (api, session) =>
+            api.confirm(session, classId: remoteId, results: results),
+      );
+      _previews.remove(classId);
+      _classes = _classes
+          .map(
+            (item) => item.id == classId
+                ? item.copyWith(attendanceCompleted: true)
+                : item,
+          )
+          .toList();
+      _history.insert(0, _recordFor(record));
+      notifyListeners();
+      return;
+    }
+    _completeLocally(classId);
+  }
+
+  void _completeLocally(String classId) {
     _classes = _classes
         .map(
           (item) => item.id == classId
@@ -317,6 +448,8 @@ class SchoolRepository extends ChangeNotifier {
         absent: classroom.students
             .where((student) => student.status == AttendanceStatus.absent)
             .length,
+        classId: classroom.id,
+        status: AttendanceRecord.local,
       ),
     );
     notifyListeners();
@@ -329,6 +462,9 @@ class SchoolRepository extends ChangeNotifier {
     _courses = [];
     _history.clear();
     _knownStudents.clear();
+    _profileLookups.clear();
+    _previews.clear();
+    _historyError = null;
     _loading = false;
     _loaded = false;
     _error = null;
@@ -348,6 +484,120 @@ class SchoolRepository extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------- Interno
+
+  /// Só vínculos ativos (e matrículas numéricas) entram na auditoria.
+  static bool _countsForAudit(Student student) {
+    final status = student.enrollmentStatus?.toUpperCase();
+    return (status == 'ATIVO' || status == 'MATRICULADO') &&
+        int.tryParse(student.registration) != null;
+  }
+
+  AttendanceRecord _recordFor(AuditRecord record) {
+    final classId = record.classId == null ? null : '${record.classId}';
+    final classroom = findClassById(classId);
+    return AttendanceRecord(
+      className: classroom?.name ?? 'Turma ${record.classId ?? '—'}',
+      date: record.date,
+      present: record.present,
+      absent: record.absent,
+      auditId: record.id,
+      classId: classId,
+      status: record.status.isEmpty
+          ? AttendanceRecord.confirmed
+          : record.status,
+    );
+  }
+
+  /// Completa nome, responsável e telefone dos alunos vinculados com os dados
+  /// guardados no serviço facial (a turma só conhece a matrícula).
+  Future<void> _loadStudentProfiles() async {
+    final facial = facialApi;
+    if (facial == null) return;
+    final generation = _generation;
+    final pending = <String>{
+      for (final classroom in _classes)
+        for (final student in classroom.students)
+          if (student.enrollmentStatus != null &&
+              !_profileLookups.contains(student.registration))
+            student.registration,
+    };
+    if (pending.isEmpty) return;
+    _profileLookups.addAll(pending);
+    final profiles = <String, StudentProfile>{};
+    await Future.wait(
+      pending.map((registration) async {
+        try {
+          final profile = await facial.getStudent(registration);
+          if (profile != null) profiles[registration] = profile;
+        } on FacialRecognitionException {
+          // Sem o cadastro facial o aluno continua com o nome genérico.
+          _profileLookups.remove(registration);
+        }
+      }),
+    );
+    if (generation != _generation || profiles.isEmpty) return;
+    _classes = [
+      for (final classroom in _classes)
+        classroom.copyWith(
+          students: [
+            for (final student in classroom.students)
+              if (profiles[student.registration] case final profile?)
+                _withProfile(student, profile)
+              else
+                student,
+          ],
+        ),
+    ];
+    for (final entry in profiles.entries) {
+      final known = _knownStudents[entry.key];
+      if (known == null) {
+        _knownStudents[entry.key] = _withProfile(
+          Student(
+            id: entry.key,
+            name: entry.key,
+            registration: entry.key,
+            guardian: '',
+            phone: '',
+          ),
+          entry.value,
+        );
+      }
+    }
+    notifyListeners();
+  }
+
+  static Student _withProfile(Student student, StudentProfile profile) =>
+      student.copyWith(
+        name: profile.name.trim().isEmpty ? null : profile.name.trim(),
+        guardian: profile.guardian.trim().isEmpty ? null : profile.guardian,
+        phone: profile.phone.trim().isEmpty ? null : profile.phone,
+      );
+
+  /// Como [_authorized], para o auditoria-service.
+  Future<T> _authorizedAudit<T>(
+    Future<T> Function(AuditoriaApi api, AuthSession session) request,
+  ) async {
+    final api = auditoriaApi;
+    final auth = this.auth;
+    final session = auth?.session;
+    if (api == null ||
+        auth == null ||
+        session == null ||
+        !auth.ensureValidSession()) {
+      throw const AuditoriaApiException(
+        'Sua sessão expirou. Entre novamente.',
+        statusCode: 401,
+      );
+    }
+    try {
+      return await request(api, session);
+    } on AuditoriaApiException catch (error) {
+      if (error.isUnauthorized && identical(auth.session, session)) {
+        auth.logout(reason: 'Sua sessão foi encerrada. Entre novamente.');
+      }
+      rethrow;
+    }
+  }
 
   static AttendanceStatus _statusForConfidence(double confidence) =>
       confidence >= .75 ? AttendanceStatus.present : AttendanceStatus.review;

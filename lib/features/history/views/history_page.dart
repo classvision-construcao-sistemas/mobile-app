@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/admin_cards.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
 
+/// Histórico de chamadas: auditorias gravadas no auditoria-service e as
+/// chamadas feitas só nesta sessão (turmas locais ou perfis sem registro).
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key, this.onOpenReview});
   final ValueChanged<String>? onOpenReview;
@@ -14,208 +17,238 @@ class HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final repository = context.watch<SchoolRepository>();
     final records = repository.history;
-    String? idFor(AttendanceRecord record) => repository.classes
-        .where((item) => item.name == record.className)
-        .firstOrNull
-        ?.id;
+    VoidCallback? callbackFor(AttendanceRecord record) {
+      // Só a chamada local ainda pode ser revisada na tela de conferência.
+      final id = record.classId;
+      if (record.isRemote || id == null || onOpenReview == null) return null;
+      if (repository.findClassById(id) == null) return null;
+      return () => onOpenReview!(id);
+    }
+
+    final data = _HistoryData(
+      records: records,
+      error: repository.historyError,
+      callbackFor: callbackFor,
+      onRefresh: repository.loadHistory,
+    );
     return LayoutBuilder(
       builder: (context, constraints) => constraints.maxWidth >= 900
-          ? _DesktopAttendance(
-              records: records,
-              idFor: idFor,
-              onOpenReview: onOpenReview,
-            )
-          : _MobileAttendance(
-              records: records,
-              idFor: idFor,
-              onOpenReview: onOpenReview,
-            ),
+          ? _DesktopAttendance(data: data)
+          : _MobileAttendance(data: data),
     );
   }
 }
 
-class _DesktopAttendance extends StatelessWidget {
-  const _DesktopAttendance({
+class _HistoryData {
+  const _HistoryData({
     required this.records,
-    required this.idFor,
-    this.onOpenReview,
+    required this.error,
+    required this.callbackFor,
+    required this.onRefresh,
   });
-  final List<AttendanceRecord> records;
-  final String? Function(AttendanceRecord) idFor;
-  final ValueChanged<String>? onOpenReview;
 
-  VoidCallback? _callbackFor(AttendanceRecord record) {
-    final id = idFor(record);
-    if (id == null || onOpenReview == null) return null;
-    return () => onOpenReview!(id);
-  }
+  final List<AttendanceRecord> records;
+  final String? error;
+  final VoidCallback? Function(AttendanceRecord) callbackFor;
+  final Future<void> Function() onRefresh;
+
+  int count(String status) =>
+      records.where((record) => record.status == status).length;
+}
+
+String _statusLabel(AttendanceRecord record) => switch (record.status) {
+  AttendanceRecord.corrected => 'Corrigida',
+  AttendanceRecord.local => 'Só nesta sessão',
+  _ => 'Confirmada',
+};
+
+Color _statusColor(AttendanceRecord record) => switch (record.status) {
+  AttendanceRecord.corrected => AppColors.info,
+  AttendanceRecord.local => AppColors.warning,
+  _ => AppColors.success,
+};
+
+String _percent(int part, int total) => total == 0
+    ? '—'
+    : '${(part * 100 / total).toStringAsFixed(1).replaceAll('.', ',')}% do total';
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner(this.message);
+  final String message;
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
-    children: [
-      const Text(
-        'Gestão acadêmica / Controle de presença',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.only(bottom: 16),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.warningLight,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Text(
+      'Não foi possível carregar o histórico do servidor: $message',
+      style: const TextStyle(
+        color: Color(0xFFB45309),
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
       ),
-      const SizedBox(height: 9),
-      const Text(
-        'Chamadas',
-        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 5),
-      const Text(
-        'Acompanhe chamadas confirmadas, pendentes e registros que exigem revisão.',
-        style: TextStyle(color: AppColors.textSecondary),
-      ),
-      const SizedBox(height: 22),
-      const Row(
-        children: [
-          Expanded(
-            child: MetricCard(
-              label: 'TOTAL NO PERÍODO',
-              value: '128',
-              supportingText: 'chamadas registradas',
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: MetricCard(
-              label: 'CONFIRMADAS',
-              value: '116',
-              supportingText: '90,6% do total',
-              valueColor: AppColors.success,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: MetricCard(
-              label: 'EM REVISÃO',
-              value: '8',
-              supportingText: 'requerem sua atenção',
-              valueColor: AppColors.warning,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: MetricCard(
-              label: 'PENDENTES',
-              value: '4',
-              supportingText: 'sem confirmação',
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 22),
-      AdminSurface(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(22, 20, 22, 12),
-              child: Text(
-                'Histórico de chamadas',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-            ),
-            if (records.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(40),
-                child: Text('Nenhuma chamada registrada nesta sessão.'),
-              )
-            else
-              for (var index = 0; index < records.length; index++)
-                _AttendanceRow(
-                  record: records[index],
-                  status: index == 0 ? 'Em revisão' : 'Confirmada',
-                  onTap: _callbackFor(records[index]),
-                ),
-          ],
-        ),
-      ),
-    ],
+    ),
   );
 }
 
-class _MobileAttendance extends StatelessWidget {
-  const _MobileAttendance({
-    required this.records,
-    required this.idFor,
-    this.onOpenReview,
-  });
-  final List<AttendanceRecord> records;
-  final String? Function(AttendanceRecord) idFor;
-  final ValueChanged<String>? onOpenReview;
-
-  VoidCallback? _callbackFor(AttendanceRecord record) {
-    final id = idFor(record);
-    if (id == null || onOpenReview == null) return null;
-    return () => onOpenReview!(id);
-  }
+class _DesktopAttendance extends StatelessWidget {
+  const _DesktopAttendance({required this.data});
+  final _HistoryData data;
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-    children: [
-      const Text(
-        'Chamadas',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 4),
-      const Text(
-        'Histórico de presença e pendências',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-      ),
-      const SizedBox(height: 18),
-      const Align(
-        alignment: Alignment.centerLeft,
-        child: Chip(label: Text('Esta semana  ⌄')),
-      ),
-      const SizedBox(height: 18),
-      if (records.isEmpty)
-        const AdminSurface(
-          child: Center(
-            child: Text('Nenhuma chamada registrada nesta sessão.'),
-          ),
-        )
-      else ...[
+  Widget build(BuildContext context) {
+    final records = data.records;
+    final total = records.length;
+    final confirmed = data.count(AttendanceRecord.confirmed);
+    final corrected = data.count(AttendanceRecord.corrected);
+    final local = data.count(AttendanceRecord.local);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
+      children: [
         const Text(
-          'Requer revisão',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          'Gestão acadêmica / Controle de presença',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
         ),
-        const SizedBox(height: 10),
-        _MobileAttendanceCard(
-          record: records.first,
-          status: 'Em revisão',
-          action: 'Abrir',
-          onTap: _callbackFor(records.first),
+        const SizedBox(height: 9),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Chamadas',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: data.onRefresh,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Atualizar'),
+            ),
+          ],
         ),
-        if (records.length > 1) ...[
-          const SizedBox(height: 20),
-          const Text(
-            'Confirmadas',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        const SizedBox(height: 5),
+        const Text(
+          'Acompanhe as chamadas confirmadas e as corrigidas pela coordenação.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 22),
+        if (data.error case final error?) _ErrorBanner(error),
+        Row(
+          children: [
+            Expanded(
+              child: MetricCard(
+                label: 'TOTAL',
+                value: '$total',
+                supportingText: 'chamadas registradas',
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: MetricCard(
+                label: 'CONFIRMADAS',
+                value: '$confirmed',
+                supportingText: _percent(confirmed, total),
+                valueColor: AppColors.success,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: MetricCard(
+                label: 'CORRIGIDAS',
+                value: '$corrected',
+                supportingText: 'com justificativa',
+                valueColor: AppColors.info,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: MetricCard(
+                label: 'SÓ NESTA SESSÃO',
+                value: '$local',
+                supportingText: 'não gravadas no servidor',
+                valueColor: AppColors.warning,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
+        AdminSurface(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(22, 20, 22, 12),
+                child: Text(
+                  'Histórico de chamadas',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+              ),
+              if (records.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Text('Nenhuma chamada registrada.'),
+                )
+              else
+                for (final record in records)
+                  _AttendanceRow(
+                    record: record,
+                    onTap: data.callbackFor(record),
+                  ),
+            ],
           ),
-          const SizedBox(height: 10),
-          for (final record in records.skip(1)) ...[
-            _MobileAttendanceCard(record: record, status: 'Confirmada'),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileAttendance extends StatelessWidget {
+  const _MobileAttendance({required this.data});
+  final _HistoryData data;
+
+  @override
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: data.onRefresh,
+    child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+      children: [
+        const Text(
+          'Chamadas',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Histórico de presença das turmas',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        ),
+        const SizedBox(height: 18),
+        if (data.error case final error?) _ErrorBanner(error),
+        if (data.records.isEmpty)
+          const AdminSurface(
+            child: Center(child: Text('Nenhuma chamada registrada.')),
+          )
+        else
+          for (final record in data.records) ...[
+            _MobileAttendanceCard(
+              record: record,
+              onTap: data.callbackFor(record),
+            ),
             const SizedBox(height: 10),
           ],
-        ],
       ],
-    ],
+    ),
   );
 }
 
 class _AttendanceRow extends StatelessWidget {
-  const _AttendanceRow({
-    required this.record,
-    required this.status,
-    this.onTap,
-  });
+  const _AttendanceRow({required this.record, this.onTap});
   final AttendanceRecord record;
-  final String status;
   final VoidCallback? onTap;
 
   @override
@@ -226,31 +259,28 @@ class _AttendanceRow extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Expanded(child: Text(_dateLabel(record.date))),
+        Expanded(child: Text(formatBrDateTime(record.date))),
         Expanded(
           child: Text(
             record.className,
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
-        const Expanded(child: Text('Professor responsável')),
-        Expanded(
-          child: Text('${record.present} de ${record.present + record.absent}'),
-        ),
+        Expanded(child: Text('${record.present} de ${record.total}')),
         Expanded(
           child: Text(
-            status,
+            _statusLabel(record),
             style: TextStyle(
-              color: status == 'Confirmada'
-                  ? AppColors.success
-                  : AppColors.warning,
+              color: _statusColor(record),
               fontWeight: FontWeight.w700,
             ),
           ),
         ),
-        TextButton(
-          onPressed: onTap,
-          child: Text(status == 'Em revisão' ? 'Revisar →' : 'Ver →'),
+        SizedBox(
+          width: 96,
+          child: onTap == null
+              ? const SizedBox.shrink()
+              : TextButton(onPressed: onTap, child: const Text('Revisar →')),
         ),
       ],
     ),
@@ -258,15 +288,8 @@ class _AttendanceRow extends StatelessWidget {
 }
 
 class _MobileAttendanceCard extends StatelessWidget {
-  const _MobileAttendanceCard({
-    required this.record,
-    required this.status,
-    this.action,
-    this.onTap,
-  });
+  const _MobileAttendanceCard({required this.record, this.onTap});
   final AttendanceRecord record;
-  final String status;
-  final String? action;
   final VoidCallback? onTap;
 
   @override
@@ -276,12 +299,13 @@ class _MobileAttendanceCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${record.className} · ${_subject(record.className)}',
+          record.className,
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 5),
         Text(
-          '${_dateLabel(record.date)} · ${record.present} de ${record.present + record.absent} presentes',
+          '${formatBrDateTime(record.date)} · '
+          '${record.present} de ${record.total} presentes',
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
         ),
         const SizedBox(height: 10),
@@ -289,31 +313,19 @@ class _MobileAttendanceCard extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                status,
+                _statusLabel(record),
                 style: TextStyle(
-                  color: status == 'Confirmada'
-                      ? AppColors.success
-                      : AppColors.warning,
+                  color: _statusColor(record),
                   fontWeight: FontWeight.w700,
                   fontSize: 11,
                 ),
               ),
             ),
-            if (action != null)
-              TextButton(onPressed: onTap, child: Text(action!)),
+            if (onTap != null)
+              TextButton(onPressed: onTap, child: const Text('Revisar')),
           ],
         ),
       ],
     ),
   );
 }
-
-String _dateLabel(DateTime date) =>
-    '${date.day.toString().padLeft(2, '0')} nov. · ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-
-String _subject(String className) => switch (className) {
-  '2º Ano A' => 'Matemática',
-  '1º Ano C' => 'Biologia',
-  '3º Ano B' => 'Química',
-  _ => 'Chamada',
-};

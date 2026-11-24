@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/models/facial_recognition_models.dart';
+import '../../../data/services/auditoria_api.dart';
 import '../../../data/services/facial_recognition_api.dart';
 import '../models/ai_processing_state.dart';
 
@@ -45,6 +46,10 @@ class AiProcessingViewModel extends ChangeNotifier {
       _state = const AiProcessingState.completed();
       _notify();
     } on FacialRecognitionException catch (error) {
+      if (_disposed) return;
+      _state = AiProcessingState.failed(error.message);
+      _notify();
+    } on AuditoriaApiException catch (error) {
       if (_disposed) return;
       _state = AiProcessingState.failed(error.message);
       _notify();

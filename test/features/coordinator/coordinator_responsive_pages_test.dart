@@ -69,10 +69,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Histórico de chamadas'), findsOneWidget);
     // Sem dados fictícios: o histórico começa vazio a cada sessão.
-    expect(
-      find.text('Nenhuma chamada registrada nesta sessão.'),
-      findsOneWidget,
-    );
+    expect(find.text('Nenhuma chamada registrada.'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('Relatórios'));
@@ -97,11 +94,8 @@ void main() {
 
     await tester.tap(find.text('Chamadas'));
     await tester.pumpAndSettle();
-    expect(find.text('Histórico de presença e pendências'), findsOneWidget);
-    expect(
-      find.text('Nenhuma chamada registrada nesta sessão.'),
-      findsOneWidget,
-    );
+    expect(find.text('Histórico de presença das turmas'), findsOneWidget);
+    expect(find.text('Nenhuma chamada registrada.'), findsOneWidget);
 
     await tester.tap(find.text('Relatórios'));
     await tester.pumpAndSettle();
