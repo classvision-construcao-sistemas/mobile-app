@@ -61,10 +61,9 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
         );
       }
       final repository = context.watch<SchoolRepository>();
-      final institutionId = context
-          .watch<AuthRepository>()
-          .session
-          ?.institutionId;
+      final session = context.watch<AuthRepository>().session;
+      final institutionId = session?.institutionId;
+      final firstName = session?.firstName ?? '';
       final firstClassId = repository.classes.firstOrNull?.id;
       void openCamera([String? id]) => Navigator.pushNamed(
         context,
@@ -81,7 +80,8 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
               : () => openReview(firstClassId),
           onViewAllPending: () => setState(() => _selectedIndex = 4),
           onOpenNotifications: () => setState(() => _showNotifications = true),
-          userName: 'Marina',
+          onOpenCameraFor: openCamera,
+          userName: firstName.isEmpty ? 'Marina' : firstName,
         ),
         1 => ClassesPage(
           onOpenClass: (id) => Navigator.pushNamed(

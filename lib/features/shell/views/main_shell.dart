@@ -64,6 +64,7 @@ class _MainShellContent extends StatelessWidget {
             ? auth.session!.firstName
             : 'Lucas',
         onOpenCamera: openCamera,
+        onOpenCameraFor: openCamera,
         onOpenReview: firstClassId == null
             ? null
             : () => openReview(firstClassId),

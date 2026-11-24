@@ -83,7 +83,15 @@ void main() {
     await signIn(tester, const Size(390, 844));
 
     expect(find.text('Olá, Lucas'), findsOneWidget);
-    expect(find.text('Sábado, 14 de novembro'), findsOneWidget);
+    // Data de hoje por extenso (ex.: "Terça-feira, 24 de novembro").
+    expect(
+      find.textContaining(
+        RegExp(
+          r'^(Segunda|Terça|Quarta|Quinta|Sexta)-feira, \d+ de |^(Sábado|Domingo), \d+ de ',
+        ),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Resumo de hoje'), findsOneWidget);
 
     await tester.tap(find.text('Turmas'));
