@@ -75,6 +75,31 @@ AuditoriaApi fakeAuditoriaApi({
           return jsonResponse(record, 201);
         case ('GET', ['auditorias']):
           return jsonResponse(store.reversed.toList(), 200);
+        case ('POST', ['auditorias', final id, 'correcoes']):
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          final record = store.firstWhere((it) => '${it['id']}' == id);
+          final changes = {
+            for (final item in body['resultados'] as List)
+              (item as Map)['alunoId']: item['situacaoPresenca'],
+          };
+          record['resultados'] = [
+            for (final item in record['resultados'] as List)
+              {
+                ...(item as Map<String, dynamic>),
+                if (changes.containsKey(item['alunoId']))
+                  'situacaoPresenca': changes[item['alunoId']],
+              },
+          ];
+          record['situacao'] = 'CORRIGIDA';
+          record['correcoes'] = [
+            ...record['correcoes'] as List,
+            {
+              'usuarioId': 7,
+              'dtCorrecao': '2026-11-24T09:00:00',
+              'justificativa': body['justificativa'],
+            },
+          ];
+          return jsonResponse(record, 200);
       }
       return erro(404, 'Rota não encontrada');
     }),

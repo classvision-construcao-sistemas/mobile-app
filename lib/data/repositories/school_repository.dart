@@ -92,6 +92,22 @@ class SchoolRepository extends ChangeNotifier {
       (auth?.role?.canRecordAttendance ?? false) &&
       (findClassById(classId)?.isRemote ?? false);
 
+  /// Chamadas gravadas no auditoria-service podem ser corrigidas por quem
+  /// registra chamadas (coordenador ou administrador).
+  bool canCorrect(AttendanceRecord record) =>
+      auditoriaApi != null &&
+      record.isRemote &&
+      (auth?.role?.canRecordAttendance ?? false);
+
+  /// Nome do aluno de matrícula [registration] na turma [classId], se a
+  /// turma estiver carregada.
+  String? studentName(String? classId, String registration) {
+    for (final student in findClassById(classId)?.students ?? const []) {
+      if (student.registration == registration) return student.name;
+    }
+    return null;
+  }
+
   Course? courseById(int? id) {
     if (id == null) return null;
     for (final course in _courses) {
@@ -438,6 +454,43 @@ class SchoolRepository extends ChangeNotifier {
       return;
     }
     _completeLocally(classId);
+  }
+
+  /// Corrige a presença de uma chamada já confirmada. [changes] traz só os
+  /// alunos alterados (matrícula → presente).
+  Future<void> correctAttendance(
+    AttendanceRecord record, {
+    required Map<String, bool> changes,
+    required String justification,
+  }) async {
+    final auditId = record.auditId;
+    if (auditId == null) {
+      throw const AuditoriaApiException(
+        'Só chamadas gravadas no servidor podem ser corrigidas.',
+      );
+    }
+    if (changes.isEmpty) {
+      throw const AuditoriaApiException('Altere a presença de algum aluno.');
+    }
+    final updated = await _authorizedAudit(
+      (api, session) => api.correct(
+        session,
+        auditId: auditId,
+        justification: justification.trim(),
+        results: [
+          for (final entry in changes.entries)
+            AuditResultItem(
+              studentId: int.parse(entry.key),
+              presence: entry.value
+                  ? AuditPresence.present
+                  : AuditPresence.possibleAbsence,
+            ),
+        ],
+      ),
+    );
+    final index = _history.indexWhere((item) => item.auditId == auditId);
+    if (index >= 0) _history[index] = _recordFor(updated);
+    notifyListeners();
   }
 
   void _completeLocally(String classId) {

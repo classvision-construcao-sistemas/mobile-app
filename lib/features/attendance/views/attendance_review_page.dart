@@ -442,23 +442,6 @@ class _DesktopAttendanceReview extends StatelessWidget {
                       const SizedBox(height: 5),
                       Text(formatBrDateTime(now)),
                       const SizedBox(height: 18),
-                      const Text(
-                        'ANOTAÇÃO DO COORDENADOR',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const TextField(
-                        minLines: 3,
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          hintText: 'Adicionar justificativa',
-                        ),
-                      ),
-                      const SizedBox(height: 18),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -468,7 +451,7 @@ class _DesktopAttendanceReview extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Devolver ao professor'),
+                        child: const Text('Voltar e trocar a foto'),
                       ),
                     ],
                   ),

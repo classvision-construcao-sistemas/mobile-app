@@ -314,6 +314,67 @@ void main() {
       expect(repository.history.single.auditId, record.auditId);
     });
 
+    test('corrects a confirmed attendance with a justification', () async {
+      final saved = <Map<String, dynamic>>[];
+      final repository = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(),
+        auditoriaApi: fakeAuditoriaApi(saved: saved),
+      );
+      await repository.loadClasses();
+      repository.applyFacialRecognition(
+        '1',
+        await repository.previewAttendance('1', photo.path),
+      );
+      await repository.completeAttendance('1');
+      final record = repository.history.single;
+      expect(repository.canCorrect(record), isTrue);
+
+      await expectLater(
+        repository.correctAttendance(
+          record,
+          changes: const {},
+          justification: 'nada',
+        ),
+        throwsA(isA<AuditoriaApiException>()),
+      );
+
+      await repository.correctAttendance(
+        record,
+        changes: const {'20260002': true},
+        justification: '  Chegou depois da foto  ',
+      );
+
+      final corrected = repository.history.single;
+      expect(corrected.status, AttendanceRecord.corrected);
+      expect(corrected.present, 2);
+      expect(corrected.attendance['20260002'], isTrue);
+      expect(
+        (saved.single['correcoes'] as List).single['justificativa'],
+        'Chegou depois da foto',
+      );
+    });
+
+    test('professors cannot correct attendances', () async {
+      final repository = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(role: 'PROFESSOR'),
+        auditoriaApi: fakeAuditoriaApi(),
+      );
+      expect(
+        repository.canCorrect(
+          AttendanceRecord(
+            className: 'Turma',
+            date: DateTime(2026, 11, 24),
+            present: 1,
+            absent: 0,
+            auditId: 1,
+          ),
+        ),
+        isFalse,
+      );
+    });
+
     test('keeps the class open when the audit cannot be saved', () async {
       final repository = SchoolRepository(
         api: fakeTurmaApi(),

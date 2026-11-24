@@ -6,6 +6,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/admin_cards.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
+import 'attendance_correction_page.dart';
 
 /// Histórico de chamadas: auditorias gravadas no auditoria-service e as
 /// chamadas feitas só nesta sessão (turmas locais ou perfis sem registro).
@@ -17,18 +18,30 @@ class HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final repository = context.watch<SchoolRepository>();
     final records = repository.history;
-    VoidCallback? callbackFor(AttendanceRecord record) {
-      // Só a chamada local ainda pode ser revisada na tela de conferência.
+    _RecordAction? actionFor(AttendanceRecord record) {
+      // Chamada gravada no servidor: corrigida com justificativa.
+      if (repository.canCorrect(record)) {
+        return (
+          label: 'Corrigir',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute<bool>(
+              builder: (_) => AttendanceCorrectionPage(record: record),
+            ),
+          ),
+        );
+      }
+      // Chamada local ainda pode ser revisada na tela de conferência.
       final id = record.classId;
       if (record.isRemote || id == null || onOpenReview == null) return null;
       if (repository.findClassById(id) == null) return null;
-      return () => onOpenReview!(id);
+      return (label: 'Revisar', onTap: () => onOpenReview!(id));
     }
 
     final data = _HistoryData(
       records: records,
       error: repository.historyError,
-      callbackFor: callbackFor,
+      actionFor: actionFor,
       onRefresh: repository.loadHistory,
     );
     return LayoutBuilder(
@@ -43,13 +56,13 @@ class _HistoryData {
   const _HistoryData({
     required this.records,
     required this.error,
-    required this.callbackFor,
+    required this.actionFor,
     required this.onRefresh,
   });
 
   final List<AttendanceRecord> records;
   final String? error;
-  final VoidCallback? Function(AttendanceRecord) callbackFor;
+  final _RecordAction? Function(AttendanceRecord) actionFor;
   final Future<void> Function() onRefresh;
 
   int count(String status) =>
@@ -197,7 +210,7 @@ class _DesktopAttendance extends StatelessWidget {
                 for (final record in records)
                   _AttendanceRow(
                     record: record,
-                    onTap: data.callbackFor(record),
+                    action: data.actionFor(record),
                   ),
             ],
           ),
@@ -237,7 +250,7 @@ class _MobileAttendance extends StatelessWidget {
           for (final record in data.records) ...[
             _MobileAttendanceCard(
               record: record,
-              onTap: data.callbackFor(record),
+              action: data.actionFor(record),
             ),
             const SizedBox(height: 10),
           ],
@@ -246,10 +259,12 @@ class _MobileAttendance extends StatelessWidget {
   );
 }
 
+typedef _RecordAction = ({String label, VoidCallback onTap});
+
 class _AttendanceRow extends StatelessWidget {
-  const _AttendanceRow({required this.record, this.onTap});
+  const _AttendanceRow({required this.record, this.action});
   final AttendanceRecord record;
-  final VoidCallback? onTap;
+  final _RecordAction? action;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -278,9 +293,13 @@ class _AttendanceRow extends StatelessWidget {
         ),
         SizedBox(
           width: 96,
-          child: onTap == null
-              ? const SizedBox.shrink()
-              : TextButton(onPressed: onTap, child: const Text('Revisar →')),
+          child: switch (action) {
+            null => const SizedBox.shrink(),
+            final action => TextButton(
+              onPressed: action.onTap,
+              child: Text('${action.label} →'),
+            ),
+          },
         ),
       ],
     ),
@@ -288,9 +307,9 @@ class _AttendanceRow extends StatelessWidget {
 }
 
 class _MobileAttendanceCard extends StatelessWidget {
-  const _MobileAttendanceCard({required this.record, this.onTap});
+  const _MobileAttendanceCard({required this.record, this.action});
   final AttendanceRecord record;
-  final VoidCallback? onTap;
+  final _RecordAction? action;
 
   @override
   Widget build(BuildContext context) => AdminSurface(
@@ -321,8 +340,8 @@ class _MobileAttendanceCard extends StatelessWidget {
                 ),
               ),
             ),
-            if (onTap != null)
-              TextButton(onPressed: onTap, child: const Text('Revisar')),
+            if (action case final action?)
+              TextButton(onPressed: action.onTap, child: Text(action.label)),
           ],
         ),
       ],

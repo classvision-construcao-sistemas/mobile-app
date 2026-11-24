@@ -86,6 +86,22 @@ class AuditoriaApi {
     ),
   );
 
+  /// `POST /auditorias/{id}/correcoes`: altera a presença de alunos de uma
+  /// chamada já confirmada; a justificativa é obrigatória.
+  Future<AuditRecord> correct(
+    AuthSession session, {
+    required int auditId,
+    required String justification,
+    required List<AuditResultItem> results,
+  }) async => AuditRecord.fromJson(
+    _asMap(
+      await _json('POST', '/auditorias/$auditId/correcoes', session, {
+        'justificativa': justification,
+        'resultados': [for (final item in results) item.toJson()],
+      }),
+    ),
+  );
+
   /// `GET /auditorias`: histórico, com filtro opcional por turma.
   Future<List<AuditRecord>> list(AuthSession session, {int? classId}) async {
     final query = classId == null ? '' : '?turmaId=$classId';
