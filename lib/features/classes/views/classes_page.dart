@@ -4,34 +4,113 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
+import '../viewmodels/classes_view_model.dart';
 
 class ClassesPage extends StatelessWidget {
   const ClassesPage({super.key, this.onOpenClass});
   final ValueChanged<String>? onOpenClass;
 
   @override
+  Widget build(BuildContext context) => ChangeNotifierProvider(
+    create: (_) => ClassesViewModel(),
+    child: _ClassesContent(onOpenClass: onOpenClass),
+  );
+}
+
+class _ClassesContent extends StatefulWidget {
+  const _ClassesContent({this.onOpenClass});
+  final ValueChanged<String>? onOpenClass;
+
+  @override
+  State<_ClassesContent> createState() => _ClassesContentState();
+}
+
+class _ClassesContentState extends State<_ClassesContent> {
+  @override
+  void initState() {
+    super.initState();
+    final repository = context.read<SchoolRepository>();
+    if (!repository.loaded && !repository.loading) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => repository.loadClasses(),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final classes = context.watch<SchoolRepository>().classes;
+    final repository = context.watch<SchoolRepository>();
+    final viewModel = context.watch<ClassesViewModel>();
+    final remoteClasses = repository.classes
+        .where((item) => item.isRemote)
+        .toList();
     final rows = [
-      for (var index = 0; index < classes.length; index++)
-        _ClassRowData.fromClass(classes[index], index),
+      for (final classroom in viewModel.filter(remoteClasses))
+        _ClassRowData.fromClass(classroom),
     ];
-    void open(String id) => onOpenClass != null
-        ? onOpenClass!(id)
+    final state = _ListState(
+      rows: rows,
+      total: remoteClasses.length,
+      loading: repository.loading,
+      error: repository.error,
+      canCreate: repository.canManageClasses,
+      searching: viewModel.query.isNotEmpty,
+      onRefresh: repository.loadClasses,
+      onSearch: viewModel.search,
+    );
+    void open(String id) => widget.onOpenClass != null
+        ? widget.onOpenClass!(id)
         : Navigator.pushNamed(context, AppRoutes.classDetails, arguments: id);
     return LayoutBuilder(
       builder: (context, constraints) => constraints.maxWidth >= 900
-          ? _DesktopClasses(rows: rows, onOpenClass: open)
-          : _MobileClasses(rows: rows, onOpenClass: open),
+          ? _DesktopClasses(state: state, onOpenClass: open)
+          : _MobileClasses(state: state, onOpenClass: open),
     );
   }
 }
 
-class _DesktopClasses extends StatelessWidget {
-  const _DesktopClasses({required this.rows, required this.onOpenClass});
+
+class _ListState {
+  const _ListState({
+    required this.rows,
+    required this.total,
+    required this.loading,
+    required this.error,
+    required this.canCreate,
+    required this.searching,
+    required this.onRefresh,
+    required this.onSearch,
+  });
+
   final List<_ClassRowData> rows;
+  final int total;
+  final bool loading;
+  final String? error;
+  final bool canCreate;
+  final bool searching;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<String> onSearch;
+
+  String get countLabel => switch (total) {
+    0 => 'Nenhuma turma cadastrada',
+    1 => '1 turma cadastrada',
+    _ => '$total turmas cadastradas',
+  };
+
+  String get emptyMessage => searching
+      ? 'Nenhuma turma encontrada para a busca.'
+      : 'Nenhuma turma cadastrada no serviço de turmas.';
+}
+
+void _openRegistration(BuildContext context) =>
+    Navigator.pushNamed(context, AppRoutes.classRegistration);
+
+class _DesktopClasses extends StatelessWidget {
+  const _DesktopClasses({required this.state, required this.onOpenClass});
+  final _ListState state;
   final ValueChanged<String> onOpenClass;
   @override
   Widget build(BuildContext context) => ListView(
@@ -45,7 +124,7 @@ class _DesktopClasses extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Instituto Federal Goiano  /  Gestão acadêmica',
+                  'Gestão acadêmica',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11,
@@ -58,76 +137,72 @@ class _DesktopClasses extends StatelessWidget {
                 ),
                 SizedBox(height: 5),
                 Text(
-                  'Gerencie as turmas, docentes e o acompanhamento de presença.',
+                  'Gerencie as turmas, os cursos e o acompanhamento de presença.',
                   style: TextStyle(color: AppColors.textSecondary),
                 ),
               ],
             ),
           ),
-          FilledButton.icon(
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRoutes.classRegistration),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Nova turma'),
+          IconButton(
+            tooltip: 'Atualizar',
+            onPressed: state.loading ? null : state.onRefresh,
+            icon: const Icon(Icons.refresh_rounded),
           ),
+          if (state.canCreate) ...[
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: () => _openRegistration(context),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Nova turma'),
+            ),
+          ],
         ],
       ),
       const SizedBox(height: 24),
       AdminSurface(
-        child: Row(
-          children: [
-            const Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.search_rounded),
-                  hintText: 'Buscar por turma ou professor',
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            _Filter(label: 'Todos os cursos'),
-            const SizedBox(width: 10),
-            _Filter(label: '2026/2'),
-            const SizedBox(width: 10),
-            const Text(
-              'Filtros avançados',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-            ),
-          ],
+        child: TextField(
+          onChanged: state.onSearch,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search_rounded),
+            hintText: 'Buscar por turma, curso, sala ou turno',
+          ),
         ),
       ),
       const SizedBox(height: 18),
-      const Row(
+      Row(
         children: [
           Expanded(
             child: Text(
-              '28 turmas cadastradas',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              state.countLabel,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
-          Text(
-            'Semestre 2026/2 · Atualizado hoje às 09:42',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-          ),
+          if (state.loading)
+            const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
         ],
       ),
       const SizedBox(height: 12),
+      if (state.error != null) ...[
+        AppErrorBanner(state.error!, onRetry: state.onRefresh),
+        const SizedBox(height: 12),
+      ],
       AdminSurface(
         padding: EdgeInsets.zero,
         child: Column(
           children: [
             const _ClassTableHeader(),
-            if (rows.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(48),
-                child: Text('Nenhuma turma cadastrada nesta sessão.'),
+            if (state.rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(48),
+                child: Text(
+                  state.loading ? 'Carregando turmas...' : state.emptyMessage,
+                ),
               )
             else
-              for (final item in rows)
+              for (final item in state.rows)
                 _ClassTableRow(
                   item: item,
                   onTap: () => onOpenClass(item.classroom.id),
@@ -135,137 +210,113 @@ class _DesktopClasses extends StatelessWidget {
           ],
         ),
       ),
-      const SizedBox(height: 14),
-      const Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Mostrando 1–5 de 28 turmas',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-            ),
-          ),
-          Text('‹    1    2    ›'),
-        ],
-      ),
     ],
   );
 }
 
 class _MobileClasses extends StatelessWidget {
-  const _MobileClasses({required this.rows, required this.onOpenClass});
-  final List<_ClassRowData> rows;
+  const _MobileClasses({required this.state, required this.onOpenClass});
+  final _ListState state;
   final ValueChanged<String> onOpenClass;
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-    children: [
-      const Text(
-        'Turmas',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 4),
-      const Text(
-        '28 turmas no semestre 2026/2',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-      ),
-      const SizedBox(height: 18),
-      const TextField(
-        decoration: InputDecoration(
-          prefixIcon: Icon(Icons.search_rounded),
-          hintText: 'Buscar turma',
-        ),
-      ),
-      const SizedBox(height: 16),
-      if (rows.isEmpty)
-        const AdminSurface(
-          child: Center(child: Text('Nenhuma turma cadastrada nesta sessão.')),
-        )
-      else
-        for (final item in rows.take(5)) ...[
-          InkWell(
-            onTap: () => onOpenClass(item.classroom.id),
-            borderRadius: BorderRadius.circular(16),
-            child: AdminSurface(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.primarySoft,
-                    foregroundColor: AppColors.primary,
-                    child: Text(
-                      item.initials,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.classroom.name,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${item.course} · ${item.classroom.students.length} alunos',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    item.presence,
-                    style: TextStyle(
-                      color: item.status == 'Atenção'
-                          ? AppColors.warning
-                          : const Color(0xFF15803D),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: state.onRefresh,
+    child: ListView(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Turmas',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
               ),
             ),
+            if (state.canCreate)
+              IconButton.filledTonal(
+                tooltip: 'Nova turma',
+                onPressed: () => _openRegistration(context),
+                icon: const Icon(Icons.add_rounded),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          state.countLabel,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        ),
+        const SizedBox(height: 18),
+        TextField(
+          onChanged: state.onSearch,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search_rounded),
+            hintText: 'Buscar turma',
           ),
-          const SizedBox(height: 10),
+        ),
+        const SizedBox(height: 16),
+        if (state.error != null) ...[
+          AppErrorBanner(state.error!, onRetry: state.onRefresh),
+          const SizedBox(height: 16),
         ],
-      const SizedBox(height: 14),
-      const Text(
-        'Filtros rápidos',
-        style: TextStyle(fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 10),
-      const Wrap(
-        spacing: 8,
-        children: [
-          Chip(label: Text('Todas')),
-          Chip(label: Text('Em atenção')),
-          Chip(label: Text('Ativas')),
-        ],
-      ),
-    ],
-  );
-}
-
-class _Filter extends StatelessWidget {
-  const _Filter({required this.label});
-  final String label;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-    decoration: BoxDecoration(
-      border: Border.all(color: AppColors.border),
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 11)),
-        const SizedBox(width: 6),
-        const Icon(Icons.keyboard_arrow_down_rounded, size: 15),
+        if (state.loading && state.rows.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (state.rows.isEmpty)
+          AdminSurface(child: Center(child: Text(state.emptyMessage)))
+        else
+          for (final item in state.rows) ...[
+            InkWell(
+              onTap: () => onOpenClass(item.classroom.id),
+              borderRadius: BorderRadius.circular(16),
+              child: AdminSurface(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: AppColors.primarySoft,
+                      foregroundColor: AppColors.primary,
+                      child: Text(
+                        item.initials,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.classroom.name,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${item.course} · '
+                            '${item.classroom.students.length} alunos',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      item.shift,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
       ],
     ),
   );
@@ -279,10 +330,10 @@ class _ClassTableHeader extends StatelessWidget {
     child: Row(
       children: [
         Expanded(flex: 3, child: Text('TURMA')),
-        Expanded(flex: 2, child: Text('PROFESSOR RESPONSÁVEL')),
+        Expanded(flex: 2, child: Text('CURSO')),
+        Expanded(child: Text('ANO')),
+        Expanded(child: Text('TURNO')),
         Expanded(child: Text('ALUNOS')),
-        Expanded(child: Text('PRESENÇA')),
-        Expanded(child: Text('STATUS')),
       ],
     ),
   );
@@ -311,44 +362,42 @@ class _ClassTableRow extends StatelessWidget {
                   child: Text(item.initials),
                 ),
                 const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.classroom.name,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      '${item.course} · ${item.classroom.room}',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 10,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.classroom.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      Text(
+                        item.classroom.room.isEmpty
+                            ? 'Sala não informada'
+                            : item.classroom.room,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          Expanded(flex: 2, child: Text(item.teacher)),
-          Expanded(child: Text('${item.classroom.students.length}')),
+          Expanded(
+            flex: 2,
+            child: Text(item.course, overflow: TextOverflow.ellipsis),
+          ),
+          Expanded(child: Text(item.year)),
           Expanded(
             child: Text(
-              item.presence,
+              item.shift,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
-          Expanded(
-            child: Text(
-              item.status,
-              style: TextStyle(
-                color: item.status == 'Atenção'
-                    ? AppColors.warning
-                    : const Color(0xFF15803D),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          Expanded(child: Text('${item.classroom.students.length}')),
         ],
       ),
     ),
@@ -360,48 +409,36 @@ class _ClassRowData {
     required this.classroom,
     required this.initials,
     required this.course,
-    required this.teacher,
-    required this.presence,
-    required this.status,
+    required this.year,
+    required this.shift,
   });
 
   final SchoolClass classroom;
   final String initials;
   final String course;
-  final String teacher;
-  final String presence;
-  final String status;
+  final String year;
+  final String shift;
 
-  factory _ClassRowData.fromClass(SchoolClass classroom, int index) {
-    const metadata = [
-      ('Informática', 'Rafael Mendes', '96,8%', 'Ativa'),
-      ('Agropecuária', 'Camila Ribeiro', '95,3%', 'Ativa'),
-      ('Química', 'João Vitor Lima', '82,1%', 'Atenção'),
-      ('Informática', 'Ana Paula Rocha', '94,7%', 'Ativa'),
-      ('Alimentos', 'Fernanda Alves', '93,9%', 'Ativa'),
-    ];
-    final meta = index < metadata.length
-        ? metadata[index]
-        : const (
-            'Curso não informado',
-            'Professor não atribuído',
-            '—',
-            'Ativa',
-          );
-    final words = classroom.name.split(' ');
-    final initials = words.length >= 2
-        ? '${words.first.replaceAll(RegExp(r'\D'), '')}${words.last[0]}'
-              .toUpperCase()
-        : classroom.name
-              .substring(0, classroom.name.length.clamp(0, 2))
-              .toUpperCase();
+  factory _ClassRowData.fromClass(SchoolClass classroom) {
+    final words = classroom.name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .toList();
+    final initials = switch (words.length) {
+      0 => 'T',
+      1 => words.first.substring(0, words.first.length.clamp(1, 2)),
+      _ => '${words.first[0]}${words.last[0]}',
+    }.toUpperCase();
+    final year = classroom.remote?.year ?? 0;
     return _ClassRowData(
       classroom: classroom,
-      initials: initials.isEmpty ? 'T' : initials,
-      course: meta.$1,
-      teacher: meta.$2,
-      presence: meta.$3,
-      status: meta.$4,
+      initials: initials,
+      course: classroom.courseName.isEmpty
+          ? 'Curso não informado'
+          : classroom.courseName,
+      year: year == 0 ? '—' : '$year',
+      shift: classroom.time.isEmpty ? '—' : classroom.time,
     );
   }
 }

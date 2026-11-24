@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
+import '../../../data/services/turma_api.dart';
 
 class ClassDetailsPage extends StatelessWidget {
   const ClassDetailsPage({super.key, required this.classId});
@@ -14,108 +16,184 @@ class ClassDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final classroom = context.watch<SchoolRepository>().classById(classId);
+    final repository = context.watch<SchoolRepository>();
+    final classroom = repository.findClassById(classId);
+    if (classroom == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: repository.loading
+                ? const CircularProgressIndicator()
+                : const Text(
+                    'Turma não encontrada. Ela pode ter sido excluída.',
+                    textAlign: TextAlign.center,
+                  ),
+          ),
+        ),
+      );
+    }
+    final actions = _ClassActions(context, repository, classroom);
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 900) {
-          return Scaffold(body: _DesktopClassDetails(classroom: classroom));
+          return Scaffold(
+            body: _DesktopClassDetails(classroom: classroom, actions: actions),
+          );
         }
         return Scaffold(
-          appBar: AppBar(title: Text(classroom.name)),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-            children: [
-              AppCard(
-                child: Row(
-                  children: [
-                    _Info(
-                      icon: Icons.schedule_rounded,
-                      label: 'Horário',
-                      value: classroom.time,
-                    ),
-                    const _Divider(),
-                    _Info(
-                      icon: Icons.meeting_room_outlined,
-                      label: 'Sala',
-                      value: classroom.room,
-                    ),
-                    const _Divider(),
-                    _Info(
-                      icon: Icons.groups_2_outlined,
-                      label: 'Alunos',
-                      value: '${classroom.students.length}',
-                    ),
-                  ],
+          appBar: AppBar(
+            title: Text(classroom.name),
+            actions: [
+              if (actions.canEdit)
+                IconButton(
+                  tooltip: 'Editar turma',
+                  onPressed: actions.edit,
+                  icon: const Icon(Icons.edit_outlined),
                 ),
-              ),
-              const SizedBox(height: 22),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Alunos',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+              if (actions.canEdit)
+                IconButton(
+                  tooltip: 'Excluir turma',
+                  onPressed: actions.delete,
+                  icon: const Icon(Icons.delete_outline_rounded),
+                ),
+            ],
+          ),
+          body: RefreshIndicator(
+            onRefresh: actions.refresh,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+              children: [
+                if (classroom.courseName.isNotEmpty) ...[
+                  Text(
+                    classroom.courseName,
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
-                  TextButton.icon(
-                    onPressed: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.studentRegistration,
-                      arguments: classroom.id,
-                    ),
-                    icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                    label: const Text('Adicionar'),
-                  ),
+                  const SizedBox(height: 12),
                 ],
-              ),
-              const SizedBox(height: 8),
-              if (classroom.students.isEmpty)
-                const AppCard(
-                  child: Center(
-                    child: Text('Nenhum aluno cadastrado nesta turma.'),
-                  ),
-                )
-              else
-                for (final student in classroom.students) ...[
-                  _StudentRow(student: student),
-                  const SizedBox(height: 9),
-                ],
-              const SizedBox(height: 18),
-              if (classroom.attendanceCompleted)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.successLight,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Row(
+                AppCard(
+                  child: Row(
                     children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: AppColors.success,
+                      _Info(
+                        icon: Icons.schedule_rounded,
+                        label: 'Turno',
+                        value: _orDash(classroom.time),
                       ),
-                      SizedBox(width: 10),
-                      Text(
-                        'Chamada realizada hoje',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      const _Divider(),
+                      _Info(
+                        icon: Icons.meeting_room_outlined,
+                        label: 'Sala',
+                        value: _orDash(classroom.room),
+                      ),
+                      const _Divider(),
+                      _Info(
+                        icon: Icons.groups_2_outlined,
+                        label: 'Alunos',
+                        value: '${classroom.students.length}',
                       ),
                     ],
                   ),
-                )
-              else
-                PrimaryButton(
-                  label: 'Fazer chamada com IA',
-                  icon: Icons.camera_alt_rounded,
-                  onPressed: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.camera,
-                    arguments: classroom.id,
-                  ),
                 ),
-            ],
+                if (classroom.isRemote) ...[
+                  const SizedBox(height: 12),
+                  AppCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 13,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.event_outlined,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            'Ano letivo ${classroom.remote!.year} · '
+                            '${_period(classroom)}',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Alunos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: actions.addStudent,
+                      icon: const Icon(
+                        Icons.person_add_alt_1_rounded,
+                        size: 18,
+                      ),
+                      label: const Text('Adicionar'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (classroom.students.isEmpty)
+                  const AppCard(
+                    child: Center(
+                      child: Text('Nenhum aluno vinculado a esta turma.'),
+                    ),
+                  )
+                else
+                  for (final student in classroom.students) ...[
+                    _StudentRow(
+                      student: student,
+                      onRemove: actions.canUnenroll(student)
+                          ? () => actions.unenroll(student)
+                          : null,
+                    ),
+                    const SizedBox(height: 9),
+                  ],
+                const SizedBox(height: 18),
+                if (classroom.attendanceCompleted)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.successLight,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Chamada realizada hoje',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  PrimaryButton(
+                    label: 'Fazer chamada com IA',
+                    icon: Icons.camera_alt_rounded,
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.camera,
+                      arguments: classroom.id,
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -123,290 +201,382 @@ class ClassDetailsPage extends StatelessWidget {
   }
 }
 
-class _DesktopClassDetails extends StatelessWidget {
-  const _DesktopClassDetails({required this.classroom});
+String _orDash(String value) => value.trim().isEmpty ? '—' : value;
+
+String _period(SchoolClass classroom) {
+  final start = classroom.remote?.startDate;
+  final end = classroom.remote?.endDate;
+  if (start == null && end == null) return 'Período não informado';
+  if (start == null) return 'Até ${formatBrDate(end!)}';
+  if (end == null) return 'Desde ${formatBrDate(start)}';
+  return '${formatBrDate(start)} a ${formatBrDate(end)}';
+}
+
+/// Ações sobre a turma, conforme as permissões do perfil no turma-service.
+class _ClassActions {
+  _ClassActions(this.context, this.repository, this.classroom);
+
+  final BuildContext context;
+  final SchoolRepository repository;
   final SchoolClass classroom;
 
-  Future<void> _edit(BuildContext context) async {
-    final name = TextEditingController(text: classroom.name);
-    final room = TextEditingController(text: classroom.room);
-    final time = TextEditingController(text: classroom.time);
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Editar turma'),
-        content: SizedBox(
-          width: 440,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Nome da turma'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: room,
-                decoration: const InputDecoration(labelText: 'Sala'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: time,
-                decoration: const InputDecoration(labelText: 'Horário'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-    if (saved != true || !context.mounted) return;
-    context.read<SchoolRepository>().updateClass(
-      id: classroom.id,
-      name: name.text.trim(),
-      room: room.text.trim(),
-      time: time.text.trim(),
-    );
+  bool get canEdit => classroom.isRemote && repository.canManageClasses;
+
+  bool canUnenroll(Student student) =>
+      student.enrollmentStatus == null || repository.canManageEnrollments;
+
+  Future<void> refresh() async {
+    if (!classroom.isRemote) return;
+    try {
+      await repository.refreshClass(classroom.id);
+    } on TurmaApiException catch (error) {
+      if (context.mounted) showAppMessage(context, error.message, error: true);
+    }
   }
 
+  void edit() => Navigator.pushNamed(
+    context,
+    AppRoutes.classRegistration,
+    arguments: classroom.id,
+  );
+
+  void addStudent() => Navigator.pushNamed(
+    context,
+    AppRoutes.studentRegistration,
+    arguments: classroom.id,
+  );
+
+  Future<void> delete() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Excluir turma',
+      message:
+          'A turma ${classroom.name} e os vínculos dos alunos serão '
+          'excluídos definitivamente.',
+      confirmLabel: 'Excluir',
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    final navigator = Navigator.of(context);
+    try {
+      await repository.deleteClass(classroom.id);
+      if (!context.mounted) return;
+      showAppMessage(context, 'Turma ${classroom.name} excluída.');
+      navigator.pop();
+    } on TurmaApiException catch (error) {
+      if (context.mounted) showAppMessage(context, error.message, error: true);
+    }
+  }
+
+  Future<void> unenroll(Student student) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Remover aluno',
+      message: '${student.name} deixará de fazer parte da turma.',
+      confirmLabel: 'Remover',
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await repository.unenrollStudent(classroom.id, student);
+      if (context.mounted) {
+        showAppMessage(context, '${student.name} removido da turma.');
+      }
+    } on TurmaApiException catch (error) {
+      if (context.mounted) showAppMessage(context, error.message, error: true);
+    }
+  }
+}
+
+class _DesktopClassDetails extends StatelessWidget {
+  const _DesktopClassDetails({required this.classroom, required this.actions});
+  final SchoolClass classroom;
+  final _ClassActions actions;
+
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
-    children: [
-      const Text(
-        'Turmas  /  Detalhes da turma',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-      ),
-      const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  classroom.name,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  '${classroom.room} · Turno matutino',
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          OutlinedButton.icon(
-            onPressed: () => _edit(context),
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Editar turma'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 22),
-      AppCard(
-        child: Row(
+  Widget build(BuildContext context) {
+    final remote = classroom.remote;
+    final initials = classroom.name.trim().isEmpty
+        ? 'T'
+        : classroom.name
+              .trim()
+              .substring(0, classroom.name.trim().length.clamp(1, 2))
+              .toUpperCase();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(40, 30, 40, 40),
+      children: [
+        Row(
           children: [
-            CircleAvatar(
-              radius: 27,
-              backgroundColor: AppColors.primarySoft,
-              child: Text(classroom.name.substring(0, 2).toUpperCase()),
+            IconButton(
+              tooltip: 'Voltar',
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.arrow_back_rounded),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 6),
+            const Text(
+              'Turmas  /  Detalhes da turma',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Informática integrado ao ensino médio',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
                   Text(
-                    classroom.time,
+                    classroom.name,
                     style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const Text(
-                    'Prof. Rafael Mendes · Matemática',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${_orDash(classroom.room)} · Turno ${classroom.time.toLowerCase()}',
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
               ),
             ),
-            _Summary(
-              label: 'ALUNOS MATRICULADOS',
-              value: '${classroom.students.length}',
+            IconButton(
+              tooltip: 'Atualizar',
+              onPressed: actions.refresh,
+              icon: const Icon(Icons.refresh_rounded),
             ),
-            const SizedBox(width: 30),
-            const _Summary(label: 'PRESENÇA NO MÊS', value: '96,8%'),
+            if (actions.canEdit) ...[
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: actions.delete,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Excluir'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: actions.edit,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Editar turma'),
+              ),
+            ],
           ],
         ),
-      ),
-      const SizedBox(height: 20),
-      const Row(
-        children: [
-          Text(
-            'Visão geral',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w800,
-            ),
+        const SizedBox(height: 22),
+        AppCard(
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 27,
+                backgroundColor: AppColors.primarySoft,
+                child: Text(initials),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      classroom.courseName.isEmpty
+                          ? 'Curso não informado'
+                          : classroom.courseName,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _period(classroom),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _Summary(
+                label: 'ALUNOS VINCULADOS',
+                value: '${classroom.students.length}',
+              ),
+              const SizedBox(width: 30),
+              _Summary(
+                label: 'ANO LETIVO',
+                value: remote == null || remote.year == 0
+                    ? '—'
+                    : '${remote.year}',
+              ),
+            ],
           ),
-          SizedBox(width: 30),
-          Text('Alunos'),
-          SizedBox(width: 30),
-          Text('Chamadas'),
-        ],
-      ),
-      const SizedBox(height: 18),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              children: [
-                const AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Dados da turma',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(child: Text('Curso\nInformática')),
-                          Expanded(child: Text('Sala\n204')),
-                          Expanded(child: Text('Turno\nMatutino')),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Presença mensal',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Desempenho da turma em novembro',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                      SizedBox(height: 22),
-                      LinearProgressIndicator(value: .968, minHeight: 12),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Alunos com atenção necessária',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      for (final student in classroom.students)
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(child: Text(student.initials)),
-                          title: Text(student.name),
-                          subtitle: Text('Matrícula ${student.registration}'),
-                          trailing: const Text(
-                            '81,5%',
-                            style: TextStyle(
-                              color: AppColors.warning,
-                              fontWeight: FontWeight.w800,
-                            ),
+        ),
+        const SizedBox(height: 18),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Column(
+                children: [
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Dados da turma',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Ações rápidas',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-                  ),
-                  SizedBox(height: 12),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.person_add_alt_1_rounded),
-                    title: Text('Adicionar aluno'),
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.studentRegistration,
-                      arguments: classroom.id,
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _Field(
+                                label: 'Curso',
+                                value: classroom.course == null
+                                    ? '—'
+                                    : classroom.course!.code,
+                              ),
+                            ),
+                            Expanded(
+                              child: _Field(
+                                label: 'Sala',
+                                value: _orDash(classroom.room),
+                              ),
+                            ),
+                            Expanded(
+                              child: _Field(
+                                label: 'Turno',
+                                value: _orDash(classroom.time),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.fact_check_outlined),
-                    title: Text('Ver últimas chamadas'),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.home),
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.download_outlined),
-                    title: Text('Exportar lista de alunos'),
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Lista preparada para exportação.'),
-                      ),
+                  const SizedBox(height: 18),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Alunos da turma',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (classroom.students.isEmpty)
+                          const Text(
+                            'Nenhum aluno vinculado a esta turma.',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                        for (final student in classroom.students)
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              child: Text(student.initials),
+                            ),
+                            title: Text(student.name),
+                            subtitle: Text('Matrícula ${student.registration}'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (student.enrollmentStatus != null)
+                                  AppStatusChip(
+                                    label: _statusLabel(
+                                      student.enrollmentStatus!,
+                                    ),
+                                  ),
+                                if (actions.canUnenroll(student))
+                                  IconButton(
+                                    tooltip: 'Remover da turma',
+                                    onPressed: () => actions.unenroll(student),
+                                    icon: const Icon(
+                                      Icons.person_remove_outlined,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 20),
+            Expanded(
+              child: AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ações rápidas',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.person_add_alt_1_rounded),
+                      title: const Text('Adicionar aluno'),
+                      onTap: actions.addStudent,
+                    ),
+                    if (!classroom.attendanceCompleted)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.camera_alt_outlined),
+                        title: const Text('Fazer chamada com IA'),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.camera,
+                          arguments: classroom.id,
+                        ),
+                      ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.fact_check_outlined),
+                      title: const Text('Ver últimas chamadas'),
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.home),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// `MATRICULADO` → `Matriculado`.
+String _statusLabel(String status) {
+  final text = status.trim().replaceAll('_', ' ').toLowerCase();
+  return text.isEmpty ? status : '${text[0].toUpperCase()}${text.substring(1)}';
+}
+
+class _Field extends StatelessWidget {
+  const _Field({required this.label, required this.value});
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
       ),
+      const SizedBox(height: 3),
+      Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
     ],
   );
 }
@@ -448,7 +618,13 @@ class _Info extends StatelessWidget {
       children: [
         Icon(icon, color: AppColors.primary, size: 22),
         const SizedBox(height: 6),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         Text(
           label,
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
@@ -466,8 +642,9 @@ class _Divider extends StatelessWidget {
 }
 
 class _StudentRow extends StatelessWidget {
-  const _StudentRow({required this.student});
+  const _StudentRow({required this.student, this.onRemove});
   final Student student;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) => AppCard(
@@ -495,7 +672,10 @@ class _StudentRow extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               Text(
-                'Matrícula ${student.registration}',
+                student.enrollmentStatus == null
+                    ? 'Matrícula ${student.registration}'
+                    : 'Matrícula ${student.registration} · '
+                          '${_statusLabel(student.enrollmentStatus!)}',
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,
@@ -504,7 +684,15 @@ class _StudentRow extends StatelessWidget {
             ],
           ),
         ),
-        const Icon(Icons.chevron_right_rounded, color: AppColors.navInactive),
+        if (onRemove != null)
+          IconButton(
+            tooltip: 'Remover da turma',
+            onPressed: onRemove,
+            icon: const Icon(
+              Icons.person_remove_outlined,
+              color: AppColors.navInactive,
+            ),
+          ),
       ],
     ),
   );

@@ -16,9 +16,13 @@ class ClassesViewModel extends ChangeNotifier {
     if (_query.isEmpty) return classes;
     return classes
         .where(
-          (item) =>
-              item.name.toLowerCase().contains(_query) ||
-              item.room.toLowerCase().contains(_query),
+          (item) => [
+            item.name,
+            item.room,
+            item.time,
+            item.courseName,
+            '${item.remote?.year ?? ''}',
+          ].any((value) => value.toLowerCase().contains(_query)),
         )
         .toList();
   }

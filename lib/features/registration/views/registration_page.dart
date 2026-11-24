@@ -9,14 +9,17 @@ import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
 import '../../../data/services/facial_recognition_api.dart';
+import '../../../data/services/turma_api.dart';
 import '../../camera/views/camera_page.dart';
 
-enum RegistrationType { classroom, student }
-
+/// Cadastro de aluno com biometria facial.
+///
+/// Com [classId] de uma turma do turma-service, o aluno também é vinculado à
+/// turma na API (a matrícula numérica é o `alunoId`). O cadastro de turmas fica
+/// em `ClassFormPage`.
 class RegistrationPage extends StatefulWidget {
-  const RegistrationPage({super.key, required this.type, this.classId});
+  const RegistrationPage({super.key, this.classId});
 
-  final RegistrationType type;
   final String? classId;
 
   @override
@@ -43,32 +46,36 @@ class _RegistrationPageState extends State<RegistrationPage> {
     super.dispose();
   }
 
-  String get _title => switch (widget.type) {
-    RegistrationType.classroom => 'Nova turma',
-    RegistrationType.student => 'Novo aluno',
-  };
+  static const _fields = <(String, IconData, TextInputType)>[
+    ('Nome do aluno', Icons.person_outline_rounded, TextInputType.name),
+    ('Matrícula', Icons.badge_outlined, TextInputType.number),
+    (
+      'Nome do responsável',
+      Icons.supervisor_account_outlined,
+      TextInputType.name,
+    ),
+    ('Telefone do responsável', Icons.phone_outlined, TextInputType.phone),
+  ];
 
-  List<(String, IconData, TextInputType)> get _fields => switch (widget.type) {
-    RegistrationType.classroom => [
-      ('Nome da turma', Icons.groups_2_outlined, TextInputType.text),
-      ('Sala', Icons.meeting_room_outlined, TextInputType.text),
-      ('Horário', Icons.schedule_rounded, TextInputType.datetime),
-    ],
-    RegistrationType.student => [
-      ('Nome do aluno', Icons.person_outline_rounded, TextInputType.name),
-      ('Matrícula', Icons.badge_outlined, TextInputType.number),
-      (
-        'Nome do responsável',
-        Icons.supervisor_account_outlined,
-        TextInputType.name,
-      ),
-      ('Telefone do responsável', Icons.phone_outlined, TextInputType.phone),
-    ],
-  };
+  /// Se o aluno também será vinculado à turma no turma-service.
+  bool _linksToRemoteClass(SchoolRepository repository) =>
+      repository.canManageEnrollments &&
+      (repository.findClassById(widget.classId)?.isRemote ?? false);
+
+  String? _validate(int index, String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Preencha este campo';
+    if (index == 1 &&
+        _linksToRemoteClass(context.read<SchoolRepository>()) &&
+        (int.tryParse(text) ?? 0) <= 0) {
+      return 'Use apenas números para vincular à turma';
+    }
+    return null;
+  }
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (widget.type == RegistrationType.student && _faceImagePath == null) {
+    if (_faceImagePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Tire uma foto ou selecione uma imagem do aluno.'),
@@ -80,35 +87,36 @@ class _RegistrationPageState extends State<RegistrationPage> {
     setState(() => _saving = true);
     final repository = context.read<SchoolRepository>();
     try {
-      switch (widget.type) {
-        case RegistrationType.classroom:
-          repository.addClass(
+      final registration = _controllers[1].text.trim();
+      await context.read<FacialRecognitionApi>().enrollStudent(
+        studentId: registration,
+        imagePath: _faceImagePath!,
+      );
+      if (!mounted) return;
+      final classId = widget.classId;
+      if (classId != null && repository.findClassById(classId) != null) {
+        await repository.enrollStudent(
+          classId,
+          Student(
+            id: registration,
             name: _controllers[0].text.trim(),
-            room: _controllers[1].text.trim(),
-            time: _controllers[2].text.trim(),
-          );
-        case RegistrationType.student:
-          final registration = _controllers[1].text.trim();
-          await context.read<FacialRecognitionApi>().enrollStudent(
-            studentId: registration,
-            imagePath: _faceImagePath!,
-          );
-          if (!mounted) return;
-          final classId = widget.classId;
-          if (classId != null && repository.findClassById(classId) != null) {
-            repository.addStudent(
-              classId,
-              Student(
-                id: registration,
-                name: _controllers[0].text.trim(),
-                registration: registration,
-                guardian: _controllers[2].text.trim(),
-                phone: _controllers[3].text.trim(),
-              ),
-            );
-          }
+            registration: registration,
+            guardian: _controllers[2].text.trim(),
+            phone: _controllers[3].text.trim(),
+          ),
+        );
       }
       if (mounted) Navigator.pop(context);
+    } on TurmaApiException catch (error) {
+      // A biometria já foi salva; só o vínculo com a turma falhou.
+      if (!mounted) return;
+      showAppMessage(
+        context,
+        'Biometria salva, mas o aluno não foi vinculado à turma: '
+        '${error.message}',
+        error: true,
+      );
+      setState(() => _saving = false);
     } on FacialRecognitionException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,7 +160,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(_title)),
+    appBar: AppBar(title: const Text('Novo aluno')),
     body: SafeArea(
       top: false,
       child: Form(
@@ -160,12 +168,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
           children: [
-            Text(switch (widget.type) {
-              RegistrationType.classroom =>
-                'Cadastre os dados básicos da nova turma.',
-              RegistrationType.student =>
-                'Cadastre o aluno, o responsável e a biometria facial.',
-            }, style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              _linksToRemoteClass(context.watch<SchoolRepository>())
+                  ? 'Cadastre o aluno, o responsável e a biometria facial. '
+                        'A matrícula também vincula o aluno à turma.'
+                  : 'Cadastre o aluno, o responsável e a biometria facial.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 22),
             for (var index = 0; index < _fields.length; index++) ...[
               AppTextField(
@@ -173,20 +182,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 icon: _fields[index].$2,
                 keyboardType: _fields[index].$3,
                 controller: _controllers[index],
-                validator: (value) => (value?.trim().isEmpty ?? true)
-                    ? 'Preencha este campo'
-                    : null,
+                validator: (value) => _validate(index, value),
               ),
               const SizedBox(height: 14),
             ],
-            if (widget.type == RegistrationType.student) ...[
-              const SizedBox(height: 4),
-              _FaceCaptureCard(
-                imagePath: _faceImagePath,
-                onCamera: _saving ? null : _captureFace,
-                onGallery: _saving ? null : _pickFaceFromGallery,
-              ),
-            ],
+            const SizedBox(height: 4),
+            _FaceCaptureCard(
+              imagePath: _faceImagePath,
+              onCamera: _saving ? null : _captureFace,
+              onGallery: _saving ? null : _pickFaceFromGallery,
+            ),
             const SizedBox(height: 16),
             PrimaryButton(
               label: 'Salvar cadastro',

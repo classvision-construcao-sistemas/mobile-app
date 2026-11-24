@@ -9,6 +9,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/school_repository.dart';
 import 'data/services/auth_api.dart';
 import 'data/services/facial_recognition_api.dart';
+import 'data/services/turma_api.dart';
 import 'features/admin/data/admin_repository.dart';
 import 'features/admin/views/system_admin_shell.dart';
 import 'features/ai_processing/views/ai_processing_page.dart';
@@ -17,6 +18,7 @@ import 'features/attendance/views/attendance_saved_page.dart';
 import 'features/auth/views/login_page.dart';
 import 'features/camera/views/camera_page.dart';
 import 'features/classes/views/class_details_page.dart';
+import 'features/classes/views/class_form_page.dart';
 import 'features/institution_admin/views/institution_admin_shell.dart';
 import 'features/institutions/views/institution_form_page.dart';
 import 'features/institutions/views/institutions_page.dart';
@@ -26,9 +28,10 @@ import 'features/users/views/user_form_page.dart';
 import 'features/users/views/users_page.dart';
 
 class ClassVisionApp extends StatefulWidget {
-  const ClassVisionApp({super.key, this.authApi});
+  const ClassVisionApp({super.key, this.authApi, this.turmaApi});
 
   final AuthApi? authApi;
+  final TurmaApi? turmaApi;
 
   @override
   State<ClassVisionApp> createState() => _ClassVisionAppState();
@@ -41,7 +44,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
 
   late final AuthApi _authApi;
   late final AuthRepository _auth;
-  final _school = SchoolRepository.demo();
+  late final TurmaApi _turmaApi;
+  late final SchoolRepository _school;
   bool _wasAuthenticated = false;
 
   @override
@@ -49,6 +53,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     super.initState();
     _authApi = widget.authApi ?? AuthApi();
     _auth = AuthRepository(api: _authApi)..addListener(_onAuthChanged);
+    _turmaApi = widget.turmaApi ?? TurmaApi();
+    _school = SchoolRepository(api: _turmaApi, auth: _auth);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -60,6 +66,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       ..dispose();
     _school.dispose();
     if (widget.authApi == null) _authApi.close();
+    if (widget.turmaApi == null) _turmaApi.close();
     super.dispose();
   }
 
@@ -70,6 +77,10 @@ class _ClassVisionAppState extends State<ClassVisionApp>
 
   void _onAuthChanged() {
     final authenticated = _auth.isAuthenticated;
+    if (!_wasAuthenticated && authenticated) {
+      // As turmas vêm do turma-service com o token recém-emitido.
+      _school.loadClasses();
+    }
     if (_wasAuthenticated && !authenticated) {
       _school.clear();
       _navigatorKey.currentState?.pushNamedAndRemoveUntil(
@@ -180,14 +191,14 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       AppRoutes.institutionRegistration => _institutionFormFor(
         settings.arguments,
       ),
-      AppRoutes.classRegistration => const RegistrationPage(
-        type: RegistrationType.classroom,
-      ),
+      AppRoutes.classRegistration when allowed((it) => it.canManageClasses) =>
+        ClassFormPage(classId: settings.arguments as String?),
       AppRoutes.studentRegistration => RegistrationPage(
-        type: RegistrationType.student,
         classId: settings.arguments as String?,
       ),
-      AppRoutes.users || AppRoutes.institutions => const _ForbiddenPage(),
+      AppRoutes.users ||
+      AppRoutes.institutions ||
+      AppRoutes.classRegistration => const _ForbiddenPage(),
       _ => _roleHome(),
     };
   }
