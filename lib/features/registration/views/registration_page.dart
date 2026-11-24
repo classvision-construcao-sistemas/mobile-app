@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/photo.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
@@ -258,7 +257,7 @@ class _FaceCaptureCard extends StatelessWidget {
                       size: 32,
                     ),
                   )
-                : Image.file(File(imagePath!), fit: BoxFit.cover),
+                : photoPreview(imagePath!),
           ),
         ),
         const SizedBox(width: 12),

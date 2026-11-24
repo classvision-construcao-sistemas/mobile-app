@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/photo.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/repositories/school_repository.dart';
 import '../../../data/services/facial_recognition_api.dart';
@@ -94,9 +93,8 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
                   child: SizedBox(
                     height: 120,
                     width: 180,
-                    child: Image.file(
-                      File(widget.result.imagePath),
-                      fit: BoxFit.cover,
+                    child: photoPreview(
+                      widget.result.imagePath,
                       errorBuilder: (_, _, _) => const ColoredBox(
                         color: AppColors.primarySoft,
                         child: Icon(

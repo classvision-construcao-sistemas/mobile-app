@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/utils/photo.dart';
 import '../models/facial_recognition_models.dart';
 
 class FacialRecognitionException implements Exception {
@@ -134,8 +135,10 @@ class FacialRecognitionApi {
     required String imagePath,
     Map<String, String> fields = const {},
   }) async {
-    final image = File(imagePath);
-    if (!await image.exists()) {
+    final http.MultipartFile photo;
+    try {
+      photo = await photoMultipart('image', imagePath);
+    } on StateError {
       throw const FacialRecognitionException(
         'A foto não está mais disponível. Tire uma nova foto.',
       );
@@ -144,7 +147,7 @@ class FacialRecognitionApi {
     try {
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'))
         ..fields.addAll(fields)
-        ..files.add(await http.MultipartFile.fromPath('image', imagePath));
+        ..files.add(photo);
       _authorize(request);
       final response = await _client.send(request).timeout(timeout);
       final body = utf8.decode(

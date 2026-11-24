@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
@@ -62,6 +63,30 @@ class _CameraContent extends StatelessWidget {
   final String? classId;
   final bool returnCapturedImage;
 
+  /// Segue com a foto tirada ou escolhida: devolve ao cadastro do aluno ou
+  /// abre o processamento da chamada.
+  void _usePhoto(BuildContext context, String path) {
+    if (returnCapturedImage) {
+      Navigator.pop(context, path);
+      return;
+    }
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.processing,
+      arguments: CameraResult(classId: classId, imagePath: path),
+    );
+  }
+
+  /// Escolhe uma foto já existente (galeria no celular, arquivo no
+  /// computador e no navegador).
+  Future<void> _pickPhoto(BuildContext context) async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 95,
+    );
+    if (image != null && context.mounted) _usePhoto(context, image.path);
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<CameraViewModel>();
@@ -78,6 +103,7 @@ class _CameraContent extends StatelessWidget {
             _CameraError(
               message: viewModel.error ?? 'Câmera indisponível.',
               onRetry: viewModel.initialize,
+              onPickPhoto: () => _pickPhoto(context),
             ),
           SafeArea(
             child: Column(
@@ -150,55 +176,65 @@ class _CameraContent extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Semantics(
-                        button: true,
-                        label: 'Capturar foto da turma',
-                        child: GestureDetector(
-                          onTap: viewModel.ready && !viewModel.capturing
-                              ? () async {
-                                  final file = await viewModel.capture();
-                                  if (file == null || !context.mounted) return;
-                                  if (returnCapturedImage) {
-                                    Navigator.pop(context, file.path);
-                                    return;
-                                  }
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    AppRoutes.processing,
-                                    arguments: CameraResult(
-                                      classId: classId,
-                                      imagePath: file.path,
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            width: 76,
-                            height: 76,
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                            ),
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: viewModel.capturing
-                                    ? AppColors.navInactive
-                                    : Colors.white,
-                                shape: BoxShape.circle,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: _CameraAction(
+                                tooltip: 'Escolher foto',
+                                icon: Icons.photo_library_outlined,
+                                onTap: viewModel.capturing
+                                    ? null
+                                    : () => _pickPhoto(context),
                               ),
-                              child: viewModel.capturing
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(15),
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : null,
                             ),
                           ),
-                        ),
+                          Semantics(
+                            button: true,
+                            label: 'Capturar foto da turma',
+                            child: GestureDetector(
+                              onTap: viewModel.ready && !viewModel.capturing
+                                  ? () async {
+                                      final file = await viewModel.capture();
+                                      if (file != null && context.mounted) {
+                                        _usePhoto(context, file.path);
+                                      }
+                                    }
+                                  : null,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                width: 76,
+                                height: 76,
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
+                                ),
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: viewModel.capturing
+                                        ? AppColors.navInactive
+                                        : Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: viewModel.capturing
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(15),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Expanded(child: SizedBox()),
+                        ],
                       ),
                     ],
                   ),
@@ -243,7 +279,7 @@ class _CameraAction extends StatelessWidget {
   });
   final String tooltip;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => IconButton(
@@ -258,9 +294,14 @@ class _CameraAction extends StatelessWidget {
 }
 
 class _CameraError extends StatelessWidget {
-  const _CameraError({required this.message, required this.onRetry});
+  const _CameraError({
+    required this.message,
+    required this.onRetry,
+    required this.onPickPhoto,
+  });
   final String message;
   final VoidCallback onRetry;
+  final VoidCallback onPickPhoto;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -281,6 +322,12 @@ class _CameraError extends StatelessWidget {
             style: const TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onPickPhoto,
+            icon: const Icon(Icons.photo_library_outlined),
+            label: const Text('Escolher foto'),
+          ),
+          const SizedBox(height: 8),
           OutlinedButton(
             onPressed: onRetry,
             child: const Text('Tentar novamente'),

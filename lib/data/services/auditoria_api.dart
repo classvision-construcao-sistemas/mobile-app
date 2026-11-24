@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/utils/photo.dart';
 import '../models/auditoria_models.dart';
 import '../models/auth_models.dart';
 
@@ -54,7 +55,10 @@ class AuditoriaApi {
     required int classId,
     required String imagePath,
   }) async {
-    if (!await File(imagePath).exists()) {
+    final http.MultipartFile photo;
+    try {
+      photo = await photoMultipart('foto', imagePath);
+    } on StateError {
       throw const AuditoriaApiException(
         'A foto não está mais disponível. Tire uma nova foto.',
       );
@@ -62,7 +66,7 @@ class AuditoriaApi {
     final request =
         http.MultipartRequest('POST', Uri.parse('$baseUrl/auditorias/previa'))
           ..fields['turmaId'] = '$classId'
-          ..files.add(await http.MultipartFile.fromPath('foto', imagePath));
+          ..files.add(photo);
     return AuditPreview.fromJson(
       _asMap(await _dispatch(request, session, uploadTimeout)),
     );
