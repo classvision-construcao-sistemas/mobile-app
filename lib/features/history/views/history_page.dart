@@ -11,13 +11,19 @@ import 'attendance_correction_page.dart';
 /// Histórico de chamadas: auditorias gravadas no auditoria-service e as
 /// chamadas feitas só nesta sessão (turmas locais ou perfis sem registro).
 class HistoryPage extends StatelessWidget {
-  const HistoryPage({super.key, this.onOpenReview});
+  const HistoryPage({super.key, this.onOpenReview, this.classId});
   final ValueChanged<String>? onOpenReview;
+
+  /// Mostra só as chamadas desta turma.
+  final String? classId;
 
   @override
   Widget build(BuildContext context) {
     final repository = context.watch<SchoolRepository>();
-    final records = repository.history;
+    final records = [
+      for (final record in repository.history)
+        if (classId == null || record.classId == classId) record,
+    ];
     _RecordAction? actionFor(AttendanceRecord record) {
       // Chamada gravada no servidor: corrigida com justificativa.
       if (repository.canCorrect(record)) {

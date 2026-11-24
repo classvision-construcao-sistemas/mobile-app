@@ -8,6 +8,7 @@ import '../../../core/widgets/app_ui.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
 import '../../../data/services/turma_api.dart';
+import '../../history/views/history_page.dart';
 
 class ClassDetailsPage extends StatelessWidget {
   const ClassDetailsPage({super.key, required this.classId});
@@ -544,7 +545,15 @@ class _DesktopClassDetails extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.fact_check_outlined),
                       title: const Text('Ver últimas chamadas'),
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.home),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => Scaffold(
+                            appBar: AppBar(title: Text(classroom.name)),
+                            body: HistoryPage(classId: classroom.id),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

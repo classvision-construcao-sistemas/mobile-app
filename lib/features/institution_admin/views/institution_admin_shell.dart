@@ -81,7 +81,7 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
           onViewAllPending: () => setState(() => _selectedIndex = 4),
           onOpenNotifications: () => setState(() => _showNotifications = true),
           onOpenCameraFor: openCamera,
-          userName: firstName.isEmpty ? 'Marina' : firstName,
+          userName: firstName,
         ),
         1 => ClassesPage(
           onOpenClass: (id) => Navigator.pushNamed(
