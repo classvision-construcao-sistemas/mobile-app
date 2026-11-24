@@ -8,12 +8,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import '../../helpers/fake_auth_server.dart';
+import '../../helpers/fake_turma_server.dart';
 
 void main() {
   Future<void> signIn(WidgetTester tester, Size size) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+    await tester.pumpWidget(
+      ClassVisionApp(authApi: roleAwareFakeAuthApi(), turmaApi: fakeTurmaApi()),
+    );
     await tester.enterText(
       find.byType(TextFormField).first,
       'lucas.ferreira@ifgoiano.edu.br',
@@ -37,10 +40,13 @@ void main() {
     await tester.tap(find.text('Turmas'));
     await tester.pumpAndSettle();
     expect(
-      find.text('Gerencie as turmas, docentes e o acompanhamento de presença.'),
+      find.text(
+        'Gerencie as turmas, os cursos e o acompanhamento de presença.',
+      ),
       findsOneWidget,
     );
-    expect(find.text('2026/2'), findsOneWidget);
+    expect(find.text('2º Ano A'), findsOneWidget);
+    expect(find.text('Técnico em Informática'), findsWidgets);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('Alunos'));
@@ -62,7 +68,11 @@ void main() {
     await tester.tap(find.text('Chamadas'));
     await tester.pumpAndSettle();
     expect(find.text('Histórico de chamadas'), findsOneWidget);
-    expect(find.text('Em revisão'), findsWidgets);
+    // Sem dados fictícios: o histórico começa vazio a cada sessão.
+    expect(
+      find.text('Nenhuma chamada registrada nesta sessão.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('Relatórios'));
@@ -81,13 +91,17 @@ void main() {
 
     await tester.tap(find.text('Turmas'));
     await tester.pumpAndSettle();
-    expect(find.text('28 turmas no semestre 2026/2'), findsOneWidget);
-    expect(find.text('Filtros rápidos'), findsOneWidget);
+    expect(find.text('3 turmas cadastradas'), findsOneWidget);
+    expect(find.text('2º Ano D'), findsOneWidget);
+    expect(find.text('Vespertino'), findsOneWidget);
 
     await tester.tap(find.text('Chamadas'));
     await tester.pumpAndSettle();
     expect(find.text('Histórico de presença e pendências'), findsOneWidget);
-    expect(find.text('Requer revisão'), findsOneWidget);
+    expect(
+      find.text('Nenhuma chamada registrada nesta sessão.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Relatórios'));
     await tester.pumpAndSettle();
@@ -113,8 +127,7 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(1440, 1024));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final repository = SchoolRepository()
-      ..addClass(name: '2º Ano A', room: 'Sala 204', time: '07:30–12:50');
+    final repository = SchoolRepository()..seedClasses([courseClass()]);
     final classId = repository.classes.single.id;
     repository.addStudent(
       classId,
@@ -138,19 +151,12 @@ void main() {
     );
 
     expect(find.text('Dados da turma'), findsOneWidget);
-    expect(find.text('Presença mensal'), findsOneWidget);
+    expect(find.text('Alunos da turma'), findsOneWidget);
     expect(find.text('Ações rápidas'), findsOneWidget);
     expect(find.text('Beatriz Nogueira'), findsOneWidget);
-
-    await tester.tap(find.text('Editar turma'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextField).first,
-      '2º Ano A — Atualizada',
-    );
-    await tester.tap(find.text('Salvar'));
-    await tester.pumpAndSettle();
-    expect(find.text('2º Ano A — Atualizada'), findsOneWidget);
+    expect(find.text('Sala 204 · Turno matutino'), findsOneWidget);
+    // Sem sessão com perfil de gestão, a turma não pode ser editada.
+    expect(find.text('Editar turma'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

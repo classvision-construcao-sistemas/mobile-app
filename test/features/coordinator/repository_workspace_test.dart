@@ -7,14 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import '../../helpers/fake_turma_server.dart';
+
 void main() {
-  test('demo repository is seeded without changing the empty default', () {
+  test('repository starts empty until the turma-service is loaded', () {
     expect(SchoolRepository().classes, isEmpty);
     expect(SchoolRepository().history, isEmpty);
-
-    final demo = SchoolRepository.demo();
-    expect(demo.classes, isNotEmpty);
-    expect(demo.history, isNotEmpty);
   });
 
   testWidgets('classes page renders and opens repository-backed classes', (
@@ -23,7 +21,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = SchoolRepository()
-      ..addClass(name: 'Turma criada agora', room: 'Sala 9', time: '10:00');
+      ..seedClasses([courseClass(nome: 'Turma criada agora', sala: 'Sala 9')]);
     String? openedId;
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
@@ -46,7 +44,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = SchoolRepository()
-      ..addClass(name: 'Turma da sessão', room: 'Sala 1', time: '08:00');
+      ..seedClasses([courseClass(nome: 'Turma da sessão', sala: 'Sala 1')]);
     final classId = repository.classes.single.id;
     repository.addStudent(
       classId,

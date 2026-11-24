@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import '../../helpers/fake_auth_server.dart';
+import '../../helpers/fake_turma_server.dart';
 
 void main() {
   Future<void> pumpShell(
@@ -22,7 +23,9 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => AdminRepository()),
-          ChangeNotifierProvider(create: (_) => SchoolRepository.demo()),
+          ChangeNotifierProvider(
+            create: (_) => SchoolRepository()..seedClasses([courseClass()]),
+          ),
           ChangeNotifierProvider(
             create: (_) => AuthRepository(api: roleAwareFakeAuthApi()),
           ),
@@ -111,7 +114,9 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+    await tester.pumpWidget(
+      ClassVisionApp(authApi: roleAwareFakeAuthApi(), turmaApi: fakeTurmaApi()),
+    );
     await tester.enterText(
       find.byType(TextFormField).first,
       'coordenacao@escola.edu.br',

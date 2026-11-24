@@ -8,12 +8,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'helpers/fake_auth_server.dart';
+import 'helpers/fake_turma_server.dart';
 
 void main() {
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(ClassVisionApp(authApi: fakeAuthApi()));
+    await tester.pumpWidget(
+      ClassVisionApp(authApi: fakeAuthApi(), turmaApi: fakeTurmaApi()),
+    );
   }
 
   Future<void> signIn(
@@ -61,7 +64,7 @@ void main() {
     await tester.tap(find.text('Turmas'));
     await tester.pumpAndSettle();
     expect(find.text('Buscar turma'), findsOneWidget);
-    expect(find.text('28 turmas no semestre 2026/2'), findsOneWidget);
+    expect(find.text('3 turmas cadastradas'), findsOneWidget);
   });
 
   testWidgets('shows the token data on the profile and logs out', (
@@ -93,7 +96,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final repository = SchoolRepository()
-      ..addClass(name: 'Turma A', room: 'Sala 1', time: '08:00');
+      ..seedClasses([courseClass(nome: 'Turma A', sala: 'Sala 1')]);
     final classId = repository.classes.single.id;
     repository.addStudent(
       classId,

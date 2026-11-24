@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_auth_server.dart';
+import '../helpers/fake_turma_server.dart';
+
+import 'package:class_vision/core/navigation/app_routes.dart';
 
 void main() {
   Future<void> startApp(WidgetTester tester, Size size) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+    await tester.pumpWidget(
+      ClassVisionApp(authApi: roleAwareFakeAuthApi(), turmaApi: fakeTurmaApi()),
+    );
   }
 
   Future<void> login(WidgetTester tester, String email) async {
@@ -38,7 +43,7 @@ void main() {
     await openDestination(
       tester,
       'Turmas',
-      'Gerencie as turmas, docentes e o acompanhamento de presença.',
+      'Gerencie as turmas, os cursos e o acompanhamento de presença.',
     ); // 02
     await openDestination(
       tester,
@@ -66,15 +71,16 @@ void main() {
       expect(find.textContaining('Detalhes da turma'), findsOneWidget); // 03
       expect(find.text('Lista de alunos'), findsNothing);
 
-      tester.state<NavigatorState>(find.byType(Navigator)).pop();
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Chamadas'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Revisar →'));
+      // Alunos vinculados no turma-service aparecem pela matrícula.
+      expect(find.text('Aluno 20260001'), findsOneWidget);
+
+      tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .pushReplacementNamed(AppRoutes.review, arguments: '1');
       await tester.pumpAndSettle();
       expect(find.text('Revisar chamada'), findsOneWidget); // 07
       expect(find.text('Lista de presença'), findsOneWidget);
-      expect(find.text('Beatriz Nogueira'), findsOneWidget);
+      expect(find.text('Aluno 20260001'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -84,11 +90,7 @@ void main() {
     await login(tester, 'lucas.ferreira@ifgoiano.edu.br');
 
     expect(find.text('Olá, Lucas'), findsOneWidget); // 10
-    await openDestination(
-      tester,
-      'Turmas',
-      '28 turmas no semestre 2026/2',
-    ); // 11
+    await openDestination(tester, 'Turmas', '3 turmas cadastradas'); // 11
     await openDestination(
       tester,
       'Chamadas',
@@ -108,7 +110,9 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
-    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+    await tester.pumpWidget(
+      ClassVisionApp(authApi: roleAwareFakeAuthApi(), turmaApi: fakeTurmaApi()),
+    );
     await login(tester, 'marina.costa@ifgoiano.edu.br');
     expect(find.text('Equipe da instituição'), findsOneWidget); // 25
     expect(tester.takeException(), isNull);

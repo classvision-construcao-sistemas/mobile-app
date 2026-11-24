@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fake_auth_server.dart';
+import '../../helpers/fake_turma_server.dart';
 
 void main() {
   Widget app() => MaterialApp(
@@ -47,7 +48,9 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(1440, 1024));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+    await tester.pumpWidget(
+      ClassVisionApp(authApi: roleAwareFakeAuthApi(), turmaApi: fakeTurmaApi()),
+    );
     await tester.enterText(
       find.byType(TextFormField).first,
       'marina.costa@ifgoiano.edu.br',

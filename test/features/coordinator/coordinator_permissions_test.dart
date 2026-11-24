@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fake_auth_server.dart';
+import '../../helpers/fake_turma_server.dart';
 
 void main() {
   Future<void> login(WidgetTester tester, String email) async {
@@ -17,7 +18,12 @@ void main() {
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1440, 1024));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+      await tester.pumpWidget(
+        ClassVisionApp(
+          authApi: roleAwareFakeAuthApi(),
+          turmaApi: fakeTurmaApi(),
+        ),
+      );
       await login(tester, 'lucas.ferreira@ifgoiano.edu.br');
 
       expect(find.text('Visão geral'), findsOneWidget);
@@ -33,7 +39,12 @@ void main() {
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1440, 1024));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+      await tester.pumpWidget(
+        ClassVisionApp(
+          authApi: roleAwareFakeAuthApi(),
+          turmaApi: fakeTurmaApi(),
+        ),
+      );
       await login(tester, 'marina.costa@ifgoiano.edu.br');
 
       await tester.tap(find.text('Visão geral'));

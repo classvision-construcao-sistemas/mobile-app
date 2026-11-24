@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fake_auth_server.dart';
+import '../../helpers/fake_turma_server.dart';
 
 void main() {
   Future<void> pumpApp(
@@ -12,7 +13,9 @@ void main() {
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(ClassVisionApp(authApi: roleAwareFakeAuthApi()));
+    await tester.pumpWidget(
+      ClassVisionApp(authApi: roleAwareFakeAuthApi(), turmaApi: fakeTurmaApi()),
+    );
   }
 
   Future<void> signIn(WidgetTester tester, String email) async {
@@ -156,6 +159,7 @@ void main() {
     await tester.pumpWidget(
       ClassVisionApp(
         authApi: fakeAuthApi(claims: professorClaims(role: 'DESCONHECIDO')),
+        turmaApi: fakeTurmaApi(),
       ),
     );
     await tester.enterText(
