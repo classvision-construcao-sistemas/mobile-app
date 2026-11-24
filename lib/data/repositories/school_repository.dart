@@ -43,6 +43,19 @@ class SchoolRepository extends ChangeNotifier {
   /// Mensagem do último erro ao carregar o histórico de chamadas.
   String? get historyError => _historyError;
 
+  /// Frequência do aluno nas chamadas registradas (nula sem chamadas).
+  double? attendanceRateOf(String registration) {
+    var total = 0;
+    var present = 0;
+    for (final record in _history) {
+      final value = record.attendance[registration];
+      if (value == null) continue;
+      total++;
+      if (value) present++;
+    }
+    return total == 0 ? null : present / total;
+  }
+
   List<SchoolClass> _classes = [];
   List<Course> _courses = [];
   final List<AttendanceRecord> _history = [];
@@ -450,6 +463,10 @@ class SchoolRepository extends ChangeNotifier {
             .length,
         classId: classroom.id,
         status: AttendanceRecord.local,
+        attendance: {
+          for (final student in classroom.students)
+            student.registration: student.status == AttendanceStatus.present,
+        },
       ),
     );
     notifyListeners();
@@ -505,6 +522,10 @@ class SchoolRepository extends ChangeNotifier {
       status: record.status.isEmpty
           ? AttendanceRecord.confirmed
           : record.status,
+      attendance: {
+        for (final result in record.results)
+          '${result.studentId}': result.present,
+      },
     );
   }
 

@@ -106,7 +106,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Notificações'), findsOneWidget);
-    expect(find.text('3 notificações não lidas'), findsOneWidget);
+    // A turma de teste não tem alunos nem chamadas: nada a notificar.
+    expect(find.text('Nenhuma notificação por enquanto.'), findsOneWidget);
   });
 
   testWidgets('coordinator login never exposes institution administration', (

@@ -125,6 +125,7 @@ class AttendanceRecord {
     this.auditId,
     this.classId,
     this.status = AttendanceRecord.confirmed,
+    this.attendance = const {},
   });
 
   static const confirmed = 'CONFIRMADA';
@@ -146,6 +147,9 @@ class AttendanceRecord {
 
   /// `CONFIRMADA`, `CORRIGIDA` ou `LOCAL`.
   final String status;
+
+  /// Presença de cada aluno nesta chamada, por matrícula.
+  final Map<String, bool> attendance;
 
   bool get isRemote => auditId != null;
   int get total => present + absent;

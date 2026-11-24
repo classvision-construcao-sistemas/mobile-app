@@ -53,7 +53,7 @@ void main() {
     await openDestination(
       tester,
       'Professores',
-      'Acompanhe docentes, turmas atribuídas e convites pendentes.',
+      'Acompanhe os docentes cadastrados na instituição.',
     ); // 05
     await openDestination(tester, 'Chamadas', 'Histórico de chamadas'); // 06
     await openDestination(tester, 'Relatórios', 'Evolução da presença'); // 08
@@ -99,13 +99,13 @@ void main() {
     await openDestination(
       tester,
       'Relatórios',
-      'Indicadores de 01 a 14 de novembro',
+      'Nenhuma chamada registrada',
     ); // 13
     await openDestination(tester, 'Mais', 'Coordenador · IF Goiano'); // 14
     await openDestination(
       tester,
       'Notificações',
-      '3 notificações não lidas',
+      '1 notificação(ões) não lida(s)',
     ); // 15
 
     await tester.pumpWidget(const SizedBox.shrink());

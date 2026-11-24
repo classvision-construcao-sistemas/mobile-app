@@ -60,7 +60,7 @@ void main() {
     await tester.tap(find.text('Professores'));
     await tester.pumpAndSettle();
     expect(
-      find.text('Acompanhe docentes, turmas atribuídas e convites pendentes.'),
+      find.text('Acompanhe os docentes cadastrados na instituição.'),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
@@ -107,7 +107,7 @@ void main() {
 
     await tester.tap(find.text('Relatórios'));
     await tester.pumpAndSettle();
-    expect(find.text('Indicadores de 01 a 14 de novembro'), findsOneWidget);
+    expect(find.text('Nenhuma chamada registrada'), findsOneWidget);
     expect(find.text('Evolução semanal'), findsOneWidget);
 
     await tester.tap(find.text('Mais'));
@@ -116,7 +116,9 @@ void main() {
     expect(find.text('Notificações'), findsOneWidget);
     await tester.tap(find.text('Notificações'));
     await tester.pumpAndSettle();
-    expect(find.text('3 notificações não lidas'), findsOneWidget);
+    // A turma 2º Ano A tem alunos e ainda não tem chamada hoje.
+    expect(find.text('Chamada pendente'), findsOneWidget);
+    expect(find.text('1 notificação(ões) não lida(s)'), findsOneWidget);
     expect(find.text('Marcar todas como lidas'), findsOneWidget);
     await tester.tap(find.text('Marcar todas como lidas'));
     await tester.pump();
