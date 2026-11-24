@@ -96,6 +96,47 @@ a API: as mensagens de erro dela (`descricao`) são exibidas como vieram.
 Na primeira subida do serviço é criado o administrador geral
 `admin@classvision.com` / `admin123456` (troque a senha fora do ambiente local).
 
+## Cursos e turmas
+
+Cursos, turmas e vínculos de alunos vêm do microsserviço
+[`turma-service`](https://github.com/classvision-construcao-sistemas/turma-service),
+que valida o mesmo JWT do serviço de autenticação (as chamadas enviam
+`Authorization: Bearer <token>`).
+
+O endereço é configurado com `TURMA_API_BASE_URL`. Sem ele, o app usa
+`http://localhost:8081` (ou `http://10.0.2.2:8081` no emulador Android). Como o
+serviço de autenticação já ocupa a 8080, suba o turma-service localmente com
+`PORT=8081`:
+
+```bash
+flutter run \
+  --dart-define=AUTH_API_BASE_URL=http://192.168.0.10:8080 \
+  --dart-define=TURMA_API_BASE_URL=http://192.168.0.10:8081 \
+  --dart-define=FACE_API_BASE_URL=http://192.168.0.10:5000
+```
+
+Como funciona no app:
+
+- **Turmas** (`GET /turmas`, `GET /cursos`): carregadas logo após o login e na
+  tela de turmas (puxe para atualizar). O serviço já devolve só as turmas da
+  instituição do token; o `ADMINISTRADOR` vê todas.
+- **Cadastro e edição** (`POST`/`PUT /turmas`, `DELETE /turmas/{id}`):
+  `ADMINISTRADOR`, `ADMIN_INSTITUICAO` e `COORDENADOR`. O formulário pede curso,
+  nome, ano letivo, turno, sala e período (`dd/mm/aaaa`, enviado como
+  `aaaa-mm-dd`). Também é possível cadastrar um curso (`POST /cursos`) na
+  instituição do usuário.
+- **Alunos da turma** (`POST`/`DELETE /turmas/{id}/alunos`): ao cadastrar um
+  aluno numa turma, perfis com permissão (os acima e `SECRETARIO`) também criam
+  o vínculo; a matrícula numérica é o `alunoId`. Como o turma-service guarda só
+  o vínculo, nome e responsável ficam apenas na sessão; alunos vindos da API
+  aparecem como "Aluno <matrícula>". Para os demais perfis o aluno fica só na
+  sessão, como antes.
+- Erros da API (`mensagem` e `campos`) são exibidos como vieram, e um `401`
+  encerra a sessão.
+
+O histórico de chamadas continua apenas em memória: o turma-service não guarda
+presenças.
+
 ## Painéis por perfil
 
 Após o login, o JWT define automaticamente a área exibida:
