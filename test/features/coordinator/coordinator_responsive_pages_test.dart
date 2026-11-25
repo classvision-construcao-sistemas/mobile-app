@@ -3,6 +3,7 @@ import 'package:class_vision/core/theme/app_theme.dart';
 import 'package:class_vision/data/models/school_models.dart';
 import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:class_vision/features/classes/views/class_details_page.dart';
+import 'package:class_vision/features/home/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +32,7 @@ void main() {
   ) async {
     await signIn(tester, const Size(1440, 1024));
 
-    expect(find.text('Bom dia, Lucas'), findsOneWidget);
+    expect(find.text(homeGreeting('Lucas')), findsOneWidget);
     expect(find.text('Presença ao longo da semana'), findsOneWidget);
     expect(find.text('Chamadas para revisar'), findsOneWidget);
     expect(find.text('Lucas Ferreira'), findsWidgets);
@@ -82,7 +83,7 @@ void main() {
   testWidgets('matches all mobile coordinator references', (tester) async {
     await signIn(tester, const Size(390, 844));
 
-    expect(find.text('Olá, Lucas'), findsOneWidget);
+    expect(find.text(homeGreeting('Lucas')), findsOneWidget);
     // Data de hoje por extenso (ex.: "Terça-feira, 24 de novembro").
     expect(
       find.textContaining(

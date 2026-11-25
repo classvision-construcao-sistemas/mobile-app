@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_ui.dart';
+import '../../../core/widgets/classvision_logo.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../viewmodels/login_view_model.dart';
 
@@ -53,23 +54,7 @@ class _LoginPageState extends State<LoginPage> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      Container(
-                        width: 68,
-                        height: 68,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'CV',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 29,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
+                      const ClassVisionMark(size: 68),
                       const SizedBox(height: 12),
                       const Text(
                         'Acesso ao ClassVision',

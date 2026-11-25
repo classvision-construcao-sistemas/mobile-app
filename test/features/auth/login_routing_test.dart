@@ -1,5 +1,6 @@
 import 'package:class_vision/app.dart';
 import 'package:class_vision/core/navigation/app_routes.dart';
+import 'package:class_vision/features/home/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -115,7 +116,7 @@ void main() {
 
     expect(find.byKey(const Key('institution-admin-shell')), findsOneWidget);
     expect(find.byKey(const Key('coordinator-shell')), findsNothing);
-    expect(find.text('Bom dia, Marina'), findsOneWidget);
+    expect(find.text(homeGreeting('Marina')), findsOneWidget);
   });
 
   testWidgets('signing out returns to the neutral login', (tester) async {

@@ -1,4 +1,5 @@
 import 'package:class_vision/app.dart';
+import 'package:class_vision/features/home/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,7 +39,7 @@ void main() {
     await startApp(tester, const Size(1440, 1024));
     await login(tester, 'lucas.ferreira@ifgoiano.edu.br');
 
-    expect(find.text('Bom dia, Lucas'), findsOneWidget); // 01
+    expect(find.text(homeGreeting('Lucas')), findsOneWidget); // 01
     expect(tester.takeException(), isNull);
     await openDestination(
       tester,
@@ -89,7 +90,7 @@ void main() {
     await startApp(tester, const Size(390, 844));
     await login(tester, 'lucas.ferreira@ifgoiano.edu.br');
 
-    expect(find.text('Olá, Lucas'), findsOneWidget); // 10
+    expect(find.text(homeGreeting('Lucas')), findsOneWidget); // 10
     await openDestination(tester, 'Turmas', '3 turmas cadastradas'); // 11
     await openDestination(
       tester,
@@ -173,7 +174,7 @@ void main() {
   ) async {
     await startApp(tester, const Size(899, 844));
     await login(tester, 'lucas.ferreira@ifgoiano.edu.br');
-    expect(find.text('Olá, Lucas'), findsOneWidget);
+    expect(find.text(homeGreeting('Lucas')), findsOneWidget);
     expect(find.text('Mais'), findsOneWidget);
 
     await tester.binding.setSurfaceSize(const Size(900, 844));

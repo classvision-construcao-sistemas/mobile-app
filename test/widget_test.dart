@@ -3,6 +3,7 @@ import 'package:class_vision/core/theme/app_theme.dart';
 import 'package:class_vision/data/models/school_models.dart';
 import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:class_vision/features/attendance/views/attendance_review_page.dart';
+import 'package:class_vision/features/home/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +51,7 @@ void main() {
     await signIn(tester, password: 'errada');
 
     expect(find.text('Email ou senha inválidos.'), findsOneWidget);
-    expect(find.textContaining('Bom dia'), findsNothing);
+    expect(find.textContaining(homeGreeting('')), findsNothing);
   });
 
   testWidgets('signs in, navigates to classes and preserves the shell', (
@@ -59,7 +60,7 @@ void main() {
     await pumpApp(tester);
 
     await signIn(tester);
-    expect(find.text('Olá, Maria'), findsOneWidget);
+    expect(find.text(homeGreeting('Maria')), findsOneWidget);
 
     await tester.tap(find.text('Turmas'));
     await tester.pumpAndSettle();

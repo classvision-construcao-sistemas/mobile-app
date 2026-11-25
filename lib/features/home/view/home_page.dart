@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../core/widgets/classvision_logo.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/school_repository.dart';
@@ -162,6 +163,19 @@ const _months = [
   'dezembro',
 ];
 
+/// "Bom dia", "Boa tarde" ou "Boa noite" conforme a hora, com o nome.
+String homeGreeting(String name, [DateTime? now]) {
+  final hour = (now ?? DateTime.now()).hour;
+  final greeting = hour < 5
+      ? 'Boa noite'
+      : hour < 12
+      ? 'Bom dia'
+      : hour < 18
+      ? 'Boa tarde'
+      : 'Boa noite';
+  return name.isEmpty ? greeting : '$greeting, $name';
+}
+
 String _longDate(DateTime date) =>
     '${_weekdays[date.weekday - 1]}, ${date.day} de ${_months[date.month - 1]}';
 
@@ -215,7 +229,7 @@ class _DesktopDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userName.isEmpty ? 'Bom dia' : 'Bom dia, $userName',
+                  homeGreeting(userName, summary.now),
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -348,6 +362,11 @@ class _MobileDashboard extends StatelessWidget {
     key: const PageStorageKey('home-mobile'),
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
     children: [
+      const Align(
+        alignment: Alignment.centerLeft,
+        child: ClassVisionLogo(size: 28),
+      ),
+      const SizedBox(height: 18),
       Row(
         children: [
           Expanded(
@@ -355,7 +374,7 @@ class _MobileDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userName.isEmpty ? 'Olá' : 'Olá, $userName',
+                  homeGreeting(userName, summary.now),
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
