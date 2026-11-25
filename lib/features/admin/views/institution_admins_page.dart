@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
@@ -49,43 +50,25 @@ class _InstitutionAdminsPageState extends State<InstitutionAdminsPage> {
         ),
         const SizedBox(height: 30),
         const AdminDataStatus(),
-        AdminSurface(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-          child: Row(
-            children: [
-              const Icon(Icons.search_rounded, color: AppColors.textSecondary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  onChanged: (value) => setState(() => _query = value),
-                  decoration: const InputDecoration(
-                    hintText: 'Buscar administrador ou instituição',
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: AppSearchField(
+                hint: 'Buscar administrador ou instituição',
+                onChanged: (value) => setState(() => _query = value),
               ),
-              DropdownButton<AccountStatus?>(
-                value: _status,
-                underline: const SizedBox.shrink(),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Todos os status')),
-                  DropdownMenuItem(
-                    value: AccountStatus.active,
-                    child: Text('Ativos'),
-                  ),
-                  DropdownMenuItem(
-                    value: AccountStatus.inactive,
-                    child: Text('Inativos'),
-                  ),
-                ],
-                onChanged: (value) => setState(() => _status = value),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            AppFilterDropdown<AccountStatus?>(
+              value: _status,
+              options: const [
+                (null, 'Todos os status'),
+                (AccountStatus.active, 'Ativos'),
+                (AccountStatus.inactive, 'Inativos'),
+              ],
+              onChanged: (value) => setState(() => _status = value),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         AdminSurface(
@@ -140,7 +123,7 @@ class _Header extends StatelessWidget {
     text,
     style: const TextStyle(
       color: AppColors.textSecondary,
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: FontWeight.w700,
     ),
   );
@@ -190,7 +173,7 @@ class _AdminRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 12,
                       ),
                     ),
                   ],

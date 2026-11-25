@@ -168,7 +168,7 @@ class _SettingsTab extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: selected ? AppColors.primary : AppColors.textSecondary,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
           ),
         ),

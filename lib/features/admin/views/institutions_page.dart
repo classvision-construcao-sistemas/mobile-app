@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
@@ -49,51 +50,32 @@ class _InstitutionsPageState extends State<InstitutionsPage> {
           subtitle:
               'Cadastre, consulte e acompanhe as instituições da plataforma.',
           action: AdminPrimaryButton(
-            label: '+ Nova instituição',
+            label: 'Nova instituição',
             onPressed: widget.onCreateInstitution,
           ),
         ),
         const SizedBox(height: 30),
         const AdminDataStatus(),
-        AdminSurface(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-          child: Row(
-            children: [
-              const Icon(Icons.search_rounded, color: AppColors.textSecondary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: _search,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    hintText: 'Buscar instituição ou administrador',
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: AppSearchField(
+                controller: _search,
+                hint: 'Buscar instituição, CNPJ ou administrador',
+                onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(width: 18),
-              DropdownButton<InstitutionStatus?>(
-                value: _status,
-                underline: const SizedBox.shrink(),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Todos os status')),
-                  DropdownMenuItem(
-                    value: InstitutionStatus.active,
-                    child: Text('Ativas'),
-                  ),
-                  DropdownMenuItem(
-                    value: InstitutionStatus.suspended,
-                    child: Text('Suspensas'),
-                  ),
-                ],
-                onChanged: (value) => setState(() => _status = value),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            AppFilterDropdown<InstitutionStatus?>(
+              value: _status,
+              options: const [
+                (null, 'Todos os status'),
+                (InstitutionStatus.active, 'Ativas'),
+                (InstitutionStatus.suspended, 'Suspensas'),
+              ],
+              onChanged: (value) => setState(() => _status = value),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         AdminSurface(
@@ -168,7 +150,7 @@ class _HeaderText extends StatelessWidget {
     label,
     style: const TextStyle(
       color: AppColors.textSecondary,
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: FontWeight.w700,
     ),
   );
@@ -206,7 +188,7 @@ class _InstitutionRow extends StatelessWidget {
                   institution.document,
                   style: const TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
               ],

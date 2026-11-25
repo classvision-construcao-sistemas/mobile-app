@@ -189,7 +189,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Gestão de instituições'), findsOneWidget);
-    expect(find.text('+ Nova instituição'), findsOneWidget);
+    expect(find.text('Nova instituição'), findsOneWidget);
   });
 
   testWidgets('institution administrator can reach connected user CRUD', (

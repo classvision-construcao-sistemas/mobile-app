@@ -46,7 +46,7 @@ void main() {
     expect(find.text('Coordenador de curso cadastrado'), findsOneWidget);
     expect(find.text('Status dos serviços'), findsOneWidget);
     expect(find.text('Operacional'), findsNWidgets(4));
-    expect(find.text('+ Nova instituição'), findsOneWidget);
+    expect(find.text('Nova instituição'), findsOneWidget);
     expectNoAcademicDestinations();
     expect(tester.takeException(), isNull);
   });

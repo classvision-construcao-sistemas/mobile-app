@@ -54,7 +54,7 @@ class AppBottomNavigation extends StatelessWidget {
                     Text(
                       item.$3,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: selected
                             ? FontWeight.w700
                             : FontWeight.w500,

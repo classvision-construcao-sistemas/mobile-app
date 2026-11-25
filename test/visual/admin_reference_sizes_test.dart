@@ -133,7 +133,7 @@ void main() {
       'Instituições',
       'Gestão de instituições',
     ); // 18
-    await tester.tap(find.text('+ Nova instituição'));
+    await tester.tap(find.text('Nova instituição'));
     await tester.pumpAndSettle();
     expect(find.text('Cadastrar instituição'), findsOneWidget); // 19
     expect(tester.takeException(), isNull);
@@ -157,7 +157,7 @@ void main() {
       'Endereços dos serviços',
     ); // 23
     await openDestination(tester, 'Instituições', 'Gestão de instituições');
-    await tester.tap(find.text('+ Nova instituição'));
+    await tester.tap(find.text('Nova instituição'));
     await tester.pumpAndSettle();
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), 'Colégio Horizonte');

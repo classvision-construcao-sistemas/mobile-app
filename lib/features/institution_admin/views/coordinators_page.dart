@@ -155,17 +155,14 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
             padding: EdgeInsets.only(left: 28, top: 2),
             child: Text(
               'Administrador da instituição',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ),
           const SizedBox(height: 20),
-          TextField(
+          AppSearchField(
             controller: _searchController,
+            hint: 'Buscar coordenador',
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search_rounded),
-              hintText: 'Buscar coordenador',
-            ),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -270,7 +267,7 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
         '${coordinators.length == 1 ? 'COORDENADOR' : 'COORDENADORES'}',
         style: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: .4,
         ),
@@ -324,7 +321,7 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
                   SizedBox(height: 4),
                   Text(
                     'Pode gerenciar turmas, alunos, professores, chamadas e relatórios. Configurações, integrações e equipe ficam restritas ao administrador.',
-                    style: TextStyle(color: AppColors.primary, fontSize: 11),
+                    style: TextStyle(color: AppColors.primary, fontSize: 12),
                   ),
                 ],
               ),
@@ -368,7 +365,7 @@ class _CoordinatorCard extends StatelessWidget {
                     coordinator.email,
                     style: const TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 11,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -423,7 +420,7 @@ class _CoordinatorRow extends StatelessWidget {
                 coordinator.email,
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 11,
+                  fontSize: 12,
                 ),
               ),
             ],

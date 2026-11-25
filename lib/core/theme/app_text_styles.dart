@@ -70,14 +70,14 @@ class AppTextStyles {
 
   /// Label do bottom nav
   static TextStyle navLabel = GoogleFonts.inter(
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: FontWeight.w500,
     height: 1.2,
   );
 
   /// Label do bottom nav ativo
   static TextStyle navLabelActive = GoogleFonts.inter(
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: FontWeight.w600,
     height: 1.2,
   );

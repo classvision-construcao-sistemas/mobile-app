@@ -300,7 +300,7 @@ class AppStatusChip extends StatelessWidget {
     ),
     child: Text(
       label,
-      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+      style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700),
     ),
   );
 }
@@ -348,4 +348,68 @@ void showAppMessage(
         backgroundColor: error ? AppColors.error : null,
       ),
     );
+}
+
+/// Campo de busca padrão das listas (lupa + texto de exemplo).
+class AppSearchField extends StatelessWidget {
+  const AppSearchField({
+    super.key,
+    required this.hint,
+    this.controller,
+    this.onChanged,
+  });
+
+  final String hint;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    onChanged: onChanged,
+    textInputAction: TextInputAction.search,
+    decoration: InputDecoration(
+      prefixIcon: const Icon(Icons.search_rounded, size: 20),
+      hintText: hint,
+    ),
+  );
+}
+
+/// Filtro de lista no mesmo estilo dos campos (ex.: "Todos os status").
+class AppFilterDropdown<T> extends StatelessWidget {
+  const AppFilterDropdown({
+    super.key,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+    this.width = 250,
+  });
+
+  final T value;
+
+  /// Pares valor → rótulo, na ordem em que aparecem.
+  final List<(T, String)> options;
+  final ValueChanged<T?> onChanged;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    child: DropdownButtonFormField<T>(
+      key: ValueKey(value),
+      initialValue: value,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.filter_list_rounded, size: 20),
+      ),
+      items: [
+        for (final (option, label) in options)
+          DropdownMenuItem<T>(
+            value: option,
+            child: Text(label, overflow: TextOverflow.ellipsis),
+          ),
+      ],
+      onChanged: onChanged,
+    ),
+  );
 }

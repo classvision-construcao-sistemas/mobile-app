@@ -65,7 +65,7 @@ class SchoolClassCard extends StatelessWidget {
               child: Text(
                 classroom.attendanceCompleted ? 'Realizada' : classroom.time,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: classroom.attendanceCompleted
                       ? AppColors.success

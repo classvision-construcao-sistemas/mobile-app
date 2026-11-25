@@ -499,7 +499,7 @@ class _MobileDashboard extends StatelessWidget {
                         ].join(' · '),
                         style: const TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -509,7 +509,7 @@ class _MobileDashboard extends StatelessWidget {
                   _percent(summary.rateFor(classroom)),
                   style: const TextStyle(
                     color: Color(0xFF15803D),
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -540,7 +540,7 @@ class _MobileMetric extends StatelessWidget {
         label,
         style: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -575,7 +575,7 @@ class _PresenceChart extends StatelessWidget {
           const SizedBox(height: 5),
           const Text(
             'Média de presença por dia letivo',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -648,7 +648,7 @@ class _ReviewPanel extends StatelessWidget {
           pending.isEmpty
               ? 'Todas as turmas já têm chamada hoje'
               : '${pending.length} turma(s) sem chamada hoje',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 14),
         for (final (index, classroom) in pending.take(4).indexed) ...[
@@ -698,7 +698,7 @@ class _DesktopReviewRow extends StatelessWidget {
               subtitle,
               style: const TextStyle(
                 color: AppColors.textSecondary,
-                fontSize: 10,
+                fontSize: 12,
               ),
             ),
           ],
@@ -755,7 +755,7 @@ class _MobileReviewCard extends StatelessWidget {
                 subtitle,
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 10,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -784,7 +784,7 @@ class _RecentActivity extends StatelessWidget {
         const SizedBox(height: 4),
         const Text(
           'Últimas chamadas registradas',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 14),
         if (history.isEmpty)
@@ -812,13 +812,13 @@ class _RecentActivity extends StatelessWidget {
             ),
             subtitle: Text(
               '${record.present} de ${record.total} presentes',
-              style: const TextStyle(fontSize: 10),
+              style: const TextStyle(fontSize: 12),
             ),
             trailing: Text(
               _relative(record.date, now),
               style: const TextStyle(
                 color: AppColors.textSecondary,
-                fontSize: 10,
+                fontSize: 12,
               ),
             ),
           ),

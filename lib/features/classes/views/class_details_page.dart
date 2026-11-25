@@ -316,7 +316,7 @@ class _DesktopClassDetails extends StatelessWidget {
             const SizedBox(width: 6),
             const Text(
               'Turmas  /  Detalhes da turma',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -391,7 +391,7 @@ class _DesktopClassDetails extends StatelessWidget {
                       _period(classroom),
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -582,7 +582,7 @@ class _Field extends StatelessWidget {
     children: [
       Text(
         label,
-        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
       ),
       const SizedBox(height: 3),
       Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -602,7 +602,7 @@ class _Summary extends StatelessWidget {
         label,
         style: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 9,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -636,7 +636,7 @@ class _Info extends StatelessWidget {
         ),
         Text(
           label,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
       ],
     ),
@@ -687,7 +687,7 @@ class _StudentRow extends StatelessWidget {
                           '${_statusLabel(student.enrollmentStatus!)}',
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 11,
+                  fontSize: 12,
                 ),
               ),
             ],

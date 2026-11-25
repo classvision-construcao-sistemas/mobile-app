@@ -39,7 +39,7 @@ void main() {
   testWidgets('validates, masks and creates an institution', (tester) async {
     final requests = <http.Request>[];
     await pumpSystemAdmin(tester, requests: requests);
-    await tester.tap(find.text('+ Nova instituição'));
+    await tester.tap(find.text('Nova instituição'));
     await tester.pumpAndSettle();
 
     expect(find.text('Cadastrar instituição'), findsOneWidget);
@@ -83,7 +83,7 @@ void main() {
     tester,
   ) async {
     await pumpSystemAdmin(tester);
-    await tester.tap(find.text('+ Nova instituição'));
+    await tester.tap(find.text('Nova instituição'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Cancelar'));

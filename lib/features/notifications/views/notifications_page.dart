@@ -109,7 +109,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           label,
           style: const TextStyle(
             color: AppColors.textSecondary,
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -224,7 +224,7 @@ class _Notification extends StatelessWidget {
                   subtitle,
                   style: const TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 10,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -232,7 +232,10 @@ class _Notification extends StatelessWidget {
           ),
           Text(
             when,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 9),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
           ),
         ],
       ),

@@ -108,7 +108,7 @@ class _ErrorBanner extends StatelessWidget {
       'Não foi possível carregar o histórico do servidor: $message',
       style: const TextStyle(
         color: Color(0xFFB45309),
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: FontWeight.w700,
       ),
     ),
@@ -131,7 +131,7 @@ class _DesktopAttendance extends StatelessWidget {
       children: [
         const Text(
           'Gestão acadêmica / Controle de presença',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 9),
         Row(
@@ -331,7 +331,7 @@ class _MobileAttendanceCard extends StatelessWidget {
         Text(
           '${formatBrDateTime(record.date)} · '
           '${record.present} de ${record.total} presentes',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 10),
         Row(
@@ -342,7 +342,7 @@ class _MobileAttendanceCard extends StatelessWidget {
                 style: TextStyle(
                   color: _statusColor(record),
                   fontWeight: FontWeight.w700,
-                  fontSize: 11,
+                  fontSize: 12,
                 ),
               ),
             ),

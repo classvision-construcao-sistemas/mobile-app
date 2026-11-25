@@ -68,7 +68,7 @@ class InstitutionCreatedPage extends StatelessWidget {
                       'PRÓXIMO PASSO',
                       style: TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

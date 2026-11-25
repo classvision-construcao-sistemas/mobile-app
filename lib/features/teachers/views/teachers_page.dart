@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../core/widgets/admin_cards.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/repositories/auth_repository.dart';
@@ -92,7 +93,7 @@ class _TeachersPageState extends State<TeachersPage> {
                     'Gestão acadêmica / Pessoas',
                     style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 11,
+                      fontSize: 12,
                     ),
                   ),
                   SizedBox(height: 9),
@@ -137,13 +138,10 @@ class _TeachersPageState extends State<TeachersPage> {
           ],
         ),
         const SizedBox(height: 20),
-        TextField(
+        AppSearchField(
           controller: _search,
+          hint: 'Buscar professor',
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search_rounded),
-            hintText: 'Buscar professor',
-          ),
         ),
         const SizedBox(height: 14),
         AdminSurface(

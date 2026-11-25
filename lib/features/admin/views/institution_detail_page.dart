@@ -250,7 +250,7 @@ class _Info extends StatelessWidget {
         label.toUpperCase(),
         style: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -320,7 +320,7 @@ class _CoordinatorsTable extends StatelessWidget {
                       coordinator.email,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -400,7 +400,7 @@ class _InstitutionActivity extends StatelessWidget {
                       activity.whenLabel,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 12,
                       ),
                     ),
                   ],

@@ -72,7 +72,6 @@ class _ClassesContentState extends State<_ClassesContent> {
   }
 }
 
-
 class _ListState {
   const _ListState({
     required this.rows,
@@ -127,7 +126,7 @@ class _DesktopClasses extends StatelessWidget {
                   'Gestão acadêmica',
                   style: TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
                 SizedBox(height: 9),
@@ -159,14 +158,9 @@ class _DesktopClasses extends StatelessWidget {
         ],
       ),
       const SizedBox(height: 24),
-      AdminSurface(
-        child: TextField(
-          onChanged: state.onSearch,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search_rounded),
-            hintText: 'Buscar por turma, curso, sala ou turno',
-          ),
-        ),
+      AppSearchField(
+        hint: 'Buscar por turma, curso, sala ou turno',
+        onChanged: state.onSearch,
       ),
       const SizedBox(height: 18),
       Row(
@@ -246,13 +240,7 @@ class _MobileClasses extends StatelessWidget {
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 18),
-        TextField(
-          onChanged: state.onSearch,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search_rounded),
-            hintText: 'Buscar turma',
-          ),
-        ),
+        AppSearchField(hint: 'Buscar turma', onChanged: state.onSearch),
         const SizedBox(height: 16),
         if (state.error != null) ...[
           AppErrorBanner(state.error!, onRetry: state.onRefresh),
@@ -297,7 +285,7 @@ class _MobileClasses extends StatelessWidget {
                             '${item.classroom.students.length} alunos',
                             style: const TextStyle(
                               color: AppColors.textSecondary,
-                              fontSize: 11,
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -377,7 +365,7 @@ class _ClassTableRow extends StatelessWidget {
                             : item.classroom.room,
                         style: const TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 10,
+                          fontSize: 12,
                         ),
                       ),
                     ],

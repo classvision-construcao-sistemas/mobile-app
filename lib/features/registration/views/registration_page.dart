@@ -288,7 +288,7 @@ class _FaceCaptureCard extends StatelessWidget {
                     : 'Você pode trocar a imagem antes de salvar.',
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 11,
+                  fontSize: 12,
                 ),
               ),
               Wrap(

@@ -49,7 +49,7 @@ class SystemDashboardPage extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               AdminPrimaryButton(
-                label: '+ Nova instituição',
+                label: 'Nova instituição',
                 icon: Icons.add_rounded,
                 onPressed: onCreateInstitution,
               ),
@@ -170,7 +170,7 @@ class _GrowthCard extends StatelessWidget {
           const SizedBox(height: 4),
           const Text(
             'Novas instituições por mês',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 18),
           Expanded(
@@ -230,7 +230,7 @@ class _GrowthCard extends StatelessWidget {
   }
 }
 
-const _axisStyle = TextStyle(color: Color(0xFF98A2B3), fontSize: 10);
+const _axisStyle = TextStyle(color: Color(0xFF98A2B3), fontSize: 12);
 
 class _ServiceStatusCard extends StatelessWidget {
   const _ServiceStatusCard({required this.services});
@@ -310,7 +310,7 @@ class _RecentActivityCard extends StatelessWidget {
                   activity.whenLabel,
                   style: const TextStyle(
                     color: Color(0xFF98A2B3),
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
               ],

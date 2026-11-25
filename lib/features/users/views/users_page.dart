@@ -120,10 +120,8 @@ class _UsersContent extends StatelessWidget {
                 style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
-              AppTextField(
-                label: 'Buscar',
-                hint: 'Nome, e-mail ou perfil',
-                icon: Icons.search_rounded,
+              AppSearchField(
+                hint: 'Buscar por nome, e-mail ou perfil',
                 onChanged: viewModel.search,
               ),
               const SizedBox(height: 16),

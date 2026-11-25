@@ -77,7 +77,7 @@ class ProfilePage extends StatelessWidget {
                       ].where((it) => it.isNotEmpty).join(' · '),
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 12,
                       ),
                     ),
                     if (institution != null &&
@@ -86,7 +86,7 @@ class ProfilePage extends StatelessWidget {
                         institution.name,
                         style: const TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 10,
+                          fontSize: 12,
                         ),
                       ),
                   ],
@@ -104,7 +104,7 @@ class ProfilePage extends StatelessWidget {
           'GESTÃO',
           style: TextStyle(
             color: AppColors.textSecondary,
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -139,7 +139,7 @@ class ProfilePage extends StatelessWidget {
           'PREFERÊNCIAS',
           style: TextStyle(
             color: AppColors.textSecondary,
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -205,7 +205,7 @@ class _MoreTile extends StatelessWidget {
               backgroundColor: AppColors.error,
               child: Text(
                 badge!,
-                style: const TextStyle(color: Colors.white, fontSize: 10),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
     ),

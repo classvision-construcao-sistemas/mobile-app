@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
 import 'widgets/admin_data_status.dart';
@@ -38,29 +39,9 @@ class _PlatformActivityPageState extends State<PlatformActivityPage> {
         ),
         const SizedBox(height: 30),
         const AdminDataStatus(),
-        AdminSurface(
-          child: Row(
-            children: [
-              const Icon(
-                Icons.manage_search_rounded,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  onChanged: (value) => setState(() => _query = value),
-                  decoration: const InputDecoration(
-                    hintText: 'Buscar por ação, instituição ou usuário',
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        AppSearchField(
+          hint: 'Buscar por ação, instituição ou usuário',
+          onChanged: (value) => setState(() => _query = value),
         ),
         const SizedBox(height: 24),
         AdminSurface(

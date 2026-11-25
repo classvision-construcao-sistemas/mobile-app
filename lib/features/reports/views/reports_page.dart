@@ -135,7 +135,7 @@ class _DesktopReports extends StatelessWidget {
     children: [
       const Text(
         'Gestão acadêmica / Indicadores',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
       ),
       const SizedBox(height: 9),
       const Text(
@@ -263,7 +263,7 @@ class _MobileReports extends StatelessWidget {
                         'Abaixo da meta de presença',
                         style: TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -343,7 +343,7 @@ class _Chart extends StatelessWidget {
                   label,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11),
+                  style: const TextStyle(fontSize: 12),
                 ),
               ),
           ],

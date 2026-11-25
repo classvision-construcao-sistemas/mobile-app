@@ -46,7 +46,7 @@ class AdminMobileNavigation extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: selectedIndex == index
                               ? AppColors.primary
                               : AppColors.navInactive,

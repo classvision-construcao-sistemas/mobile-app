@@ -61,7 +61,7 @@ class MetricCard extends StatelessWidget {
             supportingText!,
             style: const TextStyle(
               color: AppColors.textSecondary,
-              fontSize: 11,
+              fontSize: 12,
             ),
           ),
         ],

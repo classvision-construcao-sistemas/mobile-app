@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../core/widgets/admin_cards.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
@@ -117,7 +118,7 @@ class _StudentsPageState extends State<StudentsPage> {
                     'Gestão acadêmica / Pessoas',
                     style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 11,
+                      fontSize: 12,
                     ),
                   ),
                   SizedBox(height: 9),
@@ -142,39 +143,25 @@ class _StudentsPageState extends State<StudentsPage> {
           ],
         ),
         const SizedBox(height: 24),
-        AdminSurface(
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _search,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search_rounded),
-                    hintText: 'Buscar por nome ou matrícula',
-                  ),
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: AppSearchField(
+                controller: _search,
+                hint: 'Buscar por nome ou matrícula',
+                onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(width: 14),
-              DropdownButton<String?>(
-                value: classes.any((it) => it.id == _classId) ? _classId : null,
-                underline: const SizedBox.shrink(),
-                hint: const Text('Todas as turmas'),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Todas as turmas'),
-                  ),
-                  for (final classroom in classes)
-                    DropdownMenuItem<String?>(
-                      value: classroom.id,
-                      child: Text(classroom.name),
-                    ),
-                ],
-                onChanged: (value) => setState(() => _classId = value),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            AppFilterDropdown<String?>(
+              value: classes.any((it) => it.id == _classId) ? _classId : null,
+              options: [
+                (null, 'Todas as turmas'),
+                for (final classroom in classes) (classroom.id, classroom.name),
+              ],
+              onChanged: (value) => setState(() => _classId = value),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Text(
@@ -249,7 +236,7 @@ class _StudentsPageState extends State<StudentsPage> {
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         color: AppColors.textSecondary,
-                                        fontSize: 10,
+                                        fontSize: 12,
                                       ),
                                     ),
                                 ],

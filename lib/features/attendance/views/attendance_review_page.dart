@@ -114,7 +114,7 @@ class AttendanceReviewPage extends StatelessWidget {
                                 '${audit.unrecognizedCount} não reconhecido(s)',
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -271,7 +271,7 @@ class _DesktopAttendanceReview extends StatelessWidget {
             'Chamadas / ${classroom.name} / ${formatBrDate(now)}',
             style: const TextStyle(
               color: AppColors.textSecondary,
-              fontSize: 11,
+              fontSize: 12,
             ),
           ),
           const SizedBox(height: 10),
@@ -332,14 +332,14 @@ class _DesktopAttendanceReview extends StatelessWidget {
                         subtitle,
                         style: const TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                       const Text(
                         'Reconhecimento facial SCRFD + TopoFR',
                         style: TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -379,7 +379,7 @@ class _DesktopAttendanceReview extends StatelessWidget {
                         'Edite os estados divergentes. As alterações serão registradas no histórico.',
                         style: TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                       if (review > 0) ...[
@@ -394,7 +394,7 @@ class _DesktopAttendanceReview extends StatelessWidget {
                             '$review alunos precisam de revisão manual por baixa confiança.',
                             style: const TextStyle(
                               color: Color(0xFFB45309),
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -435,7 +435,7 @@ class _DesktopAttendanceReview extends StatelessWidget {
                         'CAPTURA',
                         style: TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 9,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -478,7 +478,7 @@ class _DesktopSummary extends StatelessWidget {
         label,
         style: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 9,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -524,7 +524,7 @@ class _Summary extends StatelessWidget {
             label,
             style: const TextStyle(
               color: AppColors.textSecondary,
-              fontSize: 10,
+              fontSize: 12,
             ),
           ),
         ],
@@ -553,7 +553,7 @@ class _StudentReview extends StatelessWidget {
             backgroundColor: AppColors.primarySoft,
             child: Text(
               student.initials,
-              style: const TextStyle(color: AppColors.primary, fontSize: 11),
+              style: const TextStyle(color: AppColors.primary, fontSize: 12),
             ),
           ),
           const SizedBox(width: 10),
@@ -571,7 +571,7 @@ class _StudentReview extends StatelessWidget {
                       : '${(student.confidence * 100).round()}% de confiança',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 10,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -604,7 +604,7 @@ class _StudentReview extends StatelessWidget {
                     label,
                     style: TextStyle(
                       color: color,
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

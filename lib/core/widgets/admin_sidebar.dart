@@ -54,7 +54,7 @@ class AdminSidebar extends StatelessWidget {
                 color: global
                     ? const Color(0xFF94A3B8)
                     : AppColors.textSecondary,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: .5,
               ),
@@ -92,7 +92,7 @@ class AdminSidebar extends StatelessWidget {
                           .take(2)
                           .join(),
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -117,7 +117,7 @@ class AdminSidebar extends StatelessWidget {
                             profileRole!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: foreground, fontSize: 9),
+                            style: TextStyle(color: foreground, fontSize: 12),
                           ),
                       ],
                     ),
