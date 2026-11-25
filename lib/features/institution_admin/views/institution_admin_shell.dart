@@ -5,6 +5,7 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../../core/auth/user_role.dart';
 import '../../../core/layout/app_breakpoints.dart';
 import '../../../core/navigation/app_routes.dart';
+import '../../../core/navigation/shell_url.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
 import '../../../data/repositories/school_repository.dart';
 import '../../classes/views/classes_page.dart';
@@ -18,9 +19,16 @@ import 'coordinators_page.dart';
 import 'institution_settings_page.dart';
 
 class InstitutionAdminShell extends StatefulWidget {
-  const InstitutionAdminShell({super.key, this.initialIndex = 6});
+  const InstitutionAdminShell({
+    super.key,
+    this.initialIndex = 6,
+    this.initialTab,
+  });
 
   final int initialIndex;
+
+  /// Aba vinda do endereço (`/home?aba=turmas`); tem prioridade.
+  final String? initialTab;
 
   @override
   State<InstitutionAdminShell> createState() => _InstitutionAdminShellState();
@@ -43,7 +51,20 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex;
+    _selectedIndex = ShellUrl.indexOf(
+      ShellUrl.institutionAdmin,
+      widget.initialTab,
+      widget.initialIndex,
+    );
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    final before = _selectedIndex;
+    super.setState(fn);
+    if (_selectedIndex != before) {
+      ShellUrl.show(ShellUrl.institutionAdmin, _selectedIndex);
+    }
   }
 
   @override

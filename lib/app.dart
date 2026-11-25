@@ -10,6 +10,7 @@ import 'data/repositories/school_repository.dart';
 import 'data/services/auditoria_api.dart';
 import 'data/services/auth_api.dart';
 import 'data/services/facial_recognition_api.dart';
+import 'data/services/session_store.dart';
 import 'data/services/turma_api.dart';
 import 'features/admin/data/admin_repository.dart';
 import 'features/admin/views/system_admin_shell.dart';
@@ -34,12 +35,16 @@ class ClassVisionApp extends StatefulWidget {
     this.turmaApi,
     this.auditoriaApi,
     this.facialApi,
+    this.sessionStore,
   });
 
   final AuthApi? authApi;
   final TurmaApi? turmaApi;
   final AuditoriaApi? auditoriaApi;
   final FacialRecognitionApi? facialApi;
+
+  /// Onde a sessão sobrevive ao F5 (padrão: `sessionStorage` na web).
+  final SessionStore? sessionStore;
 
   @override
   State<ClassVisionApp> createState() => _ClassVisionAppState();
@@ -63,7 +68,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
   void initState() {
     super.initState();
     _authApi = widget.authApi ?? AuthApi();
-    _auth = AuthRepository(api: _authApi)..addListener(_onAuthChanged);
+    _auth = AuthRepository(api: _authApi, store: widget.sessionStore)
+      ..addListener(_onAuthChanged);
     _turmaApi = widget.turmaApi ?? TurmaApi();
     _auditoriaApi = widget.auditoriaApi ?? AuditoriaApi();
     // O serviço facial também valida o JWT da sessão.
@@ -80,6 +86,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
     );
     _admin = AdminRepository(auth: _auth);
     WidgetsBinding.instance.addObserver(this);
+    // Sessão retomada do recarregamento da página: carrega os dados já.
+    if (_auth.isAuthenticated) _onAuthChanged();
   }
 
   @override
@@ -142,54 +150,73 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       navigatorKey: _navigatorKey,
       scaffoldMessengerKey: _messengerKey,
       initialRoute: AppRoutes.login,
-      onGenerateRoute: (settings) => MaterialPageRoute<void>(
-        builder: (_) => _pageFor(settings),
-        settings: settings,
-      ),
+      onGenerateRoute: _route,
+      // Abre só a tela do endereço (ex.: `/home?aba=turmas` depois do F5),
+      // sem empilhar as rotas "pai" que o Navigator criaria por padrão.
+      onGenerateInitialRoutes: (name) => [_route(RouteSettings(name: name))],
     ),
   );
 
-  Widget _roleHome({bool overview = false}) => switch (_auth.role) {
-    UserRole.administrador => const SystemAdminShell(),
-    UserRole.adminInstituicao => InstitutionAdminShell(
-      initialIndex: overview ? 0 : 6,
-    ),
-    UserRole.coordenador ||
-    UserRole.professor ||
-    UserRole.secretario ||
-    UserRole.assistente => const MainShell(),
-    null => const LoginPage(),
-  };
+  Route<void> _route(RouteSettings settings) => MaterialPageRoute<void>(
+    builder: (_) => _pageFor(settings),
+    settings: settings,
+  );
+
+  Widget _roleHome({bool overview = false, String? tab}) =>
+      switch (_auth.role) {
+        UserRole.administrador => SystemAdminShell(initialTab: tab),
+        UserRole.adminInstituicao => InstitutionAdminShell(
+          initialIndex: overview ? 0 : 6,
+          initialTab: tab,
+        ),
+        UserRole.coordenador ||
+        UserRole.professor ||
+        UserRole.secretario ||
+        UserRole.assistente => MainShell(initialTab: tab),
+        null => const LoginPage(),
+      };
 
   Widget _pageFor(RouteSettings settings) {
-    if (settings.name != AppRoutes.login && !_auth.isAuthenticated) {
+    // O endereço pode trazer a aba do painel: `/home?aba=turmas`.
+    final uri = Uri.tryParse(settings.name ?? '');
+    final name = uri?.path ?? settings.name;
+    final tab = uri?.queryParameters['aba'];
+    if (name != AppRoutes.login && !_auth.isAuthenticated) {
       return const LoginPage();
+    }
+    if (name == AppRoutes.login && _auth.isAuthenticated) {
+      return _roleHome(overview: true);
     }
 
     final role = _auth.role;
     bool allowed(bool Function(UserRole role) rule) =>
         role != null && rule(role);
 
-    if (role != null && RoutePolicy.shellAliases.contains(settings.name)) {
-      return _roleHome(overview: settings.name == AppRoutes.home);
+    if (role != null && RoutePolicy.shellAliases.contains(name)) {
+      return _roleHome(overview: name == AppRoutes.home, tab: tab);
     }
-    if (RoutePolicy.academicRoutes.contains(settings.name) &&
-        (role == null || !RoutePolicy.canAccess(role, settings.name))) {
+    if (RoutePolicy.academicRoutes.contains(name) &&
+        (role == null || !RoutePolicy.canAccess(role, name))) {
       return _roleHome();
     }
 
-    return switch (settings.name) {
+    return switch (name) {
       AppRoutes.login => const LoginPage(),
       AppRoutes.systemAdmin when role == UserRole.administrador =>
         const SystemAdminShell(),
       AppRoutes.institutionAdmin when role == UserRole.adminInstituicao =>
         const InstitutionAdminShell(),
       AppRoutes.coordinator
-          when role != null && RoutePolicy.canAccess(role, settings.name) =>
-        const MainShell(),
+          when role != null && RoutePolicy.canAccess(role, name) =>
+        MainShell(initialTab: tab),
       AppRoutes.systemAdmin ||
       AppRoutes.institutionAdmin ||
       AppRoutes.coordinator => _roleHome(),
+      // Telas que dependem de dados da navegação (ex.: depois do F5)
+      // voltam para o painel em vez de abrir vazias.
+      AppRoutes.classDetails ||
+      AppRoutes.processing ||
+      AppRoutes.saved when settings.arguments == null => _roleHome(),
       AppRoutes.classDetails => ClassDetailsPage(
         classId: settings.arguments as String?,
       ),

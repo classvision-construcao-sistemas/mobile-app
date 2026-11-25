@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 class MainShellViewModel extends ChangeNotifier {
-  int _index = 0;
+  // ignore: prefer_initializing_formals
+  MainShellViewModel({int index = 0}) : _index = index;
+
+  int _index;
 
   int get index => _index;
   int get mobileIndex => switch (_index) {

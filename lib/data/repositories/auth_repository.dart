@@ -1,19 +1,26 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
 import '../models/auth_models.dart';
 import '../services/auth_api.dart';
+import '../services/session_store.dart';
 
 /// Sessão do usuário e acesso às rotas protegidas do cv-authentication-service.
 ///
-/// O token fica apenas em memória, como recomenda a documentação do serviço:
-/// ao fechar o app, ou quando o token expira (1 hora), é preciso entrar de novo.
-/// Qualquer `401` de uma rota protegida encerra a sessão.
+/// O token fica em memória e, na web, também no `sessionStorage` da aba
+/// ([SessionStore]), para o login sobreviver ao F5. Ao fechar a aba ou o app,
+/// ou quando o token expira (1 hora), é preciso entrar de novo. Qualquer
+/// `401` de uma rota protegida encerra a sessão.
 class AuthRepository extends ChangeNotifier {
-  AuthRepository({required this.api});
+  AuthRepository({required this.api, SessionStore? store})
+    : _store = store ?? MemorySessionStore() {
+    _restore();
+  }
 
   final AuthApi api;
+  final SessionStore _store;
 
   AuthSession? _session;
   Institution? _institution;
@@ -39,6 +46,7 @@ class AuthRepository extends ChangeNotifier {
     final session = await api.login(email: email, password: password);
     final institutionChanged = _session?.institutionId != session.institutionId;
     _session = session;
+    _save(session);
     if (institutionChanged) _institution = null;
     _logoutReason = null;
     notifyListeners();
@@ -50,9 +58,41 @@ class AuthRepository extends ChangeNotifier {
   void logout({String? reason}) {
     if (_session == null) return;
     _session = null;
+    _store.clear();
     _institution = null;
     _logoutReason = reason;
     notifyListeners();
+  }
+
+  void _save(AuthSession session) => _store.write(
+    jsonEncode({
+      'token': session.token,
+      'tipo': session.tokenType,
+      'expiraEm': session.expiresAt.toIso8601String(),
+    }),
+  );
+
+  /// Retoma a sessão salva (ex.: depois de recarregar a página).
+  void _restore() {
+    try {
+      final raw = _store.read();
+      if (raw == null) return;
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final expiresAt = DateTime.parse(json['expiraEm'] as String);
+      final remaining = expiresAt.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        _store.clear();
+        return;
+      }
+      _session = AuthSession.fromToken(
+        json['token'] as String,
+        tokenType: json['tipo'] as String? ?? 'Bearer',
+        expiresInMs: remaining.inMilliseconds,
+      );
+      unawaited(refreshInstitution());
+    } catch (_) {
+      _store.clear();
+    }
   }
 
   /// Motivo do último logout automático (sessão expirada, token recusado...).

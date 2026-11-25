@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/auth/user_role.dart';
 import '../../../core/navigation/app_routes.dart';
+import '../../../core/navigation/shell_url.dart';
 import '../../../core/viewmodels/main_shell_view_model.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
 import '../../../core/widgets/app_bottom_navigation.dart';
@@ -18,11 +19,20 @@ import '../../students/views/students_page.dart';
 import '../../teachers/views/teachers_page.dart';
 
 class MainShell extends StatelessWidget {
-  const MainShell({super.key});
+  const MainShell({super.key, this.initialTab});
+
+  /// Aba vinda do endereço (`/home?aba=turmas`).
+  final String? initialTab;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-    create: (_) => MainShellViewModel(),
+    create: (_) {
+      final viewModel = MainShellViewModel(
+        index: ShellUrl.indexOf(ShellUrl.academic, initialTab, 0),
+      );
+      return viewModel
+        ..addListener(() => ShellUrl.show(ShellUrl.academic, viewModel.index));
+    },
     child: const _MainShellContent(),
   );
 }

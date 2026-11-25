@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/auth/user_role.dart';
 import '../../../core/navigation/app_routes.dart';
+import '../../../core/navigation/shell_url.dart';
 import '../../../core/widgets/admin_page_scaffold.dart';
 import '../../../data/models/auth_models.dart' as models;
 import '../../../data/repositories/auth_repository.dart';
@@ -21,7 +22,10 @@ import 'system_dashboard_page.dart';
 enum _SystemAdminMode { section, createInstitution, institutionDetail, created }
 
 class SystemAdminShell extends StatefulWidget {
-  const SystemAdminShell({super.key});
+  const SystemAdminShell({super.key, this.initialTab});
+
+  /// Aba vinda do endereço (`/home?aba=instituicoes`).
+  final String? initialTab;
 
   @override
   State<SystemAdminShell> createState() => _SystemAdminShellState();
@@ -36,10 +40,23 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
     AdminDestination(label: 'Configurações', icon: Icons.settings_outlined),
   ];
 
-  int _selectedIndex = 0;
+  late int _selectedIndex = ShellUrl.indexOf(
+    ShellUrl.systemAdmin,
+    widget.initialTab,
+    0,
+  );
   _SystemAdminMode _mode = _SystemAdminMode.section;
   String? _institutionId;
   Institution? _createdInstitution;
+
+  @override
+  void setState(VoidCallback fn) {
+    final before = _selectedIndex;
+    super.setState(fn);
+    if (_selectedIndex != before) {
+      ShellUrl.show(ShellUrl.systemAdmin, _selectedIndex);
+    }
+  }
 
   @override
   void initState() {
