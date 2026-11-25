@@ -122,7 +122,7 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
       _SystemAdminMode.section => switch (_selectedIndex) {
         0 => SystemDashboardPage(
           onCreateInstitution: _openCreate,
-          onManageInstitutions: () => _openRoute(AppRoutes.institutions),
+          onManageInstitutions: () => _selectDestination(1),
         ),
         1 => InstitutionsPage(
           onCreateInstitution: _openCreate,
@@ -135,7 +135,7 @@ class _SystemAdminShellState extends State<SystemAdminShell> {
         4 => const PlatformSettingsPage(),
         _ => SystemDashboardPage(
           onCreateInstitution: _openCreate,
-          onManageInstitutions: () => _openRoute(AppRoutes.institutions),
+          onManageInstitutions: () => _selectDestination(1),
         ),
       },
     };

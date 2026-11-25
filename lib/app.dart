@@ -22,7 +22,6 @@ import 'features/classes/views/class_details_page.dart';
 import 'features/classes/views/class_form_page.dart';
 import 'features/institution_admin/views/institution_admin_shell.dart';
 import 'features/institutions/views/institution_form_page.dart';
-import 'features/institutions/views/institutions_page.dart';
 import 'features/registration/views/registration_page.dart';
 import 'features/shell/views/main_shell.dart';
 import 'features/users/views/user_form_page.dart';
@@ -214,8 +213,6 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       AppRoutes.users when allowed((it) => it.canViewUsers) =>
         const UsersPage(),
       AppRoutes.userRegistration => _userFormFor(settings.arguments),
-      AppRoutes.institutions when allowed((it) => it.canManageInstitutions) =>
-        const InstitutionsPage(),
       AppRoutes.institutionRegistration => _institutionFormFor(
         settings.arguments,
       ),
@@ -224,9 +221,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       AppRoutes.studentRegistration => RegistrationPage(
         classId: settings.arguments as String?,
       ),
-      AppRoutes.users ||
-      AppRoutes.institutions ||
-      AppRoutes.classRegistration => const _ForbiddenPage(),
+      AppRoutes.users || AppRoutes.classRegistration => const _ForbiddenPage(),
       _ => _roleHome(),
     };
   }

@@ -10,6 +10,7 @@ import '../../../data/models/auth_models.dart' as models;
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/services/auth_api.dart';
 import '../../admin/data/admin_repository.dart';
+import '../../admin/views/widgets/admin_data_status.dart';
 import '../../admin/domain/admin_models.dart';
 import '../../users/views/user_form_page.dart';
 
@@ -181,6 +182,18 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
+          const AdminDataStatus(bottom: 12),
+          if (coordinators.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                adminEmptyText(
+                  context,
+                  'Nenhum coordenador cadastrado. Use "Cadastrar coordenador".',
+                ),
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
           for (final coordinator in coordinators) ...[
             _CoordinatorCard(
               coordinator: coordinator,
@@ -253,7 +266,8 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
       ),
       const SizedBox(height: 20),
       Text(
-        'EQUIPE ATUAL · ${coordinators.length} COORDENADORES',
+        'EQUIPE ATUAL · ${coordinators.length} '
+        '${coordinators.length == 1 ? 'COORDENADOR' : 'COORDENADORES'}',
         style: const TextStyle(
           color: AppColors.textSecondary,
           fontSize: 10,
@@ -262,6 +276,18 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
         ),
       ),
       const SizedBox(height: 10),
+      const AdminDataStatus(bottom: 12),
+      if (coordinators.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            adminEmptyText(
+              context,
+              'Nenhum coordenador cadastrado. Use "Cadastrar coordenador".',
+            ),
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
       for (final coordinator in coordinators)
         _CoordinatorRow(
           coordinator: coordinator,

@@ -185,10 +185,11 @@ void main() {
     await pumpApp(tester, size: const Size(1440, 1024));
     await signIn(tester, 'arthur@classvision.app');
 
-    await tester.tap(find.text('Gerenciar instituições'));
+    await tester.tap(find.text('Ver instituições'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nova instituição'), findsOneWidget);
+    expect(find.text('Gestão de instituições'), findsOneWidget);
+    expect(find.text('+ Nova instituição'), findsOneWidget);
   });
 
   testWidgets('institution administrator can reach connected user CRUD', (

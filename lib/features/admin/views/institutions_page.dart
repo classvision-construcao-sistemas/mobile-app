@@ -6,6 +6,7 @@ import '../../../core/widgets/admin_cards.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
+import 'widgets/admin_data_status.dart';
 import 'widgets/admin_page_header.dart';
 
 class InstitutionsPage extends StatefulWidget {
@@ -53,6 +54,7 @@ class _InstitutionsPageState extends State<InstitutionsPage> {
           ),
         ),
         const SizedBox(height: 30),
+        const AdminDataStatus(),
         AdminSurface(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
           child: Row(
@@ -100,17 +102,22 @@ class _InstitutionsPageState extends State<InstitutionsPage> {
             children: [
               const _InstitutionHeader(),
               if (institutions.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(64),
+                Padding(
+                  padding: const EdgeInsets.all(64),
                   child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.search_off_rounded,
                         color: AppColors.textSecondary,
                         size: 36,
                       ),
-                      SizedBox(height: 12),
-                      Text('Nenhuma instituição encontrada'),
+                      const SizedBox(height: 12),
+                      Text(
+                        adminEmptyText(
+                          context,
+                          'Nenhuma instituição encontrada',
+                        ),
+                      ),
                     ],
                   ),
                 )

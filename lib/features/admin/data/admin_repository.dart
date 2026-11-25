@@ -53,7 +53,11 @@ class AdminRepository extends ChangeNotifier {
   /// Carrega instituições e usuários e verifica os serviços.
   Future<void> load() async {
     final auth = this.auth;
-    if (auth == null || auth.session == null) return;
+    if (auth == null || auth.session == null) {
+      _loaded = true;
+      _notify();
+      return;
+    }
     _loading = true;
     _error = null;
     _notify();

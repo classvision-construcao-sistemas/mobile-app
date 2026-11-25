@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
+import 'widgets/admin_data_status.dart';
 import 'widgets/admin_page_header.dart';
 
 class SystemDashboardPage extends StatelessWidget {
@@ -44,7 +45,7 @@ class SystemDashboardPage extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onManageInstitutions,
                 icon: const Icon(Icons.apartment_outlined, size: 18),
-                label: const Text('Gerenciar instituições'),
+                label: const Text('Ver instituições'),
               ),
               const SizedBox(width: 10),
               AdminPrimaryButton(
@@ -56,6 +57,7 @@ class SystemDashboardPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 34),
+        const AdminDataStatus(bottom: 24),
         Row(
           children: [
             Expanded(

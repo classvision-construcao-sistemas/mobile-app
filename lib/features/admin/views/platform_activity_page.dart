@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/admin_cards.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
+import 'widgets/admin_data_status.dart';
 import 'widgets/admin_page_header.dart';
 
 class PlatformActivityPage extends StatefulWidget {
@@ -36,6 +37,7 @@ class _PlatformActivityPageState extends State<PlatformActivityPage> {
           subtitle: 'Cadastros recentes de instituições e usuários.',
         ),
         const SizedBox(height: 30),
+        const AdminDataStatus(),
         AdminSurface(
           child: Row(
             children: [
@@ -74,11 +76,11 @@ class _PlatformActivityPageState extends State<PlatformActivityPage> {
                 ),
               ),
               if (activities.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(24, 8, 24, 28),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
                   child: Text(
-                    'Nenhuma atividade encontrada.',
-                    style: TextStyle(color: AppColors.textSecondary),
+                    adminEmptyText(context, 'Nenhuma atividade encontrada.'),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               for (final activity in activities)

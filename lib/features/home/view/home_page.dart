@@ -7,6 +7,7 @@ import '../../../core/widgets/classvision_logo.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/school_repository.dart';
+import 'getting_started_card.dart';
 
 /// Painel inicial da área acadêmica, montado com as turmas do turma-service
 /// e o histórico de chamadas do auditoria-service.
@@ -265,6 +266,7 @@ class _DesktopDashboard extends StatelessWidget {
         ],
       ),
       const SizedBox(height: 26),
+      GettingStartedCard(onStartAttendance: onStartAttendance),
       Row(
         children: [
           const Expanded(
@@ -402,6 +404,7 @@ class _MobileDashboard extends StatelessWidget {
         ],
       ),
       const SizedBox(height: 24),
+      GettingStartedCard(onStartAttendance: onStartAttendance),
       const Text(
         'Resumo de hoje',
         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),

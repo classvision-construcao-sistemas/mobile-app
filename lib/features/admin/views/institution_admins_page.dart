@@ -6,6 +6,7 @@ import '../../../core/widgets/admin_cards.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
+import 'widgets/admin_data_status.dart';
 import 'widgets/admin_page_header.dart';
 
 class InstitutionAdminsPage extends StatefulWidget {
@@ -47,6 +48,7 @@ class _InstitutionAdminsPageState extends State<InstitutionAdminsPage> {
           ),
         ),
         const SizedBox(height: 30),
+        const AdminDataStatus(),
         AdminSurface(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
           child: Row(
@@ -92,11 +94,11 @@ class _InstitutionAdminsPageState extends State<InstitutionAdminsPage> {
             children: [
               const _AdminsHeader(),
               if (admins.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(28),
+                Padding(
+                  padding: const EdgeInsets.all(28),
                   child: Text(
-                    'Nenhum administrador encontrado.',
-                    style: TextStyle(color: AppColors.textSecondary),
+                    adminEmptyText(context, 'Nenhum administrador encontrado.'),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               for (final admin in admins) _AdminRow(admin: admin),
