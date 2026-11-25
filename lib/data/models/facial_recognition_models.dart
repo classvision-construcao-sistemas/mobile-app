@@ -1,3 +1,61 @@
+/// Situação de um rosto marcado na foto da sala.
+enum FaceStatus {
+  /// Aluno da turma reconhecido.
+  recognized,
+
+  /// Reconhecido, mas é aluno de outra turma.
+  outsideClass,
+
+  /// Rosto sem correspondência na base.
+  unidentified,
+}
+
+/// Rosto detectado na foto, com a caixa em frações da imagem (0 a 1).
+class DetectedFace {
+  const DetectedFace({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+    required this.status,
+    this.studentId,
+  });
+
+  /// Lê `{x, y, w, h}` (serviço facial) ou `{x, y, largura, altura}`
+  /// (auditoria-service). Devolve nulo se a caixa não for válida.
+  static DetectedFace? tryParse(
+    Object? area, {
+    required FaceStatus status,
+    String? studentId,
+  }) {
+    if (area is! Map) return null;
+    double? number(Object? value) => (value as num?)?.toDouble();
+    final x = number(area['x']);
+    final y = number(area['y']);
+    final width = number(area['w'] ?? area['largura']);
+    final height = number(area['h'] ?? area['altura']);
+    if (x == null || y == null || width == null || height == null) return null;
+    if (width <= 0 || height <= 0) return null;
+    return DetectedFace(
+      x: x.clamp(0, 1),
+      y: y.clamp(0, 1),
+      width: width.clamp(0, 1),
+      height: height.clamp(0, 1),
+      status: status,
+      studentId: studentId,
+    );
+  }
+
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+  final FaceStatus status;
+
+  /// Matrícula do aluno, quando reconhecido.
+  final String? studentId;
+}
+
 class RecognizedStudent {
   const RecognizedStudent({
     required this.studentId,
@@ -27,11 +85,29 @@ class RoomAuditResult {
     required this.recognizedStudents,
     required this.unrecognizedCount,
     required this.totalFacesDetected,
+    this.faces = const [],
   });
 
   factory RoomAuditResult.fromJson(Map<String, dynamic> json) {
     final rawStudents = json['recognized_students'];
+    final rawUnknown = json['unrecognized_faces'];
+    final faces = <DetectedFace>[
+      if (rawStudents is List)
+        for (final student in rawStudents.whereType<Map>())
+          ?DetectedFace.tryParse(
+            student['relative_area'],
+            status: FaceStatus.recognized,
+            studentId: student['student_id']?.toString(),
+          ),
+      if (rawUnknown is List)
+        for (final face in rawUnknown.whereType<Map>())
+          ?DetectedFace.tryParse(
+            face['relative_area'],
+            status: FaceStatus.unidentified,
+          ),
+    ];
     return RoomAuditResult(
+      faces: faces,
       message: json['message']?.toString() ?? 'Auditoria concluída.',
       recognizedStudents: rawStudents is List
           ? rawStudents
@@ -52,6 +128,9 @@ class RoomAuditResult {
   final List<RecognizedStudent> recognizedStudents;
   final int unrecognizedCount;
   final int totalFacesDetected;
+
+  /// Rostos com posição na foto (vazio se o serviço não mandar a caixa).
+  final List<DetectedFace> faces;
 }
 
 class StudentEnrollmentResult {

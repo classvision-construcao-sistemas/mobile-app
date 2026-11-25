@@ -26,6 +26,10 @@ Future<http.MultipartFile> photoMultipart(String field, String path) async {
   return http.MultipartFile.fromBytes(field, bytes, filename: name);
 }
 
+/// [ImageProvider] da foto em [path] (arquivo local ou URL `blob:`).
+ImageProvider photoProvider(String path) =>
+    kIsWeb ? NetworkImage(path) : FileImage(File(path));
+
 /// Pré-visualização da foto em [path] (arquivo local ou URL `blob:` na web).
 Widget photoPreview(
   String path, {

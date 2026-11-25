@@ -384,6 +384,7 @@ class SchoolRepository extends ChangeNotifier {
       recognizedStudents: recognized,
       unrecognizedCount: preview.unidentifiedFaces + preview.facesOutsideClass,
       totalFacesDetected: preview.totalFaces,
+      faces: preview.faces,
     );
   }
 

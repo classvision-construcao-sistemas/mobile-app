@@ -65,7 +65,11 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
     Navigator.pushReplacementNamed(
       context,
       AppRoutes.review,
-      arguments: AttendanceReviewArgs(classId: classId, auditResult: audit),
+      arguments: AttendanceReviewArgs(
+        classId: classId,
+        auditResult: audit,
+        imagePath: widget.result.imagePath,
+      ),
     );
   }
 

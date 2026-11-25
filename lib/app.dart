@@ -230,6 +230,7 @@ class _ClassVisionAppState extends State<ClassVisionApp>
         AttendanceReviewArgs args => AttendanceReviewPage(
           classId: args.classId,
           auditResult: args.auditResult,
+          imagePath: args.imagePath,
         ),
         final String classId => AttendanceReviewPage(classId: classId),
         _ => const AttendanceReviewPage(),

@@ -11,6 +11,7 @@ import '../../../data/models/facial_recognition_models.dart';
 import '../../../data/models/school_models.dart';
 import '../../../data/repositories/school_repository.dart';
 import '../../../data/services/auditoria_api.dart';
+import '../widgets/class_photo_faces.dart';
 
 /// Confirma a chamada. Em turmas registradas no auditoria-service a gravação
 /// é remota: mostra um indicador e mantém a tela aberta se falhar.
@@ -47,17 +48,30 @@ Future<void> confirmAttendance(
 }
 
 class AttendanceReviewArgs {
-  const AttendanceReviewArgs({required this.classId, this.auditResult});
+  const AttendanceReviewArgs({
+    required this.classId,
+    this.auditResult,
+    this.imagePath,
+  });
 
   final String classId;
   final RoomAuditResult? auditResult;
+
+  /// Foto da sala usada no reconhecimento (para marcar os rostos).
+  final String? imagePath;
 }
 
 class AttendanceReviewPage extends StatelessWidget {
-  const AttendanceReviewPage({super.key, this.classId, this.auditResult});
+  const AttendanceReviewPage({
+    super.key,
+    this.classId,
+    this.auditResult,
+    this.imagePath,
+  });
 
   final String? classId;
   final RoomAuditResult? auditResult;
+  final String? imagePath;
 
   @override
   Widget build(BuildContext context) {
@@ -72,11 +86,25 @@ class AttendanceReviewPage extends StatelessWidget {
     final absent = classroom.students
         .where((student) => student.status == AttendanceStatus.absent)
         .length;
+    final path = imagePath;
+    final Widget? photo = path == null || path.isEmpty
+        ? null
+        : ClassPhotoFaces(
+            imagePath: path,
+            faces: auditResult?.faces ?? const [],
+            nameFor: (id) {
+              for (final student in classroom.students) {
+                if (student.registration == id) return student.name;
+              }
+              return null;
+            },
+          );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 900) {
           return _DesktopAttendanceReview(
+            photo: photo,
             classroom: classroom,
             present: present,
             review: review,
@@ -165,9 +193,19 @@ class AttendanceReviewPage extends StatelessWidget {
                     horizontal: 24,
                     vertical: 4,
                   ),
-                  itemCount: classroom.students.length,
+                  itemCount:
+                      classroom.students.length + (photo == null ? 0 : 1),
                   separatorBuilder: (_, _) => const SizedBox(height: 9),
                   itemBuilder: (context, index) {
+                    if (photo != null) {
+                      if (index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: photo,
+                        );
+                      }
+                      index--;
+                    }
                     final student = classroom.students[index];
                     return _StudentReview(
                       student: student,
@@ -219,12 +257,14 @@ class AttendanceReviewPage extends StatelessWidget {
 
 class _DesktopAttendanceReview extends StatelessWidget {
   const _DesktopAttendanceReview({
+    this.photo,
     required this.classroom,
     required this.present,
     required this.review,
     required this.repository,
   });
 
+  final Widget? photo;
   final SchoolClass classroom;
   final int present;
   final int review;
@@ -431,6 +471,10 @@ class _DesktopAttendanceReview extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 18),
+                      if (photo case final photo?) ...[
+                        photo,
+                        const SizedBox(height: 18),
+                      ],
                       const Text(
                         'CAPTURA',
                         style: TextStyle(

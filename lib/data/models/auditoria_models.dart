@@ -1,4 +1,5 @@
 import '../../core/utils/formatters.dart';
+import 'facial_recognition_models.dart';
 
 /// Situações de presença aceitas pelo auditoria-service.
 abstract final class AuditPresence {
@@ -45,11 +46,26 @@ class AuditPreview {
     required this.unidentifiedFaces,
     required this.facesOutsideClass,
     required this.totalFaces,
+    this.faces = const [],
   });
 
   factory AuditPreview.fromJson(Map<String, dynamic> json) {
     final raw = json['alunos'];
+    final rawFaces = json['rostos'];
     return AuditPreview(
+      faces: [
+        if (rawFaces is List)
+          for (final face in rawFaces.whereType<Map>())
+            ?DetectedFace.tryParse(
+              face,
+              status: switch (face['situacao']) {
+                'RECONHECIDO' => FaceStatus.recognized,
+                'FORA_DA_TURMA' => FaceStatus.outsideClass,
+                _ => FaceStatus.unidentified,
+              },
+              studentId: face['alunoId']?.toString(),
+            ),
+      ],
       classId: asInt(json['turmaId']) ?? 0,
       students: raw is List
           ? raw
@@ -68,6 +84,9 @@ class AuditPreview {
   final int unidentifiedFaces;
   final int facesOutsideClass;
   final int totalFaces;
+
+  /// Rostos marcados na foto (vazio com o serviço antigo).
+  final List<DetectedFace> faces;
 }
 
 /// Resultado de um aluno numa auditoria confirmada.
