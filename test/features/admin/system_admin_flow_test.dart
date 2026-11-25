@@ -4,7 +4,7 @@ import 'package:class_vision/core/theme/app_theme.dart';
 import 'package:class_vision/data/repositories/auth_repository.dart';
 import 'package:class_vision/features/admin/data/admin_repository.dart';
 import 'package:class_vision/features/admin/views/system_admin_shell.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';

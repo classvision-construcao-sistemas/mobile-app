@@ -1,7 +1,7 @@
 import 'package:class_vision/core/auth/user_role.dart';
 import 'package:class_vision/core/theme/app_theme.dart';
 import 'package:class_vision/core/widgets/admin_page_scaffold.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

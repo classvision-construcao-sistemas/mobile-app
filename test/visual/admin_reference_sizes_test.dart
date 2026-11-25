@@ -1,6 +1,6 @@
 import 'package:class_vision/app.dart';
 import 'package:class_vision/features/home/view/home_page.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_auth_server.dart';

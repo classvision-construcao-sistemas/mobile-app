@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'app_colors.dart';
 
 export 'app_colors.dart';
-export 'app_text_styles.dart';
 
 /// Tema global do ClassVision
 class AppTheme {

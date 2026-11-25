@@ -4,7 +4,7 @@ import 'package:class_vision/core/theme/app_theme.dart';
 import 'package:class_vision/data/models/auditoria_models.dart';
 import 'package:class_vision/data/models/facial_recognition_models.dart';
 import 'package:class_vision/features/attendance/widgets/class_photo_faces.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// PNG 4 × 3 (cinza), suficiente para o widget saber a proporção.

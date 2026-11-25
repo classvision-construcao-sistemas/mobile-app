@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
@@ -114,7 +114,11 @@ class PrimaryButton extends StatelessWidget {
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       textStyle: const WidgetStatePropertyAll(
-        TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
     return outlined

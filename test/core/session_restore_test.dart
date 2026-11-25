@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:class_vision/app.dart';
 import 'package:class_vision/data/repositories/auth_repository.dart';
 import 'package:class_vision/data/services/session_store.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_auth_server.dart';

@@ -3,7 +3,7 @@ import 'package:class_vision/data/models/school_models.dart';
 import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:class_vision/features/classes/views/classes_page.dart';
 import 'package:class_vision/features/history/views/history_page.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 

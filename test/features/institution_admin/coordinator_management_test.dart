@@ -6,7 +6,7 @@ import 'package:class_vision/data/repositories/school_repository.dart';
 import 'package:class_vision/features/admin/data/admin_repository.dart';
 import 'package:class_vision/features/institution_admin/views/institution_admin_shell.dart';
 import 'package:class_vision/features/users/views/user_form_page.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
