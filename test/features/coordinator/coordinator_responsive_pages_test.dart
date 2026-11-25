@@ -113,7 +113,7 @@ void main() {
 
     await tester.tap(find.text('Mais'));
     await tester.pumpAndSettle();
-    expect(find.text('Coordenador · IF Goiano'), findsOneWidget);
+    expect(find.text('Coordenador de curso'), findsOneWidget);
     expect(find.text('Notificações'), findsOneWidget);
     await tester.tap(find.text('Notificações'));
     await tester.pumpAndSettle();

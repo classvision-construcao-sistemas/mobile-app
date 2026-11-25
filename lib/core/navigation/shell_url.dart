@@ -29,6 +29,15 @@ abstract final class ShellUrl {
     'configuracoes',
   ];
 
+  /// Abas do painel do administrador da instituição no celular.
+  static const institutionAdminMobile = [
+    'inicio',
+    'turmas',
+    'chamadas',
+    'coordenadores',
+    'mais',
+  ];
+
   /// Abas do painel do administrador geral.
   static const systemAdmin = [
     'inicio',

@@ -119,14 +119,15 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
         children: [
           Row(
             children: [
-              IconButton(
-                tooltip: 'Sair',
-                onPressed: widget.onBack,
-                icon: const Icon(
-                  Icons.logout_rounded,
-                  color: AppColors.textPrimary,
+              if (widget.onBack != null)
+                IconButton(
+                  tooltip: 'Sair',
+                  onPressed: widget.onBack,
+                  icon: const Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
               const Expanded(
                 child: Text(
                   'Coordenadores',
@@ -151,9 +152,12 @@ class _CoordinatorsPageState extends State<CoordinatorsPage> {
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.only(left: 28, top: 2),
-            child: Text(
+          Padding(
+            padding: EdgeInsets.only(
+              left: widget.onBack == null ? 0 : 48,
+              top: 2,
+            ),
+            child: const Text(
               'Administrador da instituição',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),

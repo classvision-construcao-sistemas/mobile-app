@@ -85,6 +85,50 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('mobile panel offers the same areas as the desktop', (
+    tester,
+  ) async {
+    await pumpShell(tester, const Size(390, 844), initialIndex: 0);
+
+    for (final tab in ['Início', 'Turmas', 'Chamadas', 'Equipe', 'Mais']) {
+      expect(find.text(tab), findsWidgets);
+    }
+    expect(find.text('Resumo de hoje'), findsOneWidget);
+
+    await tester.tap(find.text('Turmas').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Buscar turma'), findsOneWidget);
+
+    await tester.tap(find.text('Chamadas').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Histórico de presença das turmas'), findsOneWidget);
+
+    await tester.tap(find.text('Equipe'));
+    await tester.pumpAndSettle();
+    expect(find.text('Lucas Ferreira'), findsOneWidget);
+    expect(find.text('Cadastrar coordenador'), findsOneWidget);
+
+    await tester.tap(find.text('Mais'));
+    await tester.pumpAndSettle();
+    for (final item in [
+      'Alunos',
+      'Professores',
+      'Relatórios',
+      'Notificações',
+      'Usuários e acessos',
+      'Dados da instituição',
+      'Sair da conta',
+    ]) {
+      expect(find.text(item), findsOneWidget);
+    }
+
+    await tester.tap(find.text('Alunos'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BackButton), findsOneWidget);
+    expect(find.text('Buscar por nome ou matrícula'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('settings tabs show institution data and service status', (
     tester,
   ) async {

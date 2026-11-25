@@ -12,6 +12,7 @@ import '../../classes/views/classes_page.dart';
 import '../../history/views/history_page.dart';
 import '../../home/view/home_page.dart';
 import '../../notifications/views/notifications_page.dart';
+import '../../profile/views/profile_page.dart';
 import '../../reports/views/reports_page.dart';
 import '../../students/views/students_page.dart';
 import '../../teachers/views/teachers_page.dart';
@@ -45,7 +46,18 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
     AdminDestination(label: 'Configurações', icon: Icons.settings_outlined),
   ];
 
+  static const _mobileDestinations = [
+    AdminDestination(label: 'Início', icon: Icons.home_outlined),
+    AdminDestination(label: 'Turmas', icon: Icons.grid_view_outlined),
+    AdminDestination(label: 'Chamadas', icon: Icons.fact_check_outlined),
+    AdminDestination(label: 'Equipe', icon: Icons.groups_outlined),
+    AdminDestination(label: 'Mais', icon: Icons.more_horiz_rounded),
+  ];
+
   late int _selectedIndex;
+
+  /// Aba do celular (Início, Turmas, Chamadas, Equipe, Mais).
+  late int _mobileIndex;
   bool _showNotifications = false;
 
   @override
@@ -56,7 +68,39 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
       widget.initialTab,
       widget.initialIndex,
     );
+    final mobileTab = ShellUrl.institutionAdminMobile.indexOf(
+      widget.initialTab ?? '',
+    );
+    _mobileIndex = mobileTab >= 0
+        ? mobileTab
+        : switch (_selectedIndex) {
+            1 => 1,
+            4 => 2,
+            6 => 3,
+            2 || 3 || 5 => 4,
+            _ => 0,
+          };
   }
+
+  void _selectMobile(int index) {
+    if (index == _mobileIndex && !_showNotifications) return;
+    super.setState(() {
+      _mobileIndex = index;
+      _showNotifications = false;
+    });
+    ShellUrl.show(ShellUrl.institutionAdminMobile, index);
+  }
+
+  /// Abre uma seção do "Mais" em tela cheia, com voltar.
+  void _openSection(String title, Widget page) => Navigator.push(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: page,
+      ),
+    ),
+  );
 
   @override
   void setState(VoidCallback fn) {
@@ -70,17 +114,6 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      if (!AppBreakpoints.isDesktop(constraints.maxWidth)) {
-        return KeyedSubtree(
-          key: Key('institution-admin-shell'),
-          child: CoordinatorsPage(
-            mobile: true,
-            onBack: () {
-              context.read<AuthRepository>().logout();
-            },
-          ),
-        );
-      }
       final repository = context.watch<SchoolRepository>();
       final session = context.watch<AuthRepository>().session;
       final institutionId = session?.institutionId;
@@ -131,6 +164,64 @@ class _InstitutionAdminShellState extends State<InstitutionAdminShell> {
               onBack: () => setState(() => _showNotifications = false),
             )
           : sectionBody;
+      void signOut() => context.read<AuthRepository>().logout();
+
+      if (!AppBreakpoints.isDesktop(constraints.maxWidth)) {
+        // Celular: as mesmas funções do computador, em 5 abas; o que não cabe
+        // fica em "Mais".
+        final mobileBody = _showNotifications
+            ? body
+            : switch (_mobileIndex) {
+                0 => HomePage(
+                  onOpenCamera: openCamera,
+                  onOpenReview: firstClassId == null
+                      ? null
+                      : () => openReview(firstClassId),
+                  onViewAllPending: () => _selectMobile(2),
+                  onOpenNotifications: () =>
+                      setState(() => _showNotifications = true),
+                  onOpenCameraFor: openCamera,
+                  userName: firstName,
+                ),
+                1 => ClassesPage(
+                  onOpenClass: (id) => Navigator.pushNamed(
+                    context,
+                    AppRoutes.classDetails,
+                    arguments: id,
+                  ),
+                ),
+                2 => HistoryPage(onOpenReview: openReview),
+                3 => const CoordinatorsPage(mobile: true),
+                _ => ProfilePage(
+                  onStudents: () =>
+                      _openSection('Alunos', const StudentsPage()),
+                  onTeachers: () =>
+                      _openSection('Professores', const TeachersPage()),
+                  onReports: () =>
+                      _openSection('Relatórios', const ReportsPage()),
+                  onNotifications: () =>
+                      setState(() => _showNotifications = true),
+                  onUsers: () => Navigator.pushNamed(context, AppRoutes.users),
+                  onEditInstitution: institutionId == null
+                      ? null
+                      : () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.institutionRegistration,
+                          arguments: institutionId,
+                        ),
+                  onSignOut: signOut,
+                ),
+              };
+        return AdminPageScaffold(
+          key: const Key('institution-admin-shell'),
+          role: UserRole.institutionAdmin,
+          selectedIndex: _mobileIndex,
+          destinations: _mobileDestinations,
+          onDestinationSelected: _selectMobile,
+          onSignOut: signOut,
+          body: mobileBody,
+        );
+      }
       return AdminPageScaffold(
         key: const Key('institution-admin-shell'),
         role: UserRole.institutionAdmin,

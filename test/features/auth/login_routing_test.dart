@@ -148,7 +148,9 @@ void main() {
     await pumpApp(tester);
     await signIn(tester, 'marina.costa@ifgoiano.edu.br');
 
-    await tester.tap(find.byTooltip('Sair'));
+    await tester.tap(find.text('Mais'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sair da conta'));
     await tester.pumpAndSettle();
 
     expect(find.text('Acesso ao ClassVision'), findsOneWidget);

@@ -77,7 +77,11 @@ void main() {
     await tester.tap(find.text('Mais'));
     await tester.pumpAndSettle();
     expect(find.text('Maria Souza'), findsOneWidget);
-    expect(find.text('Professor · IF Goiano'), findsOneWidget);
+    expect(find.text('Professor'), findsWidgets);
+    expect(
+      find.text('Instituto Federal Goiano - Campus Urutaí'),
+      findsOneWidget,
+    );
     expect(
       find.text('Instituto Federal Goiano - Campus Urutaí'),
       findsOneWidget,

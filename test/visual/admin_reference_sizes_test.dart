@@ -102,7 +102,7 @@ void main() {
       'Relatórios',
       'Nenhuma chamada registrada',
     ); // 13
-    await openDestination(tester, 'Mais', 'Coordenador · IF Goiano'); // 14
+    await openDestination(tester, 'Mais', 'Coordenador de curso'); // 14
     await openDestination(
       tester,
       'Notificações',
@@ -115,7 +115,8 @@ void main() {
       ClassVisionApp(authApi: roleAwareFakeAuthApi(), turmaApi: fakeTurmaApi()),
     );
     await login(tester, 'marina.costa@ifgoiano.edu.br');
-    expect(find.text('Equipe da instituição'), findsOneWidget); // 25
+    expect(find.text('Resumo de hoje'), findsOneWidget);
+    await openDestination(tester, 'Equipe', 'Equipe da instituição'); // 25
     expect(tester.takeException(), isNull);
   });
 
