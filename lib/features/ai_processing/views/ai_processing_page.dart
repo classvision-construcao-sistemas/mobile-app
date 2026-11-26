@@ -6,7 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/photo.dart';
 import '../../../core/widgets/app_ui.dart';
 import '../../../data/repositories/school_repository.dart';
-import '../../../data/services/facial_recognition_api.dart';
+import '../../../data/services/auditoria_api.dart';
 import '../../attendance/views/attendance_review_page.dart';
 import '../../camera/views/camera_page.dart';
 import '../view_models/ai_processing_view_model.dart';
@@ -37,15 +37,21 @@ class _AiProcessingPageState extends State<AiProcessingPage> {
     _viewModel.start();
   }
 
-  /// Turmas do turma-service, com perfil autorizado, passam pelo
-  /// auditoria-service (que só considera os alunos ativos da turma). As demais
-  /// usam o reconhecimento facial direto.
+  /// A chamada passa sempre pelo auditoria-service, que só considera os
+  /// alunos ativos da turma e grava o resultado. Sem turma cadastrada ou sem
+  /// permissão, avisa em vez de reconhecer a foto contra a base inteira (que
+  /// tem alunos de todas as instituições).
   AiProcessingViewModel _defaultViewModel() {
     final repository = context.read<SchoolRepository>();
     final classId = widget.result.classId;
     final RoomAuditor auditor = repository.recordsAuditFor(classId)
         ? (path) => repository.previewAttendance(classId!, path)
-        : context.read<FacialRecognitionApi>().auditRoom;
+        : (_) async => throw AuditoriaApiException(
+            repository.canRecordAttendance
+                ? 'Escolha uma turma cadastrada para fazer a chamada.'
+                : 'O seu perfil consulta as chamadas, mas não pode '
+                      'registrá-las. Peça a um coordenador.',
+          );
     return AiProcessingViewModel(
       imagePath: widget.result.imagePath,
       auditor: auditor,

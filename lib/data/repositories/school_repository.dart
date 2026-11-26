@@ -84,6 +84,9 @@ class SchoolRepository extends ChangeNotifier {
   bool get canManageClasses => auth?.role?.canManageClasses ?? false;
   bool get canManageEnrollments => auth?.role?.canManageEnrollments ?? false;
 
+  /// O perfil logado pode registrar chamadas (RN-01).
+  bool get canRecordAttendance => auth?.role?.canRecordAttendance ?? false;
+
   /// Se a chamada desta turma é registrada no auditoria-service: turma do
   /// turma-service e perfil autorizado (RN-01). Caso contrário a chamada usa
   /// o reconhecimento facial direto e fica só nesta sessão.
@@ -333,8 +336,10 @@ class SchoolRepository extends ChangeNotifier {
         );
       }).toList();
 
-      // Quando a auditoria não possui uma turma local, exibe diretamente as
-      // matrículas devolvidas pelo Milvus, sem inventar dados pessoais.
+      // Numa turma de verdade só entram os alunos dela: rostos de alunos de
+      // outras turmas ou instituições nunca são acrescentados à lista. Só a
+      // auditoria sem turma mostra as matrículas devolvidas pelo Milvus.
+      if (item.isRemote) return item.copyWith(students: updated);
       for (final match in result.recognizedStudents) {
         if (knownRegistrations.add(match.studentId)) {
           updated.add(

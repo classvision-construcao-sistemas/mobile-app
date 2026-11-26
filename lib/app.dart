@@ -220,6 +220,8 @@ class _ClassVisionAppState extends State<ClassVisionApp>
       AppRoutes.classDetails => ClassDetailsPage(
         classId: settings.arguments as String?,
       ),
+      AppRoutes.camera when !allowed((it) => it.canRecordAttendance) =>
+        const _ForbiddenPage(),
       AppRoutes.camera => CameraPage(classId: settings.arguments as String?),
       AppRoutes.processing => AiProcessingPage(
         result: settings.arguments is CameraResult

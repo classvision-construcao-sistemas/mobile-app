@@ -274,6 +274,61 @@ void main() {
       expect(professor.recordsAuditFor('1'), isFalse);
     });
 
+    test('institution administrators also record attendance', () async {
+      final admin = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(role: 'ADMIN_INSTITUICAO'),
+        auditoriaApi: fakeAuditoriaApi(),
+      );
+      await admin.loadClasses();
+
+      expect(admin.canRecordAttendance, isTrue);
+      expect(admin.recordsAuditFor('1'), isTrue);
+    });
+
+    test('never adds students of other classes to a real class', () async {
+      final repository = SchoolRepository(
+        api: fakeTurmaApi(),
+        auth: await signedIn(),
+        auditoriaApi: fakeAuditoriaApi(),
+      );
+      await repository.loadClasses();
+      final before = repository.classById('1').students.length;
+
+      repository.applyFacialRecognition(
+        '1',
+        const RoomAuditResult(
+          message: '',
+          recognizedStudents: [
+            RecognizedStudent(
+              studentId: '20260001',
+              confidenceScore: .95,
+              facialArea: {},
+            ),
+            // Aluno de outra instituição reconhecido na mesma foto.
+            RecognizedStudent(
+              studentId: '99990001',
+              confidenceScore: .97,
+              facialArea: {},
+            ),
+          ],
+          unrecognizedCount: 0,
+          totalFacesDetected: 2,
+        ),
+      );
+
+      final students = repository.classById('1').students;
+      expect(students, hasLength(before));
+      expect(
+        students.map((it) => it.registration),
+        isNot(contains('99990001')),
+      );
+      expect(
+        students.firstWhere((it) => it.registration == '20260001').status,
+        AttendanceStatus.present,
+      );
+    });
+
     test('previews, confirms and lists the attendance', () async {
       final saved = <Map<String, dynamic>>[];
       final repository = SchoolRepository(
